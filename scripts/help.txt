@@ -1,0 +1,13 @@
+
+usage: lit <command>
+
+These are all the Lit commands:
+
+  init                configure a new Git repository managed by Lit
+  migrate             migrate an existing Git repository directory to Lit
+  pull                git pull the current branch and deploy it
+  checkout <branch>   git checkout the given branch and deploy it
+  log                 show recent commits of the currently deployed commit
+
+For more help, visit: https://github.com/SjorsO/lit
+
