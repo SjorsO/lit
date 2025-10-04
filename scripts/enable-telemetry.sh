@@ -7,12 +7,12 @@ project_base_path="$2"
 
 source "$lit_base_path/scripts/helpers.sh"
 
-if [ -f "$project_base_path/lit/telemetry-enabled" ]; then
+if [ -f "$lit_base_path/telemetry-enabled" ]; then
     echo "Telemetry is already enabled"
     
     exit 1
 fi
 
-generate_uuid > "$project_base_path/lit/telemetry-enabled"
+touch "$lit_base_path/telemetry-enabled"
 
 echo "Enabled anonymous telemetry"

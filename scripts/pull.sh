@@ -123,7 +123,7 @@ if [ "$reusing_enabled" = true ]; then
 
     before_storing_for_reuse_hook_hash="$(sha1sum "$before_storing_for_reuse_hook_file_path" | cut -d' ' -f1)"
 
-    tar_file_path=""    
+    tar_file_path=""
 
     if [ -f "$lit_base_path/releases/$current_remote_commit-$before_storing_for_reuse_hook_hash.tar.zst" ]; then
         tar_file_path="$lit_base_path/releases/$current_remote_commit-$before_storing_for_reuse_hook_hash.tar.zst"
@@ -260,18 +260,23 @@ for old_release_directory in $(ls "$releases_directory" | sort --numeric-sort --
     rm -rf "${releases_directory:?}/$old_release_directory"
 done
 
-if [ -f "$lit_base_path/telemetry-enabled" ]; then
-    salt=$(get_file_value "$lit_base_path/telemetry-enabled")
+if [ ! -f "$lit_base_path/data/telemetry-enabled" ]; then
+    echo "Sending anonymous telemetry is disabled"
+    echo "Telemetry helps make Lit better, you can run \"lit enable-telemetry\" to enable telemetry"
 
-    bash "$lit_base_path/scripts/send-telemetry.sh" <<EOF
+    exit 0
+fi
+
+salt=$(get_file_value "$lit_base_path/data/telemetry-salt")
+
+bash "$lit_base_path/scripts/telemetry.sh" <<EOF &
 {
     "action": "pull",
     "os": "${OSTYPE:-not set}",
-    "lit_installation_id": "$(get_file_value "$project_base_path/lit/installation-id")",
+    "lit_installation_id": "$(get_file_value "$lit_base_path/data/installation-id")",
     "lit_project_id": "$(echo "$salt$project_base_path" | shasum | cut -d' ' -f1)",
     "reusing_enabled": $reusing_enabled,
     "has_reused": $has_reused,
     "deployed_commit": "$(echo "$salt$current_commit" | shasum | cut -d' ' -f1)"
 }
 EOF
-fi

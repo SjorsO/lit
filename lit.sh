@@ -25,12 +25,16 @@ fi
 
 source "$lit_base_path/scripts/helpers.sh"
 
-if [ ! -f "$project_base_path/lit/installation-id" ]; then
-    generate_uuid > "$project_base_path/lit/installation-id"
+if [ ! -d "$lit_base_path/data" ]; then
+    mkdir "$lit_base_path/data"
 fi
 
-if [ -f "$project_base_path/lit/telemetry-enabled" ] && [ ! -s "$project_base_path/lit/telemetry-enabled" ]; then
-    generate_uuid > "$project_base_path/lit/telemetry-enabled"
+if [ ! -f "$lit_base_path/data/installation-id" ]; then
+    generate_uuid > "$lit_base_path/data/installation-id"
+fi
+
+if [ -f "$lit_base_path/data/telemetry-enabled" ] && [ ! -s "$lit_base_path/data/telemetry-salt" ]; then
+    generate_uuid > "$lit_base_path/data/telemetry-salt"
 fi
 
 if [ "$command" = "pull" ]; then

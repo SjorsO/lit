@@ -7,12 +7,12 @@ project_base_path="$2"
 
 source "$lit_base_path/scripts/helpers.sh"
 
-if [ ! -f "$project_base_path/lit/telemetry-enabled" ]; then
+if [ ! -f "$lit_base_path/telemetry-enabled" ]; then
     echo "Telemetry is already disabled"
     
     exit 1
 fi
 
-rm "$project_base_path/lit/telemetry-enabled"
+rm "$lit_base_path/telemetry-enabled"
 
 echo "Disabled telemetry"
