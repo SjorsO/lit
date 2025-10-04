@@ -15,4 +15,4 @@ fi
 
 rm "$lit_base_path/telemetry-enabled"
 
-echo "Disabled telemetry"
+echo "Completely disabled telemetry for all projects"

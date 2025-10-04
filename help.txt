@@ -14,7 +14,7 @@
 │   enable-reusing       Enable reusing releases between projects                 │
 │   disable-reusing      Disable reusing releases                                 │
 │   enable-telemetry     Enable anonymous telemetry to help make Lit better       │
-│   disable-telemetry    Disable telemetry                                        │
+│   disable-telemetry    Completely disable telemetry                             │
 │                                                                                 │
 │ For more help, visit: https://github.com/SjorsO/lit                             │
 ╰─────────────────────────────────────────────────────────────────────────────────╯
