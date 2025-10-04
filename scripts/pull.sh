@@ -23,21 +23,74 @@ if [ ! -d "$project_base_path/lit" ]; then
     exit 1
 fi
 
+releases_directory="$project_base_path/releases"
+current_directory_path="$project_base_path/current"
+lock_directory_path="$project_base_path/deployment-currently-running"
+
+# Projects previously deployed with Deployer have a "shared" directory
+if [[ -d "$project_base_path/shared/storage" ]] && [[ -f "$project_base_path/shared/.env" ]]; then
+    real_storage_directory_path="$project_base_path/shared/storage"
+    real_env_file_path="$project_base_path/shared/.env"
+else
+    real_storage_directory_path="$project_base_path/storage"
+    real_env_file_path="$project_base_path/.env"
+fi
+
+is_first_deployment=$([[ -h "$current_directory_path" ]] && echo false || echo true)
+
+has_created_lock_directory=false
+release_directory_created=false
+release_activated=false
+
 git_repository_url="$(get_file_value "$project_base_path/lit/git-repository-url")"
 current_branch="$(get_file_value "$project_base_path/lit/current-branch")"
 current_commit="$(get_file_value "$project_base_path/lit/current-commit")"
 
-for release_directory_path in "$project_base_path/releases/"*/ ; do
+on_exit() {
+    script_status_code=$?
+
+    if [[ "$release_directory_created" == true && "$release_activated" == false ]]; then
+        echo "Deleting new but unactivated release directory \"$new_release_directory\""
+
+        rm -rf "$new_release_directory"
+    fi
+
+    if [[ "$release_activated" == true ]] && [[ "$script_status_code" -ne 0 ]]; then
+        echo "Warning: The new release has been activated!"
+    fi
+
+    if [[ "$has_created_lock_directory" == true ]]; then
+        rmdir "$lock_directory_path"
+    fi
+
+    # Exit this trap with the original status code.
+    exit "$script_status_code"
+}
+# This "trap" command will call the "on_exit" function when we exit this script.
+trap on_exit INT EXIT TERM
+
+for release_directory_path in "$releases_directory/"*/ ; do
     if [[ -e "$release_directory_path" ]] && ! [[ $release_directory_path =~ /[0-9]+/$ ]] ; then
-       echo -e "The name of existing release directory \"$release_directory_path\" is not fully numeric, this should never happen."
+       echo "The name of existing release directory \"$release_directory_path\" is not fully numeric, this should never happen"
 
        exit 1
     fi
 done
 
-current_release_id=$(ls "$project_base_path/releases" | sort --numeric-sort | tail -n1) || 0;
+if [[ -d "$lock_directory_path" ]]; then
+    echo "The directory \"$lock_directory_path\" exists, this means another deployment is currently running"
 
-new_release_id="$((current_release_id + 1))"
+    exit 1
+fi
+
+# Ensure we can't run multiple deployments at the same time.
+mkdir "$lock_directory_path"
+
+has_created_lock_directory=true
+
+current_release_id=$(ls "$releases_directory" | sort --numeric-sort | tail -n1) || 0;
+
+new_release_directory="$releases_directory/$((current_release_id + 1))"
 
 remote_branch_info=$(git ls-remote --symref "$git_repository_url" "$current_branch")
 
@@ -85,7 +138,7 @@ if [ "$reusing_enabled" = true ]; then
     fi
 
     if [ -n "$tar_file_path" ]; then
-        echo "Reusing deployment from cache"       
+        printf "Reusing deployment from cache"       
     else
         temp_directory_path="$lit_base_path/releases/wip_$(generate_uuid)"
 
@@ -117,13 +170,13 @@ if [ "$reusing_enabled" = true ]; then
         cd "$lit_base_path/releases"
 
         if command -v zstd >/dev/null 2>&1; then
-            echo "Caching release for reuse, compressing with zstd... "
+            printf "Caching release for reuse, compressing with zstd... "
 
             tar --use-compress-program "zstd -T0 -3" -cf "$staging_directory_path.tar.zst" "$(basename "$staging_directory_path")"
 
             tar_file_path="$staging_directory_path.tar.zst"
         else
-            echo "Caching release for reuse, compressing... "
+            printf "Caching release for reuse, compressing... "
 
             tar -czf "$staging_directory_path.tar.gz" "$(basename "$staging_directory_path")"
 
@@ -132,28 +185,77 @@ if [ "$reusing_enabled" = true ]; then
 
         rm -rf "$staging_directory_path"
     fi
+    
+    echo ""
+    echo "Creating \"$new_release_directory\" for the new release..."
 
-    echo "Creating \"$(basename "$project_base_path")/releases/$new_release_id\" for the new release..."
+    mkdir "$new_release_directory"
 
-    mkdir "$project_base_path/releases/$new_release_id"
+    release_directory_created=true
 
-    cd "$project_base_path/releases/$new_release_id"
+    cd "$new_release_directory"
 
-    echo "Extracting release..."
+    printf "Extracting release... "
 
     tar --strip-components=1 --extract --file "$tar_file_path"
+
+    echo ""
 else
-    echo "Creating \"$(basename "$project_base_path")/releases/$new_release_id\" for the new release..."
+    echo "Creating \"$new_release_directory\" for the new release..."
 
-    mkdir "$project_base_path/releases/$new_release_id"
+    mkdir "$new_release_directory"
 
-    cd "$project_base_path/releases/$new_release_id"
+    release_directory_created=true
+
+    cd "$new_release_directory"
 
     git clone --branch "$current_branch" \
         --depth 25 \
         --single-branch \
-        "$git_repository_url" "$project_base_path/releases/$new_release_id"
+        "$git_repository_url" "$new_release_directory"
 
     current_commit="$(git rev-parse HEAD)"
 fi
 
+
+
+
+
+echo "Creating a symlink to the storage directory"
+
+if [[ ! -d "$real_storage_directory_path" ]]; then
+    mkdir -p "$real_storage_directory_path/"{app/public,app/private,framework/{cache/data,sessions,testing,views},logs}    
+fi
+
+ln $(is_macos && echo "-nsf" || echo "-nsfr") "$real_storage_directory_path" "$new_release_directory/storage"
+
+if [[ ! -s "$real_env_file_path" ]]; then
+    touch "$real_env_file_path"
+
+    echo "Your \"$real_env_file_path\" file is empty"
+    echo "Run the deployment again after you've filled in the .env file"
+
+    exit 1
+fi
+
+echo "Creating a symlink to the .env file"
+
+ln $(is_macos && echo "-nsf" || echo "-nsfr") "$real_env_file_path" "$new_release_directory/.env"
+
+# run_hook "before-activation.sh" "$base_directory" "$artifacts_path"
+
+echo "Activating new release \"$new_release_directory\""
+
+# Create a symlink to enable the release
+ln $(is_macos && echo "-nsf" || echo "-nsfr") "$new_release_directory" "$current_directory_path"
+
+release_activated=true
+
+# run_hook "after-activation.sh" "$base_directory" "$artifacts_path"
+
+# Only keep 2 release directories
+for old_release_directory in $(ls "$releases_directory" | sort --numeric-sort --reverse | tail -n+3) ; do
+    echo "Deleting old release directory \"$releases_directory/$old_release_directory\"."
+
+    rm -rf "${releases_directory:?}/$old_release_directory"
+done

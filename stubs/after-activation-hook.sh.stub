@@ -1,16 +1,19 @@
-new_release_directory="$1"
+project_base_directory="$1"
+new_release_directory="$2"
+
+available_commands=$(php artisan list)
 
 # Available since Laravel 10
-if [[ $("$php_executable" artisan list) =~ "schedule:interrupt" ]]; then
-    "$php_executable" artisan schedule:interrupt
+if [[ "$available_commands" =~ "schedule:interrupt" ]]; then
+    php artisan schedule:interrupt
 fi
 
-"$php_executable" artisan queue:restart
+php artisan queue:restart
 
-if [[ $("$php_executable" artisan list) =~ "horizon:terminate" ]]; then
-    "$php_executable" artisan horizon:terminate
+if [[ "$available_commands" =~ "horizon:terminate" ]]; then
+    php artisan horizon:terminate
 fi
 
-if [[ $("$php_executable" artisan list) =~ "pulse:restart" ]]; then
-    "$php_executable" artisan pulse:restart
+if [[ "$available_commands" =~ "pulse:restart" ]]; then
+    php artisan pulse:restart
 fi

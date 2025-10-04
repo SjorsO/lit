@@ -1,11 +1,18 @@
-new_release_directory="$1"
+project_base_directory="$1"
+new_release_directory="$2"
 
-"$php_executable" artisan storage:link
+composer install --no-interaction --no-progress --optimize-autoloader --no-dev
 
-"$php_executable" artisan config:cache
+npm ci
+npm run build
+rm -rf "node_modules"
 
-"$php_executable" artisan route:cache
+php artisan storage:link
 
-"$php_executable" artisan view:cache
+php artisan config:cache
 
-"$php_executable" artisan migrate --force
+php artisan route:cache
+
+php artisan view:cache
+
+php artisan migrate --force

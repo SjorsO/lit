@@ -50,8 +50,6 @@ touch "$project_base_path/.env"
 
 mkdir -p "$project_base_path/releases"
 
-mkdir -p "$project_base_path/storage/"{app/public,app/private,framework/{cache/data,sessions,testing,views},logs};
-
 echo "Finished initializing Lit in this directory"
 echo ""
 echo "Next steps:"
