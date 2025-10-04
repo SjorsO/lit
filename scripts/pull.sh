@@ -103,7 +103,7 @@ current_remote_commit=$(echo "$remote_branch_info" | grep -v "ref: refs/heads/" 
 
 if [ "$current_commit" = "$current_remote_commit" ]; then
     echo "Latest commit of \"$current_branch\" is already deployed (${current_remote_commit:0:8})"
-    
+
     if [ "$is_forcing" = true ]; then
         echo "Using \"--force\", redeploying..."
     else
@@ -115,7 +115,7 @@ fi
 
 reusing_enabled=$([ -f "$project_base_path/lit/reusing-enabled" ] && echo true || echo false)
 
-if [ "$reusing_enabled" = true ]; then            
+if [ "$reusing_enabled" = true ]; then
     if [ -L "$project_base_path/lit/hooks/before-storing-for-reuse.sh" ]; then
         before_storing_for_reuse_hook_file_path="$(readlink -f "$project_base_path/lit/hooks/before-storing-for-reuse.sh")"
     elif [ -f "$project_base_path/lit/hooks/before-storing-for-reuse.sh" ]; then
@@ -129,6 +129,7 @@ if [ "$reusing_enabled" = true ]; then
     before_storing_for_reuse_hook_hash="$(sha1sum "$before_storing_for_reuse_hook_file_path" | cut -d' ' -f1)"
 
     tar_file_path=""
+    has_reused=false
 
     if [ -f "$lit_base_path/releases/$current_remote_commit-$before_storing_for_reuse_hook_hash.tar.zst" ]; then
         tar_file_path="$lit_base_path/releases/$current_remote_commit-$before_storing_for_reuse_hook_hash.tar.zst"
@@ -140,8 +141,9 @@ if [ "$reusing_enabled" = true ]; then
 
     if [ -n "$tar_file_path" ]; then
         printf "Reusing deployment from cache"
-        
+
         current_commit="$current_remote_commit"
+        has_reused=true
     else
         temp_directory_path="$lit_base_path/releases/wip_$(generate_uuid)"
 
@@ -188,7 +190,7 @@ if [ "$reusing_enabled" = true ]; then
 
         rm -rf "$staging_directory_path"
     fi
-    
+
     echo ""
     echo "Creating \"$new_release_directory\" for the new release..."
 
@@ -223,7 +225,7 @@ fi
 echo "Creating a symlink to the storage directory"
 
 if [[ ! -d "$real_storage_directory_path" ]]; then
-    mkdir -p "$real_storage_directory_path/"{app/public,app/private,framework/{cache/data,sessions,testing,views},logs}    
+    mkdir -p "$real_storage_directory_path/"{app/public,app/private,framework/{cache/data,sessions,testing,views},logs}
 fi
 
 ln $(is_macos && echo "-nsf" || echo "-nsfr") "$real_storage_directory_path" "$new_release_directory/storage"
@@ -263,3 +265,17 @@ for old_release_directory in $(ls "$releases_directory" | sort --numeric-sort --
 
     rm -rf "${releases_directory:?}/$old_release_directory"
 done
+
+if [ -f "$project_base_path/lit/telemetry-enabled" ]; then
+    curl -X POST https://sjorso.com/lit-telemetry \
+      -H "Content-Type: application/json" \
+       -d "{
+           \"action\": \"pull\",
+           \"os\": \"${OSTYPE:-not set}\",
+           \"lit_installation_id\": \"$(echo \"$lit_base_path\" | shasum | cut -d' ' -f1)\",
+           \"lit_project_id\": \"$(echo \"$project_base_path\" | shasum | cut -d' ' -f1)\",
+           \"reusing_enabled\": $reusing_enabled,
+           \"has_reused\": $has_reused,
+           \"deployed_commit\": \"$(echo \"$current_commit\" | shasum | cut -d' ' -f1)\"
+       }"
+fi
