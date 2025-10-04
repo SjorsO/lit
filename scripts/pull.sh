@@ -104,13 +104,13 @@ current_remote_commit=$(echo "$remote_branch_info" | grep -v "ref: refs/heads/" 
 if [ "$current_commit" = "$current_remote_commit" ]; then
     echo "Latest commit of \"$current_branch\" is already deployed (${current_remote_commit:0:8})"
     
-    if [ "$is_forcing" = true ]; then        
+    if [ "$is_forcing" = true ]; then
         echo "Using \"--force\", redeploying..."
     else
         echo "Run \"lit pull --force\" to redeploy"
 
         exit 0
-    fi    
+    fi
 fi
 
 reusing_enabled=$([ -f "$project_base_path/lit/reusing-enabled" ] && echo true || echo false)
