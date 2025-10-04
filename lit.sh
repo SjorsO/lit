@@ -29,6 +29,8 @@ if [ ! -d "$lit_base_path/data" ]; then
     mkdir "$lit_base_path/data"
 fi
 
+echo "v1.0" > "$lit_base_path/data/lit-version"
+
 if [ ! -f "$lit_base_path/data/installation-id" ]; then
     generate_uuid > "$lit_base_path/data/installation-id"
 fi

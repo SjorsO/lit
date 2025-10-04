@@ -17,6 +17,8 @@ fi
 
 source "$lit_base_path/scripts/helpers.sh"
 
+started_at=$(is_macos && date +%s || date +%s%3N)
+
 releases_directory="$project_base_path/releases"
 current_directory_path="$project_base_path/current"
 lock_directory_path="$project_base_path/deployment-currently-running"
@@ -144,7 +146,7 @@ if [ "$reusing_enabled" = true ]; then
         mkdir -p "$temp_directory_path"
 
         git clone --branch "$current_branch" \
-            --depth 25 \
+            --depth 100 \
             --single-branch \
             "$git_repository_url" "$temp_directory_path"
 
@@ -209,7 +211,7 @@ else
     cd "$new_release_directory"
 
     git clone --branch "$current_branch" \
-        --depth 25 \
+        --depth 100 \
         --single-branch \
         "$git_repository_url" "$new_release_directory"
 
@@ -273,10 +275,17 @@ bash "$lit_base_path/scripts/telemetry.sh" <<EOF &
 {
     "action": "pull",
     "os": "${OSTYPE:-not set}",
-    "lit_installation_id": "$(get_file_value "$lit_base_path/data/installation-id")",
+    "lit_version": "$(get_file_value "$lit_base_path/data/lit-version")",
+    "lit_installation_id": "$(get_file_value "$lit_base_path/data/installation-id")",    
     "lit_project_id": "$(echo "$salt$project_base_path" | shasum | cut -d' ' -f1)",
     "reusing_enabled": $reusing_enabled,
     "has_reused": $has_reused,
     "deployed_commit": "$(echo "$salt$current_commit" | shasum | cut -d' ' -f1)"
 }
 EOF
+
+if is_macos; then
+    echo "Finished, took $(( $(date +%s) - started_at )) seconds"
+else
+    echo "Finished, took $(( $(date +%s%3N) - started_at )) milliseconds"
+fi
