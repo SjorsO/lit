@@ -1,0 +1,18 @@
+
+usage: lit <command>
+
+These are everyday Lit commands:
+
+  init <git_repo_url>  Set up a new Lit directory
+  migrate              Migrate an existing Git repository directory to Lit
+  pull                 Git pull the current branch and deploy it
+  checkout <branch>    Git checkout the given branch and deploy it
+  log                  Show recent commits of the currently deployed commit
+
+Other commands:
+
+  enable-reusing       Enable caching releases so they can be reused for other applications
+  disable-reusing      Disable reusing releases
+
+For more help, visit: https://github.com/SjorsO/lit
+
