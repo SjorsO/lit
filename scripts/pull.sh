@@ -66,6 +66,12 @@ on_exit() {
         rmdir "$lock_directory_path"
     fi
 
+    if is_macos; then
+        echo "Finished $([ "$script_status_code" -ne 0 ] && echo "with errors" || echo "successfully"), took $(( $(date +%s) - started_at )) seconds"
+    else
+        echo "Finished $([ "$script_status_code" -ne 0 ] && echo "with errors" || echo "successfully"), took $(( $(date +%s%3N) - started_at )) milliseconds"
+    fi
+
     return "$script_status_code"
 }
 trap on_exit EXIT TERM
@@ -283,9 +289,3 @@ bash "$lit_base_path/scripts/telemetry.sh" <<EOF &
     "deployed_commit": "$(echo "$salt$current_commit" | shasum | cut -d' ' -f1)"
 }
 EOF
-
-if is_macos; then
-    echo "Finished, took $(( $(date +%s) - started_at )) seconds"
-else
-    echo "Finished, took $(( $(date +%s%3N) - started_at )) milliseconds"
-fi
