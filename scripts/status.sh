@@ -26,6 +26,10 @@ for line in "$line1" "$line2" "$line3" "$line4" "$line5"; do
     fi
 done
 
+if [ ${max_length} -lt 76 ]; then
+    max_length=76
+fi
+
 box_width=$((max_length + 2))
 horizontal_line=$(printf "─%.0s" $(seq 1 $box_width))
 
