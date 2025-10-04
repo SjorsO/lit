@@ -8,7 +8,7 @@ project_base_path="$(pwd)"
 source "$lit_base_path/scripts/helpers.sh"
 
 if [ ! -d "$project_base_path/lit" ]; then
-    echo "fatal: not a lit directory"
+    echo "This is not a Lit directory"
 
     exit 1
 fi

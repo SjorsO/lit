@@ -18,7 +18,7 @@ fi
 source "$lit_base_path/scripts/helpers.sh"
 
 if [ ! -d "$project_base_path/lit" ]; then
-    echo "fatal: not a lit directory"
+    echo "This is not a Lit directory"
 
     exit 1
 fi
@@ -108,11 +108,7 @@ if [ "$current_commit" = "$current_remote_commit" ]; then
     fi    
 fi
 
-if [ -f "$project_base_path/lit/reusing-enabled" ]; then
-    reusing_enabled=true
-else
-    reusing_enabled=false
-fi
+reusing_enabled=$([ -f "$project_base_path/lit/reusing-enabled" ] && echo true || echo false)
 
 if [ "$reusing_enabled" = true ]; then            
     if [ -L "$project_base_path/lit/hooks/before-storing-for-reuse.sh" ]; then
@@ -138,7 +134,9 @@ if [ "$reusing_enabled" = true ]; then
     fi
 
     if [ -n "$tar_file_path" ]; then
-        printf "Reusing deployment from cache"       
+        printf "Reusing deployment from cache"
+        
+        current_commit="$current_remote_commit"
     else
         temp_directory_path="$lit_base_path/releases/wip_$(generate_uuid)"
 
@@ -217,10 +215,6 @@ else
     current_commit="$(git rev-parse HEAD)"
 fi
 
-
-
-
-
 echo "Creating a symlink to the storage directory"
 
 if [[ ! -d "$real_storage_directory_path" ]]; then
@@ -242,7 +236,13 @@ echo "Creating a symlink to the .env file"
 
 ln $(is_macos && echo "-nsf" || echo "-nsfr") "$real_env_file_path" "$new_release_directory/.env"
 
-# run_hook "before-activation.sh" "$base_directory" "$artifacts_path"
+if [ -f "$project_base_path/lit/hooks/before-activation.sh" ]; then
+    hook_entry_directory=$(pwd)
+    cat "$project_base_path/lit/hooks/before-activation.sh" | bash -se -- "$php_executable"
+    cd "$hook_entry_directory" || exit 1
+else
+    echo "Wanted to run \"$project_base_path/lit/hooks/before-activation.sh\" but it does not exist"
+fi
 
 echo "Activating new release \"$new_release_directory\""
 
@@ -251,11 +251,19 @@ ln $(is_macos && echo "-nsf" || echo "-nsfr") "$new_release_directory" "$current
 
 release_activated=true
 
-# run_hook "after-activation.sh" "$base_directory" "$artifacts_path"
+echo "$current_commit" > "$project_base_path/lit/current-commit"
+
+if [ -f "$project_base_path/lit/hooks/after-activation.sh" ]; then
+    hook_entry_directory=$(pwd)
+    cat "$project_base_path/lit/hooks/after-activation.sh" | bash -se -- "$php_executable"
+    cd "$hook_entry_directory" || exit 1
+else
+    echo "Wanted to run \"$project_base_path/lit/hooks/after-activation.sh\" but it does not exist"
+fi
 
 # Only keep 2 release directories
 for old_release_directory in $(ls "$releases_directory" | sort --numeric-sort --reverse | tail -n+3) ; do
-    echo "Deleting old release directory \"$releases_directory/$old_release_directory\"."
+    echo "Deleting old release directory \"$releases_directory/$old_release_directory\""
 
     rm -rf "${releases_directory:?}/$old_release_directory"
 done
