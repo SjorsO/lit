@@ -43,6 +43,8 @@ if [ "$command" = "pull" ]; then
     bash "$lit_base_path/scripts/pull.sh" "$lit_base_path" "$project_base_path" "$2"
 elif [ "$command" = "checkout" ]; then
     bash "$lit_base_path/scripts/checkout.sh" "$lit_base_path" "$project_base_path" "$2" "$3"
+elif [ "$command" = "status" ]; then
+    bash "$lit_base_path/scripts/status.sh" "$lit_base_path" "$project_base_path"
 elif [ "$command" = "log" ]; then
     if [ ! -d "$(pwd)/lit" ]; then
         echo "This is not a Lit directory"
