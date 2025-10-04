@@ -3,11 +3,11 @@
 set -e
 
 lit_base_path="$1"
-project_base_path="$(pwd)"
+project_base_path="$2"
 
-if [ -z "$2" ]; then
+if [ -z "$3" ]; then
     is_forcing=false
-elif [ "$2" = "--force" ]; then
+elif [ "$3" = "--force" ]; then
     is_forcing=true
 else
     echo "usage: lit pull [--force]"
@@ -16,12 +16,6 @@ else
 fi
 
 source "$lit_base_path/scripts/helpers.sh"
-
-if [ ! -d "$project_base_path/lit" ]; then
-    echo "This is not a Lit directory"
-
-    exit 1
-fi
 
 releases_directory="$project_base_path/releases"
 current_directory_path="$project_base_path/current"
@@ -114,6 +108,7 @@ if [ "$current_commit" = "$current_remote_commit" ]; then
 fi
 
 reusing_enabled=$([ -f "$project_base_path/lit/reusing-enabled" ] && echo true || echo false)
+has_reused=false
 
 if [ "$reusing_enabled" = true ]; then
     if [ -L "$project_base_path/lit/hooks/before-storing-for-reuse.sh" ]; then
@@ -128,8 +123,7 @@ if [ "$reusing_enabled" = true ]; then
 
     before_storing_for_reuse_hook_hash="$(sha1sum "$before_storing_for_reuse_hook_file_path" | cut -d' ' -f1)"
 
-    tar_file_path=""
-    has_reused=false
+    tar_file_path=""    
 
     if [ -f "$lit_base_path/releases/$current_remote_commit-$before_storing_for_reuse_hook_hash.tar.zst" ]; then
         tar_file_path="$lit_base_path/releases/$current_remote_commit-$before_storing_for_reuse_hook_hash.tar.zst"
@@ -266,16 +260,18 @@ for old_release_directory in $(ls "$releases_directory" | sort --numeric-sort --
     rm -rf "${releases_directory:?}/$old_release_directory"
 done
 
-if [ -f "$project_base_path/lit/telemetry-enabled" ]; then
-    curl -X POST https://sjorso.com/lit-telemetry \
-      -H "Content-Type: application/json" \
-       -d "{
-           \"action\": \"pull\",
-           \"os\": \"${OSTYPE:-not set}\",
-           \"lit_installation_id\": \"$(echo \"$lit_base_path\" | shasum | cut -d' ' -f1)\",
-           \"lit_project_id\": \"$(echo \"$project_base_path\" | shasum | cut -d' ' -f1)\",
-           \"reusing_enabled\": $reusing_enabled,
-           \"has_reused\": $has_reused,
-           \"deployed_commit\": \"$(echo \"$current_commit\" | shasum | cut -d' ' -f1)\"
-       }"
+if [ -f "$lit_base_path/telemetry-enabled" ]; then
+    salt=$(get_file_value "$lit_base_path/telemetry-enabled")
+
+    bash "$lit_base_path/scripts/send-telemetry.sh" <<EOF
+{
+    "action": "pull",
+    "os": "${OSTYPE:-not set}",
+    "lit_installation_id": "$(get_file_value "$project_base_path/lit/installation-id")",
+    "lit_project_id": "$(echo "$salt$project_base_path" | shasum | cut -d' ' -f1)",
+    "reusing_enabled": $reusing_enabled,
+    "has_reused": $has_reused,
+    "deployed_commit": "$(echo "$salt$current_commit" | shasum | cut -d' ' -f1)"
+}
+EOF
 fi

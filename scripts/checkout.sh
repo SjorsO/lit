@@ -3,10 +3,10 @@
 set -e
 
 lit_base_path="$1"
-new_branch="$2"
-project_base_path="$(pwd)"
+project_base_path="$2"
+new_branch="$3"
 
-if [ -z "$new_branch" ] || [ -n "$3" ]; then
+if [ -z "$new_branch" ] || [ -n "$4" ]; then
     echo "usage: lit checkout <branch>"
 
     exit 1
@@ -14,11 +14,6 @@ fi
 
 source "$lit_base_path/scripts/helpers.sh"
 
-if [ ! -d "$project_base_path/lit" ]; then
-    echo "This is not a Lit directory"
-
-    exit 1
-fi
 
 git_repository_url="$(get_file_value "$project_base_path/lit/git-repository-url")"
 current_branch="$(get_file_value "$project_base_path/lit/current-branch")"

@@ -8,7 +8,7 @@ project_base_path="$(pwd)"
 command="$1"
 
 if [ "$command" = "init" ]; then
-    bash "$lit_base_path/scripts/init.sh" "$lit_base_path" "$2"
+    bash "$lit_base_path/scripts/init.sh" "$lit_base_path" "$project_base_path" "$2"
 
     exit $?
 elif [ "$command" = "help" ]; then
@@ -23,10 +23,20 @@ if [ ! -d "$project_base_path/lit" ]; then
     exit 1
 fi
 
+source "$lit_base_path/scripts/helpers.sh"
+
+if [ ! -f "$project_base_path/lit/installation-id" ]; then
+    generate_uuid > "$project_base_path/lit/installation-id"
+fi
+
+if [ -f "$project_base_path/lit/telemetry-enabled" ] && [ ! -s "$project_base_path/lit/telemetry-enabled" ]; then
+    generate_uuid > "$project_base_path/lit/telemetry-enabled"
+fi
+
 if [ "$command" = "pull" ]; then
-    bash "$lit_base_path/scripts/pull.sh" "$lit_base_path" "$2"
+    bash "$lit_base_path/scripts/pull.sh" "$lit_base_path" "$project_base_path" "$2"
 elif [ "$command" = "checkout" ]; then
-    bash "$lit_base_path/scripts/checkout.sh" "$lit_base_path" "$2" "$3"
+    bash "$lit_base_path/scripts/checkout.sh" "$lit_base_path" "$project_base_path" "$2" "$3"
 elif [ "$command" = "log" ]; then
     if [ ! -d "$(pwd)/lit" ]; then
         echo "This is not a Lit directory"
@@ -36,13 +46,13 @@ elif [ "$command" = "log" ]; then
 
     git --git-dir "$(pwd)/current/.git" log "${@:2}"
 elif [ "$command" = "enable-reusing" ]; then
-    bash "$lit_base_path/scripts/enable-reusing.sh" "$lit_base_path"
+    bash "$lit_base_path/scripts/enable-reusing.sh" "$lit_base_path" "$project_base_path"
 elif [ "$command" = "disable-reusing" ]; then
-    bash "$lit_base_path/scripts/disable-reusing.sh" "$lit_base_path"
+    bash "$lit_base_path/scripts/disable-reusing.sh" "$lit_base_path" "$project_base_path"
 elif [ "$command" = "enable-telemetry" ]; then
-    bash "$lit_base_path/scripts/enable-telemetry.sh" "$lit_base_path"
+    bash "$lit_base_path/scripts/enable-telemetry.sh" "$lit_base_path" "$project_base_path"
 elif [ "$command" = "disable-telemetry" ]; then
-    bash "$lit_base_path/scripts/disable-telemetry.sh" "$lit_base_path"
+    bash "$lit_base_path/scripts/disable-telemetry.sh" "$lit_base_path" "$project_base_path"
 else
     cat "$lit_base_path/help.txt"
 fi

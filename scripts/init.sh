@@ -11,8 +11,8 @@ if [ "$(ls -A . 2>/dev/null)" ]; then
 fi
 
 lit_base_path="$1"
-git_repository_url="$2"
-project_base_path="$(pwd)"
+project_base_path="$2"
+git_repository_url="$3"
 
 source "$lit_base_path/scripts/helpers.sh"
 
