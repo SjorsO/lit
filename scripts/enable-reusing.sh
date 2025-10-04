@@ -26,6 +26,11 @@ if [ ! -f "$project_base_path/lit/hooks/before-storing-for-reuse.sh" ]; then
 
     echo "Created new hook \"$(basename "$project_base_path")/lit/hooks/before-storing-for-reuse.sh\""    
     echo ""
+    echo "Make sure to review and update these hooks:"
+    echo "- \"lit/hooks/before-storing-for-reuse.sh\""
+    echo "- \"lit/hooks/before-activation.sh\""
+    echo "- \"lit/hooks/after-activation.sh\""
+    echo ""
 fi
 
 echo "Enabled reusing cached releases"

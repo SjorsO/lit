@@ -34,7 +34,7 @@ default_branch=$(echo "$default_branch_info" | grep "ref: refs/heads/" | sed 's/
 default_commit=$(echo "$default_branch_info" | grep -v "ref: refs/heads/" | cut -f1)
 
 echo "$default_branch" > "$project_base_path/lit/current-branch"
-echo "$default_commit" > "$project_base_path/lit/current-commit"
+echo "not deployed yet" > "$project_base_path/lit/current-commit"
 
 echo "Done!"
 echo ""
@@ -42,9 +42,8 @@ echo "Current branch set to \"$default_branch\""
 echo ""
 
 mkdir -p "$project_base_path/lit/hooks"
-cp "$lit_base_path/stubs/after-pulling-hook.sh.stub" "$project_base_path/lit/hooks/after-pulling.sh"
-cp "$lit_base_path/stubs/before-activitation-hook.sh.stub" "$project_base_path/lit/hooks/before-activitation.sh"
-cp "$lit_base_path/stubs/after-activation-hook.sh.stub" "$project_base_path/lit/hooks/after-activation.sh"
+cp "$lit_base_path/stubs/before-activation.sh.stub" "$project_base_path/lit/hooks/before-activation.sh"
+cp "$lit_base_path/stubs/after-activation.sh.stub" "$project_base_path/lit/hooks/after-activation.sh"
 
 touch "$project_base_path/.env"
 
@@ -55,8 +54,7 @@ echo ""
 echo "Next steps:"
 echo "- Fill in the \".env\" file"
 echo "- Review these hooks and change them if necessary:"
-echo "  - \"lit/hooks/after-pulling.sh\""
-echo "  - \"lit/hooks/before-activitation.sh\""
+echo "  - \"lit/hooks/before-activation.sh\""
 echo "  - \"lit/hooks/after-activation.sh\""
 echo ""
 echo "After that, either:"

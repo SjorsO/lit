@@ -36,7 +36,14 @@ else
     real_env_file_path="$project_base_path/.env"
 fi
 
-is_first_deployment=$([[ -h "$current_directory_path" ]] && echo false || echo true)
+if [[ ! -s "$real_env_file_path" ]]; then
+    touch "$real_env_file_path"
+
+    echo "Your \"$real_env_file_path\" file is empty"
+    echo "Try again after you've filled in the .env file"
+
+    exit 1
+fi
 
 has_created_lock_directory=false
 release_directory_created=false
@@ -63,11 +70,9 @@ on_exit() {
         rmdir "$lock_directory_path"
     fi
 
-    # Exit this trap with the original status code.
-    exit "$script_status_code"
+    return "$script_status_code"
 }
-# This "trap" command will call the "on_exit" function when we exit this script.
-trap on_exit INT EXIT TERM
+trap on_exit EXIT TERM
 
 for release_directory_path in "$releases_directory/"*/ ; do
     if [[ -e "$release_directory_path" ]] && ! [[ $release_directory_path =~ /[0-9]+/$ ]] ; then
@@ -223,22 +228,13 @@ fi
 
 ln $(is_macos && echo "-nsf" || echo "-nsfr") "$real_storage_directory_path" "$new_release_directory/storage"
 
-if [[ ! -s "$real_env_file_path" ]]; then
-    touch "$real_env_file_path"
-
-    echo "Your \"$real_env_file_path\" file is empty"
-    echo "Run the deployment again after you've filled in the .env file"
-
-    exit 1
-fi
-
 echo "Creating a symlink to the .env file"
 
 ln $(is_macos && echo "-nsf" || echo "-nsfr") "$real_env_file_path" "$new_release_directory/.env"
 
 if [ -f "$project_base_path/lit/hooks/before-activation.sh" ]; then
     hook_entry_directory=$(pwd)
-    cat "$project_base_path/lit/hooks/before-activation.sh" | bash -se -- "$php_executable"
+    cat "$project_base_path/lit/hooks/before-activation.sh" | bash -se -- "$project_base_path" "$new_release_directory"
     cd "$hook_entry_directory" || exit 1
 else
     echo "Wanted to run \"$project_base_path/lit/hooks/before-activation.sh\" but it does not exist"
@@ -255,7 +251,7 @@ echo "$current_commit" > "$project_base_path/lit/current-commit"
 
 if [ -f "$project_base_path/lit/hooks/after-activation.sh" ]; then
     hook_entry_directory=$(pwd)
-    cat "$project_base_path/lit/hooks/after-activation.sh" | bash -se -- "$php_executable"
+    cat "$project_base_path/lit/hooks/after-activation.sh" | bash -se -- "$project_base_path" "$new_release_directory"
     cd "$hook_entry_directory" || exit 1
 else
     echo "Wanted to run \"$project_base_path/lit/hooks/after-activation.sh\" but it does not exist"
