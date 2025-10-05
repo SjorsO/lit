@@ -29,6 +29,9 @@ if [ ! -d "$project_base_path/lit/logs" ]; then
     mkdir -p "$project_base_path/lit/logs"
 fi
 
+rotate_log_file "$project_base_path/lit/logs/lit.log"
+rotate_log_file "$project_base_path/lit/logs/output.log"
+
 echo "[$(get_human_timestamp)] lit $*" >> "$project_base_path/lit/logs/lit.log"
 echo "[$(get_human_timestamp)] lit $*" >> "$project_base_path/lit/logs/output.log"
 

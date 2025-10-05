@@ -26,13 +26,16 @@ rotate_log_file() {
         return
     fi
 
-    if [[ $(stat "$(is_macos && echo "-f%z" || echo "-c%s")" "$log_file" 2>/dev/null || echo 0) -le 10485760 ]]; then
+    file_size=$(stat "$(is_macos && echo "-f%z" || echo "-c%s")" "$log_file" 2>/dev/null || echo 0)
+
+    if [[ $file_size -le 10485760 ]]; then
         return
     fi
 
-    [[ -f "${log_file%.log}.2.log" ]] && rm "${log_file%.log}.2.log"
-    [[ -f "${log_file%.log}.1.log" ]] && mv "${log_file%.log}.1.log" "${log_file%.log}.2.log"
-
+    [[ -f "${log_file%.log}.4.tar.gz" ]] && rm "${log_file%.log}.4.tar.gz"
+    [[ -f "${log_file%.log}.3.tar.gz" ]] && mv "${log_file%.log}.3.tar.gz" "${log_file%.log}.4.tar.gz"
+    [[ -f "${log_file%.log}.2.tar.gz" ]] && mv "${log_file%.log}.2.tar.gz" "${log_file%.log}.3.tar.gz"
+    [[ -f "${log_file%.log}.1.log" ]] && tar -czf "${log_file%.log}.2.tar.gz" "${log_file%.log}.1.log" && rm "${log_file%.log}.1.log"
     mv "$log_file" "${log_file%.log}.1.log"
 
     touch "$log_file"
