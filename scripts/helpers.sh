@@ -17,19 +17,6 @@ is_macos() {
     [[ "$OSTYPE" == "darwin"* ]]
 }
 
-log_info() {
-    local project_base_dir=$1
-    local message=$2
-
-    if [[ ! -d "$project_base_dir/lit/logs" ]]; then
-        mkdir -p "$project_base_dir/lit/logs"
-    fi
-
-    rotate_log_file "$project_base_dir/lit/logs/lit.log"
-
-    echo "[$(get_human_timestamp)] $message" >> "$project_base_dir/lit/logs/lit.log"
-}
-
 rotate_log_file() {
     local log_file=$1
 

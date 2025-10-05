@@ -25,12 +25,44 @@ fi
 
 source "$lit_base_path/scripts/helpers.sh"
 
-log_info "$project_base_path" "Running: lit $*"
+if [ ! -d "$project_base_path/lit/logs" ]; then
+    mkdir -p "$project_base_path/lit/logs"
+fi
 
+echo "[$(get_human_timestamp)] lit $*" >> "$project_base_path/lit/logs/lit.log"
 echo "[$(get_human_timestamp)] lit $*" >> "$project_base_path/lit/logs/output.log"
 
 # Write all output to both stdout and a log file
 exec > >(tee -a "$project_base_path/lit/logs/output.log") 2>&1
+
+lock_directory_path="$project_base_path/lit/lit-is-currently-running"
+has_created_lock_directory=false
+
+on_exit() {
+    script_status_code=$?
+
+    if [[ "$has_created_lock_directory" == true ]]; then
+        rmdir "$lock_directory_path"
+    fi
+
+    echo "[$(get_human_timestamp)] Finished" >> "$project_base_path/lit/logs/output.log"
+
+    exit "$script_status_code"
+}
+trap on_exit EXIT TERM
+
+if [ -d "$lock_directory_path" ]; then
+    echo "Another Lit command is currently running for this project, aborting..."
+    echo "If this is wrong, manually run:"
+    echo "    rmdir \"$lock_directory_path\""
+
+    exit 1
+fi
+
+# Ensure we can't run multiple commands at the same time.
+mkdir "$lock_directory_path"
+
+has_created_lock_directory=true
 
 if [ ! -d "$lit_base_path/data" ]; then
     mkdir "$lit_base_path/data"
@@ -71,7 +103,3 @@ elif [ "$command" = "disable-telemetry" ]; then
 else
     cat "$lit_base_path/help.txt"
 fi
-
-echo "[$(get_human_timestamp)] Finished" >> "$project_base_path/lit/logs/output.log"
-
-log_info "$project_base_path" "Finished"

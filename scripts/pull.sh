@@ -21,7 +21,6 @@ started_at=$(date +%s)
 
 releases_directory="$project_base_path/releases"
 current_directory_path="$project_base_path/current"
-lock_directory_path="$project_base_path/deployment-currently-running"
 
 # Projects previously deployed with Deployer have a "shared" directory
 if [[ -d "$project_base_path/shared/storage" ]] && [[ -f "$project_base_path/shared/.env" ]]; then
@@ -41,7 +40,6 @@ if [[ ! -s "$real_env_file_path" ]]; then
     exit 1
 fi
 
-has_created_lock_directory=false
 release_directory_created=false
 release_activated=false
 
@@ -64,11 +62,7 @@ on_exit() {
         echo ">"
     fi
 
-    if [[ "$has_created_lock_directory" == true ]]; then
-        rmdir "$lock_directory_path"
-    fi
-
-    echo "Finished $([ "$script_status_code" -ne 0 ] && echo "with errors" || echo "successfully"), took $(( $(date +%s) - started_at )) seconds"
+    echo "Finished $([ "$script_status_code" -ne 0 ] && echo "with errors" || echo "successfully") (in $(( $(date +%s) - started_at )) seconds)"
 
     return "$script_status_code"
 }
@@ -81,17 +75,6 @@ for release_directory_path in "$releases_directory/"*/ ; do
        exit 1
     fi
 done
-
-if [[ -d "$lock_directory_path" ]]; then
-    echo "The directory \"$lock_directory_path\" exists, this means another deployment is currently running"
-
-    exit 1
-fi
-
-# Ensure we can't run multiple deployments at the same time.
-mkdir "$lock_directory_path"
-
-has_created_lock_directory=true
 
 current_release_id=$(ls "$releases_directory" | sort --numeric-sort | tail -n1) || 0;
 
