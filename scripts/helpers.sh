@@ -18,7 +18,8 @@ is_macos() {
 }
 
 rotate_log_file() {
-    local log_file=$1
+    local max_size=$1
+    local log_file=$2
 
     if [[ ! -f "$log_file" ]]; then
         touch "$log_file"
@@ -28,7 +29,7 @@ rotate_log_file() {
 
     file_size=$(stat "$(is_macos && echo "-f%z" || echo "-c%s")" "$log_file" 2>/dev/null || echo 0)
 
-    if [[ $file_size -le 10485760 ]]; then
+    if [[ $file_size -le $max_size ]]; then
         return
     fi
 
