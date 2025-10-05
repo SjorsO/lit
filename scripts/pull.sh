@@ -5,15 +5,13 @@ set -e
 lit_base_path="$1"
 project_base_path="$2"
 
-if [ -z "$3" ]; then
-    is_forcing=false
-elif [ "$3" = "--force" ]; then
-    is_forcing=true
-else
+if [ -n "$4" ] || ([ -n "$3" ] && [ "$3" != "--force" ]); then
     echo "usage: lit pull [--force]"
 
     exit 1
 fi
+
+is_forcing=$([ "$3" = "--force" ] && echo true || echo false)
 
 source "$lit_base_path/scripts/helpers.sh"
 

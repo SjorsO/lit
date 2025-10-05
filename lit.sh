@@ -41,6 +41,13 @@ rotate_log_file "$max_log_file_size" "$project_base_path/lit/logs/output.log"
 echo "[$(get_human_timestamp)] lit $*" >> "$project_base_path/lit/logs/lit.log"
 echo "[$(get_human_timestamp)] lit $*" >> "$project_base_path/lit/logs/output.log"
 
+# Don't log "git log" to "output.log"
+if [ "$command" = "log" ]; then
+    git --git-dir "$(pwd)/current/.git" log "${@:2}"
+
+    exit 0
+fi
+
 # Write all output to both stdout and a log file
 exec > >(tee -a "$project_base_path/lit/logs/output.log") 2>&1
 
@@ -88,19 +95,11 @@ if [ -f "$lit_base_path/data/telemetry-enabled" ] && [ ! -s "$lit_base_path/data
 fi
 
 if [ "$command" = "pull" ]; then
-    bash "$lit_base_path/scripts/pull.sh" "$lit_base_path" "$project_base_path" "$2"
+    bash "$lit_base_path/scripts/pull.sh" "$lit_base_path" "$project_base_path" "$2" "$3"
 elif [ "$command" = "checkout" ]; then
     bash "$lit_base_path/scripts/checkout.sh" "$lit_base_path" "$project_base_path" "$2" "$3"
 elif [ "$command" = "status" ]; then
     bash "$lit_base_path/scripts/status.sh" "$lit_base_path" "$project_base_path"
-elif [ "$command" = "log" ]; then
-    if [ ! -d "$(pwd)/lit" ]; then
-        echo "This is not a Lit directory"
-
-        exit 1
-    fi
-
-    git --git-dir "$(pwd)/current/.git" log "${@:2}"
 elif [ "$command" = "enable-reusing" ]; then
     bash "$lit_base_path/scripts/enable-reusing.sh" "$lit_base_path" "$project_base_path"
 elif [ "$command" = "disable-reusing" ]; then
