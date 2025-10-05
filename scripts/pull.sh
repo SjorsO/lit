@@ -17,7 +17,7 @@ fi
 
 source "$lit_base_path/scripts/helpers.sh"
 
-started_at=$(is_macos && date +%s || date +%s%3N)
+started_at=$(date +%s)
 
 releases_directory="$project_base_path/releases"
 current_directory_path="$project_base_path/current"
@@ -59,18 +59,16 @@ on_exit() {
     fi
 
     if [[ "$release_activated" == true ]] && [[ "$script_status_code" -ne 0 ]]; then
-        echo "Warning: The new release has been activated!"
+        echo ">"
+        echo "> Warning: The new release has been activated!"
+        echo ">"
     fi
 
     if [[ "$has_created_lock_directory" == true ]]; then
         rmdir "$lock_directory_path"
     fi
 
-    if is_macos; then
-        echo "Finished $([ "$script_status_code" -ne 0 ] && echo "with errors" || echo "successfully"), took $(( $(date +%s) - started_at )) seconds"
-    else
-        echo "Finished $([ "$script_status_code" -ne 0 ] && echo "with errors" || echo "successfully"), took $(( $(date +%s%3N) - started_at )) milliseconds"
-    fi
+    echo "Finished $([ "$script_status_code" -ne 0 ] && echo "with errors" || echo "successfully"), took $(( $(date +%s) - started_at )) seconds"
 
     return "$script_status_code"
 }

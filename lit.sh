@@ -39,6 +39,8 @@ if [ -f "$lit_base_path/data/telemetry-enabled" ] && [ ! -s "$lit_base_path/data
     generate_uuid > "$lit_base_path/data/telemetry-salt"
 fi
 
+log_info "$project_base_path" "Running: lit $*"
+
 if [ "$command" = "pull" ]; then
     bash "$lit_base_path/scripts/pull.sh" "$lit_base_path" "$project_base_path" "$2"
 elif [ "$command" = "checkout" ]; then
@@ -64,3 +66,5 @@ elif [ "$command" = "disable-telemetry" ]; then
 else
     cat "$lit_base_path/help.txt"
 fi
+
+log_info "$project_base_path" "Finished"
