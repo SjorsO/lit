@@ -1,7 +1,7 @@
 ╭──────────────────────────────────────────────────────────────────────────────╮
 │ usage: lit <command>                                                         │
 │                                                                              │
-│ These are everyday Lit commands:                                             │
+│ Common Lit commands:                                                         │
 │                                                                              │
 │   init <git_repo_url>  Set up a new Lit directory                            │
 │   migrate              Migrate an existing Git repository directory to Lit   │
@@ -12,7 +12,7 @@
 │                                                                              │
 │ Other commands:                                                              │
 │                                                                              │
-│   enable-reusing       Enable reusing releases between projects              │
+│   enable-reusing       Enable release caching and reusing cached releases    │
 │   disable-reusing      Disable reusing releases                              │
 │   enable-telemetry     Enable anonymous telemetry to help make Lit better    │
 │   disable-telemetry    Completely disable telemetry                          │
