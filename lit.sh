@@ -25,6 +25,13 @@ fi
 
 source "$lit_base_path/scripts/helpers.sh"
 
+log_info "$project_base_path" "Running: lit $*"
+
+echo "[$(get_human_timestamp)] lit $*" >> "$project_base_path/lit/logs/output.log"
+
+# Write all output to both stdout and a log file
+exec > >(tee -a "$project_base_path/lit/logs/output.log") 2>&1
+
 if [ ! -d "$lit_base_path/data" ]; then
     mkdir "$lit_base_path/data"
 fi
@@ -38,8 +45,6 @@ fi
 if [ -f "$lit_base_path/data/telemetry-enabled" ] && [ ! -s "$lit_base_path/data/telemetry-salt" ]; then
     generate_uuid > "$lit_base_path/data/telemetry-salt"
 fi
-
-log_info "$project_base_path" "Running: lit $*"
 
 if [ "$command" = "pull" ]; then
     bash "$lit_base_path/scripts/pull.sh" "$lit_base_path" "$project_base_path" "$2"
@@ -66,5 +71,7 @@ elif [ "$command" = "disable-telemetry" ]; then
 else
     cat "$lit_base_path/help.txt"
 fi
+
+echo "[$(get_human_timestamp)] Finished" >> "$project_base_path/lit/logs/output.log"
 
 log_info "$project_base_path" "Finished"

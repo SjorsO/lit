@@ -1,5 +1,9 @@
 #!/bin/bash
 
+generate_uuid() {
+    uuidgen | tr '[:upper:]' '[:lower:]'
+}
+
 get_file_value() {
     # Remove new lines and trim whitespace
     sed -e 's/^[[:space:]]*//; s/[[:space:]]*$//' < "$1"
@@ -35,7 +39,7 @@ rotate_log_file() {
         return
     fi
 
-    if [[ $(stat $(is_macos && echo "-f%z" || echo "-c%s") "$log_file" 2>/dev/null || echo 0) -le 10485760 ]]; then
+    if [[ $(stat "$(is_macos && echo "-f%z" || echo "-c%s")" "$log_file" 2>/dev/null || echo 0) -le 10485760 ]]; then
         return
     fi
 

@@ -36,4 +36,4 @@ echo "$new_branch" > "$project_base_path/lit/current-branch"
 
 echo "Switched to branch \"$new_branch\""
 
-bash "$lit_base_path/scripts/pull.sh" "$lit_base_path"
+bash "$lit_base_path/scripts/pull.sh" "$lit_base_path" "$project_base_path"
