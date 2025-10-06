@@ -10,11 +10,13 @@ Here's how to install Lit on your server:
 git clone git@github.com:SjorsO/lit.git
 
 # Run the interactive installer
-source lit/lit.sh
+bash lit/lit.sh
+
+# Reload your aliases (this will be automated later)
 ```
 
 ## Basic usage
-
+TODO
 
 ## How Lit deploys Laravel
 TODO
