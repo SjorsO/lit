@@ -14,7 +14,7 @@ on_exit() {
     tput cnorm
 }
 trap on_exit EXIT
-trap 'echo ""; exit 130' INT TERM
+# trap 'echo ""; exit 130' INT TERM
 
 tput civis
 
@@ -32,7 +32,7 @@ yes_no_menu() {
         fi
 
         read -rsn1 key || {
-            exit 130
+             return
         }
 
         case "$key" in

@@ -10,7 +10,7 @@ command="$1"
 if [ ! -f "$lit_base_path/data/installation-id" ]; then
     source "$lit_base_path/scripts/install.sh" "$lit_base_path"
 
-    exit 0
+    return
 fi
 
 if [ "$command" = "init" ]; then

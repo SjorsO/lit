@@ -10,7 +10,7 @@ Here's how to install Lit on your server:
 git clone git@github.com:SjorsO/lit.git
 
 # Run the interactive installer
-bash lit/lit.sh
+source lit/lit.sh
 ```
 
 ## Basic usage
