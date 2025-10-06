@@ -14,7 +14,7 @@ on_exit() {
     tput cnorm
 }
 trap on_exit EXIT
-# trap 'echo ""; exit 130' INT TERM
+trap 'echo ""; exit 130' INT TERM
 
 tput civis
 
@@ -32,7 +32,7 @@ yes_no_menu() {
         fi
 
         read -rsn1 key || {
-             return
+            exit 130
         }
 
         case "$key" in
@@ -115,7 +115,6 @@ else
         echo ""
         echo "" >> "$alias_file"
         echo "alias lit=\"$lit_base_path/lit.sh\"" >> "$alias_file"
-        alias lit="$lit_base_path/lit.sh"
         echo "  Alias added."
     else
         echo ""
