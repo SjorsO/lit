@@ -8,7 +8,7 @@ project_base_path="$(pwd)"
 command="$1"
 
 if [ ! -f "$lit_base_path/data/installation-id" ]; then
-    bash "$lit_base_path/scripts/install.sh" "$lit_base_path"
+    source "$lit_base_path/scripts/install.sh" "$lit_base_path"
 
     exit 0
 fi
