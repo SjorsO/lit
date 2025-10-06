@@ -115,6 +115,7 @@ else
         echo ""
         echo "" >> "$alias_file"
         echo "alias lit=\"$lit_base_path/lit.sh\"" >> "$alias_file"
+        alias lit="$lit_base_path/lit.sh"
         echo "  Alias added."
     else
         echo ""
