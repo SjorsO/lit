@@ -55,7 +55,7 @@ on_exit() {
     fi
 
     if [[ "$release_activated" == true ]]; then
-        echo "[$(get_human_timestamp)] Deployed branch $current_branch (${current_commit:0:10})" >> "$project_base_path/lit/logs/lit.log"
+        echo "[$(get_human_timestamp)] Deployed branch \"$current_branch\" (${current_commit:0:10})" >> "$project_base_path/lit/logs/lit.log"
     else
         echo "[$(get_human_timestamp)] Warning: Had errors, did not activate new release" >> "$project_base_path/lit/logs/lit.log"
     fi
@@ -138,11 +138,15 @@ if [ "$reusing_enabled" = true ]; then
 
         mkdir -p "$temp_directory_path"
 
+        printf "Cloning repository... "
+    
         git clone --branch "$current_branch" \
             --depth 100 \
             --single-branch \
-            --progress \
+            --quiet \
             "$git_repository_url" "$temp_directory_path"
+
+        echo ""
 
         cd "$temp_directory_path"
 
@@ -204,11 +208,15 @@ else
 
     cd "$new_release_directory"
 
+    printf "Cloning repository... "
+    
     git clone --branch "$current_branch" \
         --depth 100 \
         --single-branch \
-        --progress \
+        --quiet \
         "$git_repository_url" "$new_release_directory"
+
+    echo ""
 
     current_commit="$(git rev-parse HEAD)"
 fi
