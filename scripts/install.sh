@@ -85,9 +85,9 @@ for file in "${alias_files[@]}"; do
     fi
 done
 
-echo "                           ┌─────────────────┐"
-echo "╭──────────────────────────┤  Lit Installer  ├──────────────────────────╮"
-echo "                           └─────────────────┘"
+echo "                           ┌──────────────────┐"
+echo "╭──────────────────────────┤  Welcome to Lit  ├──────────────────────────╮"
+echo "                           └──────────────────┘"
 
 if [ -z "$alias_file" ]; then
     echo "  Normally Lit would ask you if you want to add an alias, but Lit"
@@ -131,8 +131,8 @@ else
     echo ""
 fi
 
-echo "  Help improve Lit by enabling telemetry."
-echo "  Telemetry is fully anonymous and has no impact on performance."
+echo "  You can help improve Lit by enabling telemetry."
+echo "  Telemetry is fully anonymous with no performance impact."
 echo ""
 echo "  Enable anonymous telemetry?"
 echo ""
@@ -153,11 +153,9 @@ fi
 echo ""
 echo "├────────────────────────────────────────────────────────────────────────┤"
 echo ""
-
 echo "  All done, you're ready to use Lit."
 echo ""
 echo "  Enjoying Lit? Consider giving a star: https://github.com/SjorsO/lit"
-
 echo ""
 echo "╰────────────────────────────────────────────────────────────────────────╯"
 echo ""
