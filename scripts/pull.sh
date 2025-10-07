@@ -133,6 +133,7 @@ if [ "$reusing_enabled" = true ]; then
         git clone --branch "$current_branch" \
             --depth 100 \
             --single-branch \
+            --progress \
             "$git_repository_url" "$temp_directory_path"
 
         cd "$temp_directory_path"
@@ -198,6 +199,7 @@ else
     git clone --branch "$current_branch" \
         --depth 100 \
         --single-branch \
+        --progress \
         "$git_repository_url" "$new_release_directory"
 
     current_commit="$(git rev-parse HEAD)"
