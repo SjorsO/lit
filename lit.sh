@@ -1,16 +1,39 @@
 #!/bin/bash
 
-set -e
+# Detect if Lit is run via "source".
+# Using "source" is necessary the first time Lit runs so we can register the alias.
+if [ "${BASH_SOURCE[0]}" != "${0}" ]; then
+    lit_base_path="$(dirname "$(pwd)/${0}")"
+
+    if [ ! -f "$lit_base_path/data/installation-id" ]; then
+        bash "$lit_base_path/scripts/install.sh" "$lit_base_path"
+
+        if [ $? -eq 100 ]; then
+            alias lit="$lit_base_path/lit.sh"
+        fi
+
+        unset lit_base_path
+
+        return 0
+    fi
+
+    unset lit_base_path
+
+    echo "Don't use \"source\" to run Lit, use \"bash\" instead"
+
+    return 1
+fi
+
+set +e
 
 lit_base_path="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 project_base_path="$(pwd)"
-
 command="$1"
 
 if [ ! -f "$lit_base_path/data/installation-id" ]; then
-    bash "$lit_base_path/scripts/install.sh" "$lit_base_path"
-    
-    exit 0
+    echo "You are running Lit for the first time, you have to use \"source lit.sh\""
+
+    exit 1
 fi
 
 if [ "$command" = "init" ]; then
@@ -35,11 +58,11 @@ if [ ! -d "$project_base_path/lit/logs" ]; then
     mkdir -p "$project_base_path/lit/logs"
 fi
 
-if [ ! -f "$project_base_path/lit/max-log-file-size" ]; then
-    echo "10485760" > "$project_base_path/lit/max-log-file-size"
+if [ ! -f "$project_base_path/lit/data/max-log-file-size" ]; then
+    echo "10485760" > "$project_base_path/lit/data/max-log-file-size"
 fi
 
-max_log_file_size=$(get_file_value "$project_base_path/lit/max-log-file-size")
+max_log_file_size=$(get_file_value "$project_base_path/lit/data/max-log-file-size")
 
 rotate_log_file "$max_log_file_size" "$project_base_path/lit/logs/lit.log"
 rotate_log_file "$max_log_file_size" "$project_base_path/lit/logs/output.log"

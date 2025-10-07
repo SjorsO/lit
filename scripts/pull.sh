@@ -62,7 +62,7 @@ on_exit() {
 
     echo "Finished $([ "$script_status_code" -ne 0 ] && echo "with errors" || echo "successfully") (in $(( $(date +%s) - started_at )) seconds)"
 
-    return "$script_status_code"
+    exit "$script_status_code"
 }
 trap on_exit EXIT TERM
 
@@ -261,7 +261,7 @@ bash "$lit_base_path/scripts/telemetry.sh" <<EOF &
     "action": "pull",
     "os": "${OSTYPE:-not set}",
     "lit_version": "$(get_file_value "$lit_base_path/data/lit-version")",
-    "lit_installation_id": "$(get_file_value "$lit_base_path/data/installation-id")",    
+    "lit_installation_id": "$(get_file_value "$lit_base_path/data/installation-id")",
     "lit_project_id": "$(echo "$salt$project_base_path" | shasum | cut -d' ' -f1)",
     "reusing_enabled": $reusing_enabled,
     "has_reused": $has_reused,

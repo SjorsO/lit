@@ -11,10 +11,13 @@ if [ ! -d "$lit_base_path/data" ]; then
 fi
 
 on_exit() {
+    script_status_code=$?
+
     tput cnorm
+
+    exit "$script_status_code"
 }
 trap on_exit EXIT
-trap 'echo ""; exit 130' INT TERM
 
 tput civis
 
@@ -73,6 +76,7 @@ alias_files=(
 )
 
 alias_file=""
+alias_created=false
 
 for file in "${alias_files[@]}"; do
     if [ -f "$file" ]; then
@@ -116,6 +120,7 @@ else
         echo "" >> "$alias_file"
         echo "alias lit=\"$lit_base_path/lit.sh\"" >> "$alias_file"
         echo "  Alias added."
+        alias_created=true
     else
         echo ""
         echo "  Not adding alias."
@@ -158,3 +163,7 @@ echo "╰───────────────────────�
 echo ""
 
 generate_uuid > "$lit_base_path/data/installation-id"
+
+if [ "$alias_created" = true ]; then
+    exit 100
+fi
