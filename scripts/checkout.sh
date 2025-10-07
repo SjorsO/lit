@@ -24,7 +24,11 @@ if [ "$current_branch" = "$new_branch" ]; then
     exit 1
 fi
 
+printf "Switching to branch \"$new_branch\"... "
+
 remote_branch_info=$(git ls-remote --symref "$git_repository_url" "$new_branch")
+
+echo ""
 
 if [ -z "$remote_branch_info" ]; then
     echo "Branch \"$new_branch\" does not exist on remote"
@@ -32,8 +36,8 @@ if [ -z "$remote_branch_info" ]; then
     exit 1
 fi
 
+current_remote_commit=$(echo "$remote_branch_info" | grep -v "ref: refs/heads/" | cut -f1)
+
 echo "$new_branch" > "$project_base_path/lit/current-branch"
 
-echo "Switched to branch \"$new_branch\""
-
-bash "$lit_base_path/scripts/pull.sh" "$lit_base_path" "$project_base_path"
+bash "$lit_base_path/scripts/pull.sh" "$lit_base_path" "$project_base_path" "--use-commit-from-checkout" "$current_remote_commit"

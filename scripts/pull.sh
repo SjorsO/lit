@@ -5,7 +5,9 @@ set -e
 lit_base_path="$1"
 project_base_path="$2"
 
-if [ -n "$4" ] || ([ -n "$3" ] && [ "$3" != "--force" ]); then
+if [ "$3" = "--use-commit-from-checkout" ]; then
+    current_remote_commit="$4"
+elif [ -n "$4" ] || ([ -n "$3" ] && [ "$3" != "--force" ]); then
     echo "usage: lit pull [--force]"
 
     exit 1
@@ -55,7 +57,7 @@ on_exit() {
     fi
 
     if [[ "$release_activated" == true ]]; then
-        echo "[$(get_human_timestamp)] Deployed branch \"$current_branch\" (${current_commit:0:10})" >> "$project_base_path/lit/logs/lit.log"
+        echo "[$(get_human_timestamp)] Deployed branch \"$current_branch\" (${current_commit:0:11})" >> "$project_base_path/lit/logs/lit.log"
     else
         echo "[$(get_human_timestamp)] Warning: Had errors, did not activate new release" >> "$project_base_path/lit/logs/lit.log"
     fi
@@ -86,12 +88,19 @@ current_release_id=$(ls "$releases_directory" | sort --numeric-sort | tail -n1) 
 
 new_release_directory="$releases_directory/$((current_release_id + 1))"
 
-remote_branch_info=$(git ls-remote --symref "$git_repository_url" "$current_branch")
+# If we are pulling after a "lit checkout", then we already have the commit.
+if [[ -z "$current_remote_commit" ]]; then
+    printf "Reading \"$git_repository_url\"... "
 
-current_remote_commit=$(echo "$remote_branch_info" | grep -v "ref: refs/heads/" | cut -f1)
+    remote_branch_info=$(git ls-remote --symref "$git_repository_url" "$current_branch")
+
+    current_remote_commit=$(echo "$remote_branch_info" | grep -v "ref: refs/heads/" | cut -f1)
+
+    echo ""
+fi
 
 if [ "$current_commit" = "$current_remote_commit" ]; then
-    echo "Latest commit of \"$current_branch\" is already deployed (${current_remote_commit:0:8})"
+    echo "Latest commit of \"$current_branch\" is already deployed (${current_remote_commit:0:11})"
 
     if [ "$is_forcing" = true ]; then
         echo "Using \"--force\", redeploying..."
@@ -125,7 +134,7 @@ if [ "$reusing_enabled" = true ]; then
     elif [ -f "$lit_base_path/releases/$current_remote_commit-$before_storing_for_reuse_hook_hash.tar.gz" ]; then
         tar_file_path="$lit_base_path/releases/$current_remote_commit-$before_storing_for_reuse_hook_hash.tar.gz"
     elif ls "$lit_base_path/releases/$current_remote_commit-"* >/dev/null 2>&1; then
-        echo "Commit ${current_remote_commit:0:8} was deployed before, but it can't be reused because it was prepared by a different \"before-storing-for-reuse.sh\" hook"
+        echo "Commit ${current_remote_commit:0:11} was deployed before, but it can't be reused because it was prepared by a different \"before-storing-for-reuse.sh\" hook"
     fi
 
     if [ -n "$tar_file_path" ]; then
@@ -260,9 +269,11 @@ fi
 
 # Only keep 2 release directories
 for old_release_directory in $(ls "$releases_directory" | sort --numeric-sort --reverse | tail -n+3) ; do
-    echo "Deleting old release directory \"$releases_directory/$old_release_directory\""
+    printf "Deleting old release directory \"$releases_directory/$old_release_directory\"... "
 
     rm -rf "${releases_directory:?}/$old_release_directory"
+
+    echo ""
 done
 
 if [ ! -f "$lit_base_path/data/telemetry-enabled" ]; then
