@@ -54,7 +54,15 @@ on_exit() {
         rm -rf "$new_release_directory"
     fi
 
+    if [[ "$release_activated" == true ]]; then
+        echo "[$(get_human_timestamp)] Deployed branch $current_branch (${current_commit:0:10})" >> "$project_base_path/lit/logs/lit.log"
+    else
+        echo "[$(get_human_timestamp)] Warning: Had errors, did not activate new release" >> "$project_base_path/lit/logs/lit.log"
+    fi
+    
     if [[ "$release_activated" == true ]] && [[ "$script_status_code" -ne 0 ]]; then
+        echo "[$(get_human_timestamp)] Warning: Had errors, but new release was still activated" >> "$project_base_path/lit/logs/lit.log"
+
         echo ">"
         echo "> Warning: The new release has been activated!"
         echo ">"

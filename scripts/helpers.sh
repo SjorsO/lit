@@ -10,7 +10,7 @@ get_file_value() {
 }
 
 get_human_timestamp() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S').$(date '+%N' | cut -c1-3)"
+    echo "$(date '+%Y-%m-%d %H:%M:%S')"
 }
 
 is_macos() {
