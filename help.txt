@@ -3,7 +3,7 @@
 │                                                                              │
 │ Common Lit commands:                                                         │
 │                                                                              │
-│   init <git_repo_url>  Set up a new Lit directory                            │
+│   clone <git_repo_url> Clone a git repository into a new Lit directory       │
 │   migrate              Migrate an existing Git repository directory to Lit   │
 │   pull                 Git pull the current branch and deploy it             │
 │   checkout <branch>    Git checkout the given branch and deploy it           │

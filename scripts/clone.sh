@@ -17,7 +17,7 @@ git_repository_url="$3"
 source "$lit_base_path/scripts/helpers.sh"
 
 if [ -z "$git_repository_url" ]; then
-    echo "usage: lit init <git_repository_url>"
+    echo "usage: lit clone <git_repository_url>"
 
     exit 1
 fi
@@ -49,7 +49,7 @@ touch "$project_base_path/.env"
 
 mkdir -p "$project_base_path/releases"
 
-echo "Finished initializing Lit in this directory"
+echo "Finished cloning into this directory"
 echo ""
 echo "Next steps:"
 echo "- Fill in the \".env\" file"
