@@ -103,7 +103,7 @@ if [ -z "$alias_file" ]; then
 elif grep -q "lit.sh" "$alias_file" 2>/dev/null; then
     :
 else
-    echo "  Would you like add an alias for Lit?"
+    echo "  Would you like to add an alias for Lit?"
     echo ""
     echo "  File:"
     echo "    $alias_file"

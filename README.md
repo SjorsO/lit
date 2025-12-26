@@ -32,7 +32,7 @@ This command sets up Lit's directory structure and walks you through the next st
 
 To deploy a Laravel project with Lit, run `lit clone <git repository url>`, and follow the on-screen instructions.
 
-After setting up a Lit directory, you can customize the deployment by editing the `lit/hooks/before-release.sh` and `lit/hooks/after-release.sh` hooks.
+After setting up a Lit directory, you can customize the deployment by editing the `lit/hooks/before-activation.sh` and `lit/hooks/after-activation.sh` hooks.
 
 When everything is configured, deploy the latest commit of your current branch by running `lit pull`.
 
