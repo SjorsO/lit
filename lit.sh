@@ -3,7 +3,7 @@
 # Detect if Lit is run via "source".
 # Using "source" is necessary the first time Lit runs so we can register the alias.
 if [ "${BASH_SOURCE[0]}" != "${0}" ]; then
-    lit_base_path="$(dirname "$(pwd)/${0}")"
+    lit_base_path="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
     if [ ! -f "$lit_base_path/data/installation-id" ]; then
         bash "$lit_base_path/scripts/install.sh" "$lit_base_path"
