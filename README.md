@@ -1,3 +1,6 @@
+> [!WARNING]
+> Lit is still in beta. Commands and features may change.
+
 # Lit
 Lit is a drop-in replacement for deploying Laravel projects with `git pull`.
 
@@ -64,6 +67,7 @@ This directory is a symlink to the latest release in the "releases" directory.
 Your Nginx webroot, cronjob, and supervisor queue workers should point to the "current" directory.
 
 ## Zero downtime deployment pitfalls
+TODO: 
 storage dir
 sqlite database
 database migrations can fail
@@ -92,13 +96,6 @@ There are a few minor downsides you should be aware of:
 - The dependencies you're installing are not identical to the ones that passed your test suite
 - Manual action required
 - You need git, composer and NPM installed on your server
-
-## Alternative ways of deploying Laravel
-- git pull
-- deploy laravel
-- laravel forge
-- laravel envoyer
-- deployer
 
 ## License
 Lit is open-sourced software licensed under the MIT license.
