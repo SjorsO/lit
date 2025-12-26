@@ -12,7 +12,7 @@ Lit makes `git pull` better by adding:
 ## Install
 Here's how to install Lit on your server:
 ```
-git clone https://github.com/SjorsO/lit.git && source lit/lit.sh
+git clone --quiet https://github.com/SjorsO/lit.git && source lit/lit.sh
 ```
 
 ## Usage
