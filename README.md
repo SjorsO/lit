@@ -44,7 +44,7 @@ These commands failed in the directory that is currently deployed, so your users
 With zero downtime deployments, those same commands run in a new directory, completely separate from your active release.
 If they fail, the deployment is aborted and your active release is unaffected.
 
-Lit uses the same directory structure as Laravel Forge and Envoyer, with the addition of a `lit` directory:
+Lit uses the same directory structure as Laravel Forge and Envoyer, with the addition of `lit`, `logs`, and `hooks` directories:
 ```
 project
 ├── .env
@@ -70,7 +70,38 @@ database migrations can fail
 (all the other stuff from my deploy guide)
 
 ## Log rotation
-TODO
+Lit creates a `logs` directory for each project.
+This directory contains Lit's own log files, but it's also a good place to log your application's cron and queue worker output to.
+
+To prevent your log files from getting too big, you can set up log rotation for this directory using logrotate. 
+First, manually create a directory for your old logs.
+```
+mkdir /home/{your-user}/www/{your-project}/logs/old
+```
+
+Then create a new logrotate configuration file `/etc/logrotate.d/lit-log-rotation`:
+```
+/home/{your-user}/www/{your-project}/logs/*.log {
+    monthly
+    minsize 5M
+    maxsize 10M
+    rotate 4
+    compress
+    delaycompress
+    missingok
+    notifempty
+    copytruncate
+
+    su {your-user} {your-group}
+
+    olddir /home/{your-user}/www/{your-project}/logs/old
+}
+```
+
+You can test this your logrotate configuration by doing a dry-run:
+```
+sudo logrotate -d -v /etc/logrotate.d/lit-log-rotation
+```
 
 ## Reusing releases
 Lit has the option of caching and reusing releases.
