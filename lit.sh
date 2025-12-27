@@ -98,6 +98,8 @@ if [ -d "$lock_directory_path" ]; then
     echo "If this is wrong, manually run:"
     echo "    rmdir \"$lock_directory_path\""
 
+    echo "[$(get_human_timestamp)] Aborted because another Lit command is currently running" >> "$project_base_path/logs/lit.log"
+
     exit 1
 fi
 
