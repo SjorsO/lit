@@ -58,7 +58,7 @@ on_exit() {
 
     if [[ "$release_activated" == true ]]; then
         echo "[$(get_human_timestamp)] Deployed branch \"$current_branch\" (${current_commit:0:11})" >> "$project_base_path/logs/lit.log"
-    else
+    elif [[ "$release_directory_created" == true ]]; then
         echo "[$(get_human_timestamp)] Warning: Had errors, did not activate new release" >> "$project_base_path/logs/lit.log"
     fi
 
@@ -106,6 +106,8 @@ if [ "$current_commit" = "$current_remote_commit" ]; then
         echo "Using \"--force\", redeploying..."
     else
         echo "Run \"lit pull --force\" to redeploy"
+
+        echo "[$(get_human_timestamp)] Not deploying because latest commit of \"$current_branch\" is already deployed (${current_remote_commit:0:11})" >> "$project_base_path/logs/lit.log"
 
         exit 0
     fi
