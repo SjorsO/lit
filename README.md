@@ -63,11 +63,14 @@ This directory is a symlink to the latest release in the "releases" directory.
 Your Nginx webroot, cronjob, and supervisor queue workers should point to the "current" directory.
 
 ## Zero downtime deployment pitfalls
-TODO: 
+TODO:
 storage dir
 sqlite database
 database migrations can fail
 (all the other stuff from my deploy guide)
+
+## Log rotation
+TODO
 
 ## Reusing releases
 Lit has the option of caching and reusing releases.

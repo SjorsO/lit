@@ -64,15 +64,6 @@ if [ ! -d "$project_base_path/logs" ]; then
     mkdir -p "$project_base_path/logs"
 fi
 
-if [ ! -f "$project_base_path/lit/max-log-file-size" ]; then
-    echo "10485760" > "$project_base_path/lit/max-log-file-size"
-fi
-
-max_log_file_size=$(get_file_value "$project_base_path/lit/max-log-file-size")
-
-rotate_log_file "$max_log_file_size" "$project_base_path/logs/lit.log"
-rotate_log_file "$max_log_file_size" "$project_base_path/logs/lit-output.log"
-
 echo "[$(get_human_timestamp)] lit $*" >> "$project_base_path/logs/lit.log"
 echo "[$(get_human_timestamp)] lit $*" >> "$project_base_path/logs/lit-output.log"
 
