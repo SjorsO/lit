@@ -245,7 +245,7 @@ echo "Creating a symlink to the .env file"
 ln $(is_macos && echo "-nsf" || echo "-nsfr") "$real_env_file_path" "$new_release_directory/.env"
 
 if [ "$caching_enabled" = "false" ] && [ -f "$project_base_path/hooks/before-caching.sh" ]; then
-    echo "Warning: \"hooks/before-caching.sh\" exists but it won't be used because release caching is disabled"
+    echo "Hook \"hooks/before-caching.sh\" exists but won't be used because release caching is disabled"
 fi
 
 if [ -f "$project_base_path/hooks/before-activation.sh" ]; then
