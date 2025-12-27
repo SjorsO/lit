@@ -69,21 +69,20 @@ sqlite database
 database migrations can fail
 (all the other stuff from my deploy guide)
 
-## Reusing releases
-Lit has the option of caching and reusing releases.
-This is significantly faster when you have to deploy the same commit multiple times.
-Reusing releases is perfect for servers that host the same application multiple times for multiple tenants.
+## Release caching
+Lit can cache releases and reuse them for future deployments.
+Using a cached release is significantly faster when deploying the same commit multiple times.
+Release caching is perfect for servers that host the same application multiple times for multiple tenants.
 
-Reusing releases is disabled by default, because most servers host each application only once.
-Caching the release adds a few seconds of overhead, so there's no reason to enable it if you don't need it.
+Release caching is disabled by default because caching adds a few seconds of overhead.
 
-To enable reusing releases for an application, run `lit enable-reusing`.
-This will add a `before-storing-for-reuse.sh` hook to the project.
-This hook should contain the steps that should be reused, typically these are `composer install`, `npm install` and `npm run build`.
+To enable release caching for an application, run `lit enable-caching`.
+This will add a `before-caching.sh` hook to the project.
+This hook should contain the steps that can be cached and reused between projects, typically these are `composer install`, `npm install` and `npm run build`.
 After this hook is done running, Lit will cache the release so it can be reused the next time this commit is deployed.
 
-A cached release is only reused if the `before-storing-for-reuse.sh` is identical to the hook that created the cache entry.
-Because of this, it is recommended to use a symlink for your `before-storing-for-reuse.sh`.
+A cached release is only reused if the `before-caching.sh` hook is identical to the hook that created the cache entry.
+To keep the hook identical, consider using a symlink for your `before-caching.sh` to share it across projects.
 
 ## Downsides of deploying with Lit (or Git)
 Using Lit (or Git) to deploy your Laravel applications is perfectly fine in almost all cases.

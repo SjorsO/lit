@@ -12,8 +12,8 @@
 │                                                                              │
 │ Other commands:                                                              │
 │                                                                              │
-│   enable-reusing       Enable release caching and reusing cached releases    │
-│   disable-reusing      Disable reusing releases                              │
+│   enable-caching       Enable release caching                                │
+│   disable-caching      Disable release caching                               │
 │   enable-telemetry     Enable anonymous telemetry to help improve Lit        │
 │   disable-telemetry    Completely disable telemetry                          │
 │                                                                              │

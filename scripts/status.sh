@@ -11,7 +11,7 @@ git_repository_url="$(get_file_value "$project_base_path/lit/git-repository-url"
 current_branch="$(get_file_value "$project_base_path/lit/current-branch")"
 current_commit="$(get_file_value "$project_base_path/lit/current-commit")"
 
-reusing_status=$([ -f "$project_base_path/lit/reusing-enabled" ] && echo "enabled" || echo "disabled")
+caching_status=$([ -f "$project_base_path/lit/caching-enabled" ] && echo "enabled" || echo "disabled")
 
 lines=()
 while IFS= read -r line; do
@@ -20,7 +20,7 @@ done <<EOF
  Git repository url: $git_repository_url
      Current branch: $current_branch
      Current commit: $current_commit
-   Reusing releases: $reusing_status
+   Release caching: $caching_status
 EOF
 
 for line in "${lines[@]}"; do

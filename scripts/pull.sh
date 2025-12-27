@@ -111,37 +111,37 @@ if [ "$current_commit" = "$current_remote_commit" ]; then
     fi
 fi
 
-reusing_enabled=$([ -f "$project_base_path/lit/reusing-enabled" ] && echo true || echo false)
-has_reused=false
+caching_enabled=$([ -f "$project_base_path/lit/caching-enabled" ] && echo true || echo false)
+used_cache=false
 
-if [ "$reusing_enabled" = true ]; then
-    if [ -L "$project_base_path/hooks/before-storing-for-reuse.sh" ]; then
-        before_storing_for_reuse_hook_file_path="$(readlink -f "$project_base_path/hooks/before-storing-for-reuse.sh")"
-    elif [ -f "$project_base_path/hooks/before-storing-for-reuse.sh" ]; then
-        before_storing_for_reuse_hook_file_path="$project_base_path/hooks/before-storing-for-reuse.sh"
+if [ "$caching_enabled" = true ]; then
+    if [ -L "$project_base_path/hooks/before-caching.sh" ]; then
+        before_caching_hook_path="$(readlink -f "$project_base_path/hooks/before-caching.sh")"
+    elif [ -f "$project_base_path/hooks/before-caching.sh" ]; then
+        before_caching_hook_path="$project_base_path/hooks/before-caching.sh"
     else
-        echo "Hook does not exist: \"$(basename "$project_base_path")/hooks/before-storing-for-reuse.sh\""
+        echo "Hook does not exist: \"$(basename "$project_base_path")/hooks/before-caching.sh\""
 
-        before_storing_for_reuse_hook_file_path="$project_base_path/lit/reusing-enabled"
+        before_caching_hook_path="$project_base_path/lit/caching-enabled"
     fi
 
-    before_storing_for_reuse_hook_hash="$(sha1sum "$before_storing_for_reuse_hook_file_path" | cut -d' ' -f1)"
+    before_caching_hook_hash="$(sha1sum "$before_caching_hook_path" | cut -d' ' -f1)"
 
     tar_file_path=""
 
-    if [ -f "$lit_base_path/releases/$current_remote_commit-$before_storing_for_reuse_hook_hash.tar.zst" ]; then
-        tar_file_path="$lit_base_path/releases/$current_remote_commit-$before_storing_for_reuse_hook_hash.tar.zst"
-    elif [ -f "$lit_base_path/releases/$current_remote_commit-$before_storing_for_reuse_hook_hash.tar.gz" ]; then
-        tar_file_path="$lit_base_path/releases/$current_remote_commit-$before_storing_for_reuse_hook_hash.tar.gz"
+    if [ -f "$lit_base_path/releases/$current_remote_commit-$before_caching_hook_hash.tar.zst" ]; then
+        tar_file_path="$lit_base_path/releases/$current_remote_commit-$before_caching_hook_hash.tar.zst"
+    elif [ -f "$lit_base_path/releases/$current_remote_commit-$before_caching_hook_hash.tar.gz" ]; then
+        tar_file_path="$lit_base_path/releases/$current_remote_commit-$before_caching_hook_hash.tar.gz"
     elif ls "$lit_base_path/releases/$current_remote_commit-"* >/dev/null 2>&1; then
-        echo "Commit ${current_remote_commit:0:11} was deployed before, but it can't be reused because it was prepared by a different \"before-storing-for-reuse.sh\" hook"
+        echo "Cached release found but hook changed, rebuilding..."
     fi
 
     if [ -n "$tar_file_path" ]; then
         printf "Reusing deployment from cache"
 
         current_commit="$current_remote_commit"
-        has_reused=true
+        used_cache=true
     else
         temp_directory_path="$lit_base_path/releases/wip_$(generate_uuid)"
 
@@ -161,11 +161,11 @@ if [ "$reusing_enabled" = true ]; then
 
         current_commit="$(git rev-parse HEAD)"
 
-        echo "Running \"$(basename "$project_base_path")/hooks/before-storing-for-reuse.sh\"..."
+        echo "Running \"$(basename "$project_base_path")/hooks/before-caching.sh\"..."
 
-        bash "$before_storing_for_reuse_hook_file_path" "$temp_directory_path"
+        bash "$before_caching_hook_path" "$temp_directory_path"
 
-        staging_directory_path="$lit_base_path/releases/$current_commit-$before_storing_for_reuse_hook_hash"
+        staging_directory_path="$lit_base_path/releases/$current_commit-$before_caching_hook_hash"
 
         if [ -d "$staging_directory_path" ]; then
             rm -rf "$staging_directory_path"
@@ -178,13 +178,13 @@ if [ "$reusing_enabled" = true ]; then
         cd "$lit_base_path/releases"
 
         if command -v zstd >/dev/null 2>&1; then
-            printf "Caching release for reuse, compressing with zstd... "
+            printf "Caching release (zstd)... "
 
             tar --use-compress-program "zstd -T0 -3" -cf "$staging_directory_path.tar.zst" "$(basename "$staging_directory_path")"
 
             tar_file_path="$staging_directory_path.tar.zst"
         else
-            printf "Caching release for reuse, compressing... "
+            printf "Caching release... "
 
             tar -czf "$staging_directory_path.tar.gz" "$(basename "$staging_directory_path")"
 
@@ -292,8 +292,8 @@ bash "$lit_base_path/scripts/telemetry.sh" <<EOF &
     "lit_version": "$(get_file_value "$lit_base_path/data/lit-version")",
     "lit_installation_id": "$(get_file_value "$lit_base_path/data/installation-id")",
     "lit_project_id": "$(echo "$salt$project_base_path" | shasum | cut -d' ' -f1)",
-    "reusing_enabled": $reusing_enabled,
-    "has_reused": $has_reused,
+    "caching_enabled": $caching_enabled,
+    "used_cache": $used_cache,
     "deployed_commit": "$(echo "$salt$current_commit" | shasum | cut -d' ' -f1)"
 }
 EOF

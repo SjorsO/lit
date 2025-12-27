@@ -118,10 +118,10 @@ elif [ "$command" = "checkout" ]; then
     bash "$lit_base_path/scripts/checkout.sh" "$lit_base_path" "$project_base_path" "$2" "$3"
 elif [ "$command" = "status" ]; then
     bash "$lit_base_path/scripts/status.sh" "$lit_base_path" "$project_base_path"
-elif [ "$command" = "enable-reusing" ]; then
-    bash "$lit_base_path/scripts/enable-reusing.sh" "$lit_base_path" "$project_base_path"
-elif [ "$command" = "disable-reusing" ]; then
-    bash "$lit_base_path/scripts/disable-reusing.sh" "$lit_base_path" "$project_base_path"
+elif [ "$command" = "enable-caching" ]; then
+    bash "$lit_base_path/scripts/enable-caching.sh" "$lit_base_path" "$project_base_path"
+elif [ "$command" = "disable-caching" ]; then
+    bash "$lit_base_path/scripts/disable-caching.sh" "$lit_base_path" "$project_base_path"
 elif [ "$command" = "enable-telemetry" ]; then
     bash "$lit_base_path/scripts/enable-telemetry.sh" "$lit_base_path" "$project_base_path"
 elif [ "$command" = "disable-telemetry" ]; then
