@@ -69,40 +69,6 @@ sqlite database
 database migrations can fail
 (all the other stuff from my deploy guide)
 
-## Log rotation
-Lit creates a `logs` directory for each project.
-This directory contains Lit's own log files, but it's also a good place to log your application's cron and queue worker output to.
-
-To prevent your log files from getting too big, you can set up log rotation for this directory using logrotate. 
-First, manually create a directory for your old logs.
-```
-mkdir /home/{your-user}/www/{your-project}/logs/old
-```
-
-Then create a new logrotate configuration file `/etc/logrotate.d/lit-log-rotation`:
-```
-/home/{your-user}/www/{your-project}/logs/*.log {
-    monthly
-    minsize 5M
-    maxsize 10M
-    rotate 4
-    compress
-    delaycompress
-    missingok
-    notifempty
-    copytruncate
-
-    su {your-user} {your-group}
-
-    olddir /home/{your-user}/www/{your-project}/logs/old
-}
-```
-
-You can test this your logrotate configuration by doing a dry-run:
-```
-sudo logrotate -d -v /etc/logrotate.d/lit-log-rotation
-```
-
 ## Reusing releases
 Lit has the option of caching and reusing releases.
 This is significantly faster when you have to deploy the same commit multiple times.
@@ -126,6 +92,40 @@ There are a few minor downsides you should be aware of:
 - The dependencies you're installing are not identical to the ones that passed your test suite
 - Manual action required
 - You need git, composer and NPM installed on your server
+
+## Log rotation
+Lit creates a `logs` directory for each project.
+This directory contains Lit's own log files, but it's also a good place to store your application's cron and queue worker output.
+
+You can use logrotate to keep log file size manageable.
+First, create a directory for rotated logs:
+```
+mkdir /home/{user}/www/{project}/logs/old
+```
+
+Then add a logrotate configuration file at `/etc/logrotate.d/lit-log-rotation`:
+```
+/home/{user}/www/{project}/logs/*.log {
+    monthly
+    minsize 5M
+    maxsize 10M
+    rotate 4
+    compress
+    delaycompress
+    missingok
+    notifempty
+    copytruncate
+
+    su {user} {group}
+
+    olddir /home/{user}/www/{project}/logs/old
+}
+```
+
+Test your configuration with a dry-run:
+```
+sudo logrotate -d -v /etc/logrotate.d/lit-log-rotation
+```
 
 ## License
 Lit is open-sourced software licensed under the MIT license.
