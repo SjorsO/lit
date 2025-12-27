@@ -20,7 +20,7 @@ done <<EOF
  Git repository url: $git_repository_url
      Current branch: $current_branch
      Current commit: $current_commit
-   Release caching: $caching_status
+    Release caching: $caching_status
 EOF
 
 for line in "${lines[@]}"; do

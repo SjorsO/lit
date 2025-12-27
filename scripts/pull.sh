@@ -61,7 +61,7 @@ on_exit() {
     else
         echo "[$(get_human_timestamp)] Warning: Had errors, did not activate new release" >> "$project_base_path/logs/lit.log"
     fi
-    
+
     if [[ "$release_activated" == true ]] && [[ "$script_status_code" -ne 0 ]]; then
         echo "[$(get_human_timestamp)] Warning: Had errors, but new release was still activated" >> "$project_base_path/logs/lit.log"
 
@@ -148,7 +148,7 @@ if [ "$caching_enabled" = true ]; then
         mkdir -p "$temp_directory_path"
 
         printf "Cloning repository... "
-    
+
         git clone --branch "$current_branch" \
             --depth 100 \
             --single-branch \
@@ -218,7 +218,7 @@ else
     cd "$new_release_directory"
 
     printf "Cloning repository... "
-    
+
     git clone --branch "$current_branch" \
         --depth 100 \
         --single-branch \
@@ -241,6 +241,10 @@ ln $(is_macos && echo "-nsf" || echo "-nsfr") "$real_storage_directory_path" "$n
 echo "Creating a symlink to the .env file"
 
 ln $(is_macos && echo "-nsf" || echo "-nsfr") "$real_env_file_path" "$new_release_directory/.env"
+
+if [ "$caching_enabled" = "false" ] && [ -f "$project_base_path/hooks/before-caching.sh" ]; then
+    echo "Warning: \"hooks/before-caching.sh\" exists but it won't be used because release caching is disabled"
+fi
 
 if [ -f "$project_base_path/hooks/before-activation.sh" ]; then
     hook_entry_directory=$(pwd)
