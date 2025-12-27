@@ -57,13 +57,13 @@ on_exit() {
     fi
 
     if [[ "$release_activated" == true ]]; then
-        echo "[$(get_human_timestamp)] Deployed branch \"$current_branch\" (${current_commit:0:11})" >> "$project_base_path/lit/logs/lit.log"
+        echo "[$(get_human_timestamp)] Deployed branch \"$current_branch\" (${current_commit:0:11})" >> "$project_base_path/logs/lit.log"
     else
-        echo "[$(get_human_timestamp)] Warning: Had errors, did not activate new release" >> "$project_base_path/lit/logs/lit.log"
+        echo "[$(get_human_timestamp)] Warning: Had errors, did not activate new release" >> "$project_base_path/logs/lit.log"
     fi
     
     if [[ "$release_activated" == true ]] && [[ "$script_status_code" -ne 0 ]]; then
-        echo "[$(get_human_timestamp)] Warning: Had errors, but new release was still activated" >> "$project_base_path/lit/logs/lit.log"
+        echo "[$(get_human_timestamp)] Warning: Had errors, but new release was still activated" >> "$project_base_path/logs/lit.log"
 
         echo ">"
         echo "> Warning: The new release has been activated!"
@@ -115,12 +115,12 @@ reusing_enabled=$([ -f "$project_base_path/lit/reusing-enabled" ] && echo true |
 has_reused=false
 
 if [ "$reusing_enabled" = true ]; then
-    if [ -L "$project_base_path/lit/hooks/before-storing-for-reuse.sh" ]; then
-        before_storing_for_reuse_hook_file_path="$(readlink -f "$project_base_path/lit/hooks/before-storing-for-reuse.sh")"
-    elif [ -f "$project_base_path/lit/hooks/before-storing-for-reuse.sh" ]; then
-        before_storing_for_reuse_hook_file_path="$project_base_path/lit/hooks/before-storing-for-reuse.sh"
+    if [ -L "$project_base_path/hooks/before-storing-for-reuse.sh" ]; then
+        before_storing_for_reuse_hook_file_path="$(readlink -f "$project_base_path/hooks/before-storing-for-reuse.sh")"
+    elif [ -f "$project_base_path/hooks/before-storing-for-reuse.sh" ]; then
+        before_storing_for_reuse_hook_file_path="$project_base_path/hooks/before-storing-for-reuse.sh"
     else
-        echo "Hook does not exist: \"$(basename "$project_base_path")/lit/hooks/before-storing-for-reuse.sh\""
+        echo "Hook does not exist: \"$(basename "$project_base_path")/hooks/before-storing-for-reuse.sh\""
 
         before_storing_for_reuse_hook_file_path="$project_base_path/lit/reusing-enabled"
     fi
@@ -161,7 +161,7 @@ if [ "$reusing_enabled" = true ]; then
 
         current_commit="$(git rev-parse HEAD)"
 
-        echo "Running \"$(basename "$project_base_path")/lit/hooks/before-storing-for-reuse.sh\"..."
+        echo "Running \"$(basename "$project_base_path")/hooks/before-storing-for-reuse.sh\"..."
 
         bash "$before_storing_for_reuse_hook_file_path" "$temp_directory_path"
 
@@ -242,12 +242,12 @@ echo "Creating a symlink to the .env file"
 
 ln $(is_macos && echo "-nsf" || echo "-nsfr") "$real_env_file_path" "$new_release_directory/.env"
 
-if [ -f "$project_base_path/lit/hooks/before-activation.sh" ]; then
+if [ -f "$project_base_path/hooks/before-activation.sh" ]; then
     hook_entry_directory=$(pwd)
-    cat "$project_base_path/lit/hooks/before-activation.sh" | bash -se -- "$project_base_path" "$new_release_directory"
+    cat "$project_base_path/hooks/before-activation.sh" | bash -se -- "$project_base_path" "$new_release_directory"
     cd "$hook_entry_directory" || exit 1
 else
-    echo "Wanted to run \"$project_base_path/lit/hooks/before-activation.sh\" but it does not exist"
+    echo "Wanted to run \"$project_base_path/hooks/before-activation.sh\" but it does not exist"
 fi
 
 echo "Activating new release \"$new_release_directory\""
@@ -259,12 +259,12 @@ release_activated=true
 
 echo "$current_commit" > "$project_base_path/lit/current-commit"
 
-if [ -f "$project_base_path/lit/hooks/after-activation.sh" ]; then
+if [ -f "$project_base_path/hooks/after-activation.sh" ]; then
     hook_entry_directory=$(pwd)
-    cat "$project_base_path/lit/hooks/after-activation.sh" | bash -se -- "$project_base_path" "$new_release_directory"
+    cat "$project_base_path/hooks/after-activation.sh" | bash -se -- "$project_base_path" "$new_release_directory"
     cd "$hook_entry_directory" || exit 1
 else
-    echo "Wanted to run \"$project_base_path/lit/hooks/after-activation.sh\" but it does not exist"
+    echo "Wanted to run \"$project_base_path/hooks/after-activation.sh\" but it does not exist"
 fi
 
 # Only keep 2 release directories
