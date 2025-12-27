@@ -238,9 +238,13 @@ if [[ ! -d "$real_storage_directory_path" ]]; then
     mkdir -p "$real_storage_directory_path/"{app/public,app/private,framework/{cache/data,sessions,testing,views},logs}
 fi
 
+rm -rf "$new_release_directory/storage"
+
 ln $(is_macos && echo "-nsf" || echo "-nsfr") "$real_storage_directory_path" "$new_release_directory/storage"
 
 echo "Creating a symlink to the .env file"
+
+rm -f "$new_release_directory/.env"
 
 ln $(is_macos && echo "-nsf" || echo "-nsfr") "$real_env_file_path" "$new_release_directory/.env"
 
