@@ -71,12 +71,12 @@ fi
 max_log_file_size=$(get_file_value "$project_base_path/lit/max-log-file-size")
 
 rotate_log_file "$max_log_file_size" "$project_base_path/logs/lit.log"
-rotate_log_file "$max_log_file_size" "$project_base_path/logs/output.log"
+rotate_log_file "$max_log_file_size" "$project_base_path/logs/lit-output.log"
 
 echo "[$(get_human_timestamp)] lit $*" >> "$project_base_path/logs/lit.log"
-echo "[$(get_human_timestamp)] lit $*" >> "$project_base_path/logs/output.log"
+echo "[$(get_human_timestamp)] lit $*" >> "$project_base_path/logs/lit-output.log"
 
-# Don't log "git log" to "output.log"
+# Don't log "git log" to "lit-output.log"
 if [ "$command" = "log" ]; then
     git --git-dir "$(pwd)/current/.git" log "${@:2}"
 
@@ -84,7 +84,7 @@ if [ "$command" = "log" ]; then
 fi
 
 # Write all output to both stdout and a log file
-exec > >(tee -a "$project_base_path/logs/output.log") 2>&1
+exec > >(tee -a "$project_base_path/logs/lit-output.log") 2>&1
 
 lock_directory_path="$project_base_path/lit/lit-is-currently-running"
 has_created_lock_directory=false
@@ -96,7 +96,7 @@ on_exit() {
         rmdir "$lock_directory_path"
     fi
 
-    echo "[$(get_human_timestamp)] Finished" >> "$project_base_path/logs/output.log"
+    echo "[$(get_human_timestamp)] Finished" >> "$project_base_path/logs/lit-output.log"
 
     exit "$script_status_code"
 }
