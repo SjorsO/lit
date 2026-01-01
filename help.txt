@@ -16,5 +16,5 @@
 │   enable-telemetry     Enable anonymous telemetry to help improve Lit        │
 │   disable-telemetry    Completely disable telemetry                          │
 │                                                                              │
-│ For more help, visit: https://github.com/SjorsO/lit                          │
+│ For more info, visit: https://github.com/SjorsO/lit                          │
 ╰──────────────────────────────────────────────────────────────────────────────╯
