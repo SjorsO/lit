@@ -1,12 +1,12 @@
-lit clone "https://github.com/SjorsO/lit.git" > /dev/null
+lit clone "https://watchtower-static.fsn1.your-objectstorage.com/bundle-for-lit-tests.tar.zst" > /dev/null
 
-project_path="$world_path/case/lit"
+project_path="$world_path/case/bundle-for-lit-tests"
 
 # Replace hooks to verify $1 and $2 are correct directories
 # $1 (project_base_directory) should contain lit/ and logs/
-# $2 (new_release_directory) should contain the cloned repo (lit.sh)
-echo '[ -d "$1/lit" ] && [ -d "$1/logs" ] && [ -f "$2/lit.sh" ] && touch "$1/before-activation-ran" && touch "$2/before-activation-release"' > "$project_path/hooks/before-activation.sh"
-echo '[ -d "$1/lit" ] && [ -d "$1/logs" ] && [ -f "$2/lit.sh" ] && touch "$1/after-activation-ran" && touch "$2/after-activation-release"' > "$project_path/hooks/after-activation.sh"
+# $2 (new_release_directory) should be a directory with the extracted bundle
+echo '[ -d "$1/lit" ] && [ -d "$1/logs" ] && [ -d "$2" ] && touch "$1/before-activation-ran" && touch "$2/before-activation-release"' > "$project_path/hooks/before-activation.sh"
+echo '[ -d "$1/lit" ] && [ -d "$1/logs" ] && [ -d "$2" ] && touch "$1/after-activation-ran" && touch "$2/after-activation-release"' > "$project_path/hooks/after-activation.sh"
 
 cd "$project_path"
 
@@ -48,7 +48,7 @@ assert_string_contains "$current_target" "releases/1" || exit 1
 assert_symlink "$project_path/releases/1/.env" || exit 1
 assert_symlink "$project_path/releases/1/storage" || exit 1
 
-# Pull again - should skip because already deployed
+# Pull again - should skip because same bundle hash
 set +e
 output=$(lit pull 2>&1)
 status_code=$?
@@ -110,7 +110,6 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_string_contains "$output" "Deploying from: git" || exit 1
-assert_string_contains "$output" "Git repository url: https://github.com/SjorsO/lit.git" || exit 1
-assert_string_contains "$output" "Current branch: main" || exit 1
-assert_string_contains "$output" "Release caching: disabled" || exit 1
+assert_string_contains "$output" "Deploying from: bundle" || exit 1
+assert_string_contains "$output" "Bundle URL: https://watchtower-static.fsn1.your-objectstorage.com/bundle-for-lit-tests.tar.zst" || exit 1
+assert_string_contains "$output" "Current bundle hash:" || exit 1

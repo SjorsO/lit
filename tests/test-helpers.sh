@@ -92,3 +92,14 @@ assert_symlink() {
         return 1
     fi
 }
+
+assert_string_contains() {
+    local haystack="$1"
+    local needle="$2"
+
+    if [[ "$haystack" != *"$needle"* ]]; then
+        printf 'Expected string to contain "%s"\n' "$needle"
+
+        return 1
+    fi
+}

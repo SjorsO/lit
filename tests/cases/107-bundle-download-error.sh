@@ -1,0 +1,30 @@
+# Test that if bundle download fails, it handles gracefully
+
+lit clone "https://example.com/nonexistent-bundle.tar.gz" > /dev/null
+
+project_path="$world_path/case/nonexistent-bundle"
+
+echo "APP_KEY=test" > "$project_path/.env"
+
+cd "$project_path"
+
+set +e
+output=$(lit pull 2>&1)
+status_code=$?
+set -e
+
+# Deploy should fail
+assert_same 1 "$status_code" || exit 1
+
+# No release should be created
+assert_file_missing "$project_path/releases/1" || exit 1
+
+# Current symlink should not exist
+assert_file_missing "$project_path/current" || exit 1
+
+# Output should mention download failure
+assert_string_contains "$output" "Failed to download bundle" || exit 1
+
+# Log should contain the download failure
+log_content=$(cat "$project_path/logs/lit.log")
+assert_string_contains "$log_content" "Failed to download bundle" || exit 1

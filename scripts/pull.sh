@@ -265,6 +265,8 @@ elif [ "$source_type" = "bundle" ]; then
         printf '\n'
         printf 'Failed to download bundle from "%s"\n' "$bundle_url"
 
+        echo "[$(get_human_timestamp)] Failed to download bundle from \"$bundle_url\"" >> "$project_base_path/logs/lit.log"
+
         rm -f "$temp_bundle_path"
 
         exit 1
