@@ -50,12 +50,12 @@ if [ "${max_length}" -lt 76 ]; then
 fi
 
 box_width=$((max_length + 2))
-horizontal_line=$(printf "─%.0s" $(seq 1 $box_width))
+horizontal_line=$(printf '─%.0s' $(seq 1 $box_width))
 
-echo "╭${horizontal_line}╮"
+printf '╭%s╮\n' "$horizontal_line"
 
 for line in "${lines[@]}"; do
-    printf "│ %-${max_length}s │\n" "$line"
+    printf '│ %-'"${max_length}"'s │\n' "$line"
 done
 
-echo "╰${horizontal_line}╯"
+printf '╰%s╯\n' "$horizontal_line"

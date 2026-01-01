@@ -9,11 +9,11 @@ source_url="$3"
 source "$lit_base_path/scripts/helpers.sh"
 
 if [ -z "$source_url" ]; then
-    echo "usage: lit clone <url>"
-    echo ""
-    echo "Examples:"
-    echo "  lit clone https://github.com/user/repo.git"
-    echo "  lit clone https://example.com/releases/app.tar.gz"
+    printf 'usage: lit clone <url>\n'
+    printf '\n'
+    printf 'Examples:\n'
+    printf '  lit clone https://github.com/user/repo.git\n'
+    printf '  lit clone https://example.com/releases/app.tar.gz\n'
 
     exit 1
 fi
@@ -29,7 +29,7 @@ fi
 project_path="$base_path/$project_name"
 
 if [ "$(ls -A "$project_path" 2>/dev/null)" ]; then
-    echo "Directory \"$project_name\" already exists and is not empty."
+    printf 'Directory "%s" already exists and is not empty.\n' "$project_name"
 
     exit 1
 fi
@@ -51,18 +51,18 @@ if [ "$source_type" = "git" ]; then
     echo "$default_branch" > "$project_path/lit/current-branch"
     echo "not deployed yet" > "$project_path/lit/current-commit"
 
-    echo "Done!"
-    echo ""
-    echo "Current branch set to \"$default_branch\""
+    printf 'Done!\n'
+    printf '\n'
+    printf 'Current branch set to "%s"\n' "$default_branch"
 elif [ "$source_type" = "bundle" ]; then
     echo "$source_url" > "$project_path/lit/bundle-url"
 
     echo "not deployed yet" > "$project_path/lit/current-bundle-hash"
 
-    echo "Bundle URL set to \"$source_url\""
+    printf 'Bundle URL set to "%s"\n' "$source_url"
 fi
 
-echo ""
+printf '\n'
 
 mkdir -p "$project_path/hooks"
 cp "$lit_base_path/stubs/hooks-for-$source_type/before-activation.sh.stub" "$project_path/hooks/before-activation.sh"
@@ -72,22 +72,22 @@ touch "$project_path/.env"
 
 mkdir -p "$project_path/releases"
 
-echo "Finished cloning into \"$project_name\""
-echo ""
-echo "Next steps:"
-echo "- cd \"$project_name\""
-echo "- Fill in the \".env\" file"
-echo "- Review these hooks:"
-echo "  - \"hooks/before-activation.sh\""
-echo "  - \"hooks/after-activation.sh\""
-echo ""
+printf 'Finished cloning into "%s"\n' "$project_name"
+printf '\n'
+printf 'Next steps:\n'
+printf '- cd "%s"\n' "$project_name"
+printf '- Fill in the ".env" file\n'
+printf '- Review these hooks:\n'
+printf '  - "hooks/before-activation.sh"\n'
+printf '  - "hooks/after-activation.sh"\n'
+printf '\n'
 
 if [ "$source_type" = "git" ]; then
-    echo "After that, either:"
-    echo "- Run \"lit pull\" to deploy the current branch ($default_branch)"
-    echo "- Run \"lit checkout <branch>\" to deploy a different branch"
+    printf 'After that, either:\n'
+    printf '- Run "lit pull" to deploy the current branch (%s)\n' "$default_branch"
+    printf '- Run "lit checkout <branch>" to deploy a different branch\n'
 elif [ "$source_type" = "bundle" ]; then
-    echo "After that, run \"lit pull\" to download and deploy the bundle"
+    printf 'After that, run "lit pull" to download and deploy the bundle\n'
 fi
 
-echo ""
+printf '\n'

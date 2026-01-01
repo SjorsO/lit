@@ -8,11 +8,11 @@ project_base_path="$2"
 source "$lit_base_path/scripts/helpers.sh"
 
 if [ ! -f "$project_base_path/lit/caching-enabled" ]; then
-    echo "Release caching is already disabled"
-    
+    printf 'Release caching is already disabled\n'
+
     exit 1
 fi
 
 rm "$project_base_path/lit/caching-enabled"
 
-echo "Release caching disabled"
+printf 'Release caching disabled\n'

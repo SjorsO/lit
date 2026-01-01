@@ -7,7 +7,7 @@ project_base_path="$2"
 new_branch="$3"
 
 if [ -z "$new_branch" ] || [ -n "$4" ]; then
-    echo "usage: lit checkout <branch>"
+    printf 'usage: lit checkout <branch>\n'
 
     exit 1
 fi
@@ -17,7 +17,7 @@ source "$lit_base_path/scripts/helpers.sh"
 source_type="$(get_file_value "$project_base_path/lit/source-type")"
 
 if [ "$source_type" != "git" ]; then
-    echo "Cannot change branches because you are not deploying from git"
+    printf 'Cannot change branches because you are not deploying from git\n'
 
     exit 1
 fi
@@ -26,7 +26,7 @@ git_repository_url="$(get_file_value "$project_base_path/lit/git-repository-url"
 current_branch="$(get_file_value "$project_base_path/lit/current-branch")"
 
 if [ "$current_branch" = "$new_branch" ]; then
-    echo "Current branch is already \"$new_branch\""
+    printf 'Current branch is already "%s"\n' "$new_branch"
 
     exit 1
 fi
@@ -35,10 +35,10 @@ printf 'Switching to branch "%s"... ' "$new_branch"
 
 remote_branch_info=$(git ls-remote --symref "$git_repository_url" "$new_branch")
 
-echo ""
+printf '\n'
 
 if [ -z "$remote_branch_info" ]; then
-    echo "Branch \"$new_branch\" does not exist on remote"
+    printf 'Branch "%s" does not exist on remote\n' "$new_branch"
 
     exit 1
 fi

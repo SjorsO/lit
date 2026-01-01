@@ -8,7 +8,7 @@ project_base_path="$2"
 if [ "$3" = "--use-commit-from-checkout" ]; then
     current_remote_commit="$4"
 elif [ -n "$4" ] || ([ -n "$3" ] && [ "$3" != "--force" ]); then
-    echo "usage: lit pull [--force]"
+    printf 'usage: lit pull [--force]\n'
 
     exit 1
 fi
@@ -20,7 +20,7 @@ source "$lit_base_path/scripts/helpers.sh"
 source_type="$(get_file_value "$project_base_path/lit/source-type")"
 
 if [ "$source_type" != "git" ] && [ "$source_type" != "bundle" ]; then
-    echo "Invalid source type: \"$source_type\""
+    printf 'Invalid source type: "%s"\n' "$source_type"
 
     exit 1
 fi
@@ -42,7 +42,7 @@ fi
 if [[ ! -s "$real_env_file_path" ]]; then
     touch "$real_env_file_path"
 
-    echo 'Your ".env" file is empty, try again when you have filled it in'
+    printf 'Your ".env" file is empty, try again when you have filled it in\n'
 
     echo "[$(get_human_timestamp)] Did not deploy because the \".env\" file is empty" >> "$project_base_path/logs/lit.log"
 
@@ -65,7 +65,7 @@ on_exit() {
     script_status_code=$?
 
     if [[ "$release_directory_created" == true && "$release_activated" == false ]]; then
-        echo "Deleting new but unactivated release directory \"$new_release_directory\""
+        printf 'Deleting new but unactivated release directory "%s"\n' "$new_release_directory"
 
         rm -rf "$new_release_directory"
     fi
@@ -81,12 +81,12 @@ on_exit() {
     if [[ "$release_activated" == true ]] && [[ "$script_status_code" -ne 0 ]]; then
         echo "[$(get_human_timestamp)] Warning: Had errors, but new release was still activated" >> "$project_base_path/logs/lit.log"
 
-        echo ">"
-        echo "> Warning: The new release has been activated!"
-        echo ">"
+        printf '>\n'
+        printf '> Warning: The new release has been activated!\n'
+        printf '>\n'
     fi
 
-    echo "Finished $([ "$script_status_code" -ne 0 ] && echo "with errors" || echo "successfully") (in $(( $(date +%s) - started_at )) seconds)"
+    printf 'Finished %s (in %s seconds)\n' "$([ "$script_status_code" -ne 0 ] && echo "with errors" || echo "successfully")" "$(( $(date +%s) - started_at ))"
 
     exit "$script_status_code"
 }
@@ -94,7 +94,7 @@ trap on_exit EXIT TERM
 
 for release_directory_path in "$releases_directory/"*/ ; do
     if [[ -e "$release_directory_path" ]] && ! [[ $release_directory_path =~ /[0-9]+/$ ]] ; then
-       echo "The name of existing release directory \"$release_directory_path\" is not fully numeric, this should never happen"
+       printf 'The name of existing release directory "%s" is not fully numeric, this should never happen\n' "$release_directory_path"
 
        exit 1
     fi
@@ -116,16 +116,16 @@ if [ "$source_type" = "git" ]; then
 
         current_remote_commit=$(echo "$remote_branch_info" | grep -v "ref: refs/heads/" | cut -f1)
 
-        echo ""
+        printf '\n'
     fi
 
     if [ "$current_commit" = "$current_remote_commit" ]; then
-        echo "Latest commit of \"$current_branch\" is already deployed (${current_remote_commit:0:11})"
+        printf 'Latest commit of "%s" is already deployed (%s)\n' "$current_branch" "${current_remote_commit:0:11}"
 
         if [ "$is_forcing" = true ]; then
-            echo 'Using "--force", redeploying...'
+            printf 'Using "--force", redeploying...\n'
         else
-            echo 'Run "lit pull --force" to redeploy'
+            printf 'Run "lit pull --force" to redeploy\n'
 
             echo "[$(get_human_timestamp)] Not deploying because latest commit of \"$current_branch\" is already deployed (${current_remote_commit:0:11})" >> "$project_base_path/logs/lit.log"
 
@@ -142,7 +142,7 @@ if [ "$source_type" = "git" ]; then
         elif [ -f "$project_base_path/hooks/before-caching.sh" ]; then
             before_caching_hook_path="$project_base_path/hooks/before-caching.sh"
         else
-            echo "Hook does not exist: \"$(basename "$project_base_path")/hooks/before-caching.sh\""
+            printf 'Hook does not exist: "%s/hooks/before-caching.sh"\n' "$(basename "$project_base_path")"
 
             before_caching_hook_path="$project_base_path/lit/caching-enabled"
         fi
@@ -156,11 +156,11 @@ if [ "$source_type" = "git" ]; then
         elif [ -f "$lit_base_path/releases/$current_remote_commit-$before_caching_hook_hash.tar.gz" ]; then
             tar_file_path="$lit_base_path/releases/$current_remote_commit-$before_caching_hook_hash.tar.gz"
         elif ls "$lit_base_path/releases/$current_remote_commit-"* >/dev/null 2>&1; then
-            echo "Cached release found but hook changed, rebuilding..."
+            printf 'Cached release found but hook changed, rebuilding...\n'
         fi
 
         if [ -n "$tar_file_path" ]; then
-            printf "Reusing deployment from cache"
+            printf 'Reusing deployment from cache'
 
             current_commit="$current_remote_commit"
             used_cache=true
@@ -169,7 +169,7 @@ if [ "$source_type" = "git" ]; then
 
             mkdir -p "$temp_directory_path"
 
-            printf "Cloning repository... "
+            printf 'Cloning repository... '
 
             git clone --branch "$current_branch" \
                 --depth 100 \
@@ -177,13 +177,13 @@ if [ "$source_type" = "git" ]; then
                 --quiet \
                 "$git_repository_url" "$temp_directory_path"
 
-            echo ""
+            printf '\n'
 
             cd "$temp_directory_path"
 
             current_commit="$(git rev-parse HEAD)"
 
-            echo "Running \"$(basename "$project_base_path")/hooks/before-caching.sh\"..."
+            printf 'Running "%s/hooks/before-caching.sh"...\n' "$(basename "$project_base_path")"
 
             bash "$before_caching_hook_path" "$temp_directory_path"
 
@@ -200,13 +200,13 @@ if [ "$source_type" = "git" ]; then
             cd "$lit_base_path/releases"
 
             if command -v zstd >/dev/null 2>&1; then
-                printf "Caching release (zstd)... "
+                printf 'Caching release (zstd)... '
 
                 tar --use-compress-program "zstd -T0 -3" -cf "$staging_directory_path.tar.zst" "$(basename "$staging_directory_path")"
 
                 tar_file_path="$staging_directory_path.tar.zst"
             else
-                printf "Caching release... "
+                printf 'Caching release... '
 
                 tar -czf "$staging_directory_path.tar.gz" "$(basename "$staging_directory_path")"
 
@@ -216,8 +216,8 @@ if [ "$source_type" = "git" ]; then
             rm -rf "$staging_directory_path"
         fi
 
-        echo ""
-        echo "Creating \"$new_release_directory\" for the new release..."
+        printf '\n'
+        printf 'Creating "%s" for the new release...\n' "$new_release_directory"
 
         mkdir "$new_release_directory"
 
@@ -225,13 +225,13 @@ if [ "$source_type" = "git" ]; then
 
         cd "$new_release_directory"
 
-        printf "Extracting release... "
+        printf 'Extracting release... '
 
         tar --strip-components=1 --extract --file "$tar_file_path"
 
-        echo ""
+        printf '\n'
     else
-        echo "Creating \"$new_release_directory\" for the new release..."
+        printf 'Creating "%s" for the new release...\n' "$new_release_directory"
 
         mkdir "$new_release_directory"
 
@@ -239,7 +239,7 @@ if [ "$source_type" = "git" ]; then
 
         cd "$new_release_directory"
 
-        printf "Cloning repository... "
+        printf 'Cloning repository... '
 
         git clone --branch "$current_branch" \
             --depth 100 \
@@ -247,7 +247,7 @@ if [ "$source_type" = "git" ]; then
             --quiet \
             "$git_repository_url" "$new_release_directory"
 
-        echo ""
+        printf '\n'
 
         current_commit="$(git rev-parse HEAD)"
     fi
@@ -262,27 +262,33 @@ elif [ "$source_type" = "bundle" ]; then
     rm -f "$temp_bundle_path"
 
     if ! curl --fail --silent --show-error --location "$bundle_url" -o "$temp_bundle_path"; then
-        echo ""
-        echo "Failed to download bundle from \"$bundle_url\""
+        printf '\n'
+        printf 'Failed to download bundle from "%s"\n' "$bundle_url"
 
         rm -f "$temp_bundle_path"
 
         exit 1
     fi
 
-    echo ""
+    if is_macos; then
+        bundle_size_in_bytes=$(stat -f%z "$temp_bundle_path")
+    else
+        bundle_size_in_bytes=$(stat -c%s "$temp_bundle_path")
+    fi
+
+    printf '(%s MB)\n' "$((bundle_size_in_bytes / 1048576))"
 
     new_bundle_hash="$(shasum "$temp_bundle_path" | cut -d' ' -f1)"
 
     if [ "$current_bundle_hash" = "$new_bundle_hash" ]; then
-        echo "Bundle is already deployed (hash: ${new_bundle_hash:0:11})"
+        printf 'Bundle is already deployed (hash: %s)\n' "${new_bundle_hash:0:11}"
 
         if [ "$is_forcing" = true ]; then
-            echo 'Using "--force", redeploying...'
+            printf 'Using "--force", redeploying...\n'
         else
             rm -f "$temp_bundle_path"
 
-            echo 'Run "lit pull --force" to redeploy'
+            printf 'Run "lit pull --force" to redeploy\n'
 
             echo "[$(get_human_timestamp)] Not deploying because same bundle version is already deployed (hash: ${new_bundle_hash:0:11})" >> "$project_base_path/logs/lit.log"
 
@@ -290,7 +296,7 @@ elif [ "$source_type" = "bundle" ]; then
         fi
     fi
 
-    echo "Creating \"$new_release_directory\" for the new release..."
+    printf 'Creating "%s" for the new release...\n' "$new_release_directory"
 
     mkdir "$new_release_directory"
 
@@ -300,16 +306,16 @@ elif [ "$source_type" = "bundle" ]; then
 
     mv "$temp_bundle_path" "$new_release_directory/lit-bundle.tar"
 
-    printf "Extracting bundle... "
+    printf 'Extracting bundle... '
 
     tar --extract --file "$new_release_directory/lit-bundle.tar"
 
     rm -f "$new_release_directory/lit-bundle.tar"
 
-    echo ""
+    printf '\n'
 fi
 
-echo "Creating a symlink to the storage directory"
+printf 'Creating a symlink to the storage directory\n'
 
 if [[ ! -d "$real_storage_directory_path" ]]; then
     mkdir -p "$real_storage_directory_path/"{app/public,app/private,framework/{cache/data,sessions,testing,views},logs}
@@ -319,14 +325,14 @@ rm -rf "$new_release_directory/storage"
 
 ln "$(is_macos && echo "-nsf" || echo "-nsfr")" "$real_storage_directory_path" "$new_release_directory/storage"
 
-echo "Creating a symlink to the .env file"
+printf 'Creating a symlink to the .env file\n'
 
 rm -f "$new_release_directory/.env"
 
 ln "$(is_macos && echo "-nsf" || echo "-nsfr")" "$real_env_file_path" "$new_release_directory/.env"
 
 if [ "$caching_enabled" = "false" ] && [ -f "$project_base_path/hooks/before-caching.sh" ]; then
-    echo 'Hook "hooks/before-caching.sh" exists but will not be used because release caching is disabled'
+    printf 'Hook "hooks/before-caching.sh" exists but will not be used because release caching is disabled\n'
 fi
 
 if [ -f "$project_base_path/hooks/before-activation.sh" ]; then
@@ -334,10 +340,10 @@ if [ -f "$project_base_path/hooks/before-activation.sh" ]; then
     cat "$project_base_path/hooks/before-activation.sh" | bash -se -- "$project_base_path" "$new_release_directory"
     cd "$hook_entry_directory" || exit 1
 else
-    echo "Wanted to run \"$project_base_path/hooks/before-activation.sh\" but it does not exist"
+    printf 'Wanted to run "%s/hooks/before-activation.sh" but it does not exist\n' "$project_base_path"
 fi
 
-echo "Activating new release \"$new_release_directory\""
+printf 'Activating new release "%s"\n' "$new_release_directory"
 
 # Create a symlink to enable the release
 ln "$(is_macos && echo "-nsf" || echo "-nsfr")" "$new_release_directory" "$current_directory_path"
@@ -355,7 +361,7 @@ if [ -f "$project_base_path/hooks/after-activation.sh" ]; then
     cat "$project_base_path/hooks/after-activation.sh" | bash -se -- "$project_base_path" "$new_release_directory"
     cd "$hook_entry_directory" || exit 1
 else
-    echo "Wanted to run \"$project_base_path/hooks/after-activation.sh\" but it does not exist"
+    printf 'Wanted to run "%s/hooks/after-activation.sh" but it does not exist\n' "$project_base_path"
 fi
 
 # Only keep 2 release directories
@@ -368,11 +374,11 @@ for old_release_directory in $(ls "$releases_directory" | sort --numeric-sort --
 
     rm -rf "${releases_directory:?}/$old_release_directory"
 
-    echo ""
+    printf '\n'
 done
 
 if [ ! -f "$lit_base_path/data/telemetry-enabled" ]; then
-    echo 'Not sending telemetry. You can run "lit enable-telemetry" to enable anonymouse telemetry.'
+    printf 'Not sending telemetry. You can run "lit enable-telemetry" to enable anonymous telemetry.\n'
 
     exit 0
 fi
