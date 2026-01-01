@@ -3,8 +3,8 @@
 │                                                                              │
 │ Common Lit commands:                                                         │
 │                                                                              │
-│   clone <url>          Clone a git repo or bundle URL into a new Lit dir     │
-│   pull                 Run a new deployment                                  │
+│   init <url>           Initialize a new Lit directory from git or a bundle   │
+│   deploy               Run a new deployment                                  │
 │   checkout <branch>    Git checkout the given branch and deploy it           │
 │   log                  Forwards to "git log" for the current release         │
 │   status               Show information about the current Lit directory      │

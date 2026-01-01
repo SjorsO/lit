@@ -1,5 +1,5 @@
 set +e
-output=$(lit clone "https://example.com/releases/my-app.tar.gz" 2>&1)
+output=$(lit init "https://example.com/releases/my-app.tar.gz" 2>&1)
 status_code=$?
 set -e
 

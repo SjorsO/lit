@@ -9,11 +9,11 @@ source_url="$3"
 source "$lit_base_path/scripts/helpers.sh"
 
 if [ -z "$source_url" ]; then
-    printf 'usage: lit clone <url>\n'
+    printf 'usage: lit init <url>\n'
     printf '\n'
     printf 'Examples:\n'
-    printf '  lit clone https://github.com/user/repo.git\n'
-    printf '  lit clone https://example.com/releases/app.tar.gz\n'
+    printf '  lit init https://github.com/user/repo.git\n'
+    printf '  lit init https://example.com/releases/app.tar.gz\n'
 
     exit 1
 fi
@@ -73,7 +73,7 @@ touch "$project_path/.env"
 
 mkdir -p "$project_path/releases"
 
-printf 'Finished cloning into "%s"\n' "$project_name"
+printf 'Finished initializing "%s"\n' "$project_name"
 printf '\n'
 printf 'Next steps:\n'
 printf -- '- cd "%s"\n' "$project_name"
@@ -86,10 +86,10 @@ printf '\n'
 
 if [ "$source_type" = "git" ]; then
     printf 'After that, either:\n'
-    printf -- '- Run "lit pull" to deploy the current branch (%s)\n' "$default_branch"
+    printf -- '- Run "lit deploy" to deploy the current branch (%s)\n' "$default_branch"
     printf -- '- Run "lit checkout <branch>" to deploy a different branch\n'
 elif [ "$source_type" = "bundle" ]; then
-    printf 'After that, run "lit pull" to download and deploy the bundle\n'
+    printf 'After that, run "lit deploy" to download and deploy the bundle\n'
 fi
 
 printf '\n'

@@ -42,8 +42,8 @@ if [ ! -f "$lit_base_path/data/installation-id" ]; then
     exit 1
 fi
 
-if [ "$command" = "clone" ]; then
-    bash "$lit_base_path/scripts/clone.sh" "$lit_base_path" "$project_base_path" "$2"
+if [ "$command" = "init" ]; then
+    bash "$lit_base_path/scripts/init.sh" "$lit_base_path" "$project_base_path" "$2"
 
     exit $?
 elif [ "$command" = "help" ]; then
@@ -120,8 +120,8 @@ if [ -f "$lit_base_path/data/telemetry-enabled" ] && [ ! -s "$lit_base_path/data
     generate_uuid > "$lit_base_path/data/telemetry-salt"
 fi
 
-if [ "$command" = "pull" ]; then
-    bash "$lit_base_path/scripts/pull.sh" "$lit_base_path" "$project_base_path" "$2" "$3"
+if [ "$command" = "deploy" ]; then
+    bash "$lit_base_path/scripts/deploy.sh" "$lit_base_path" "$project_base_path" "$2" "$3"
 elif [ "$command" = "checkout" ]; then
     bash "$lit_base_path/scripts/checkout.sh" "$lit_base_path" "$project_base_path" "$2" "$3"
 elif [ "$command" = "status" ]; then

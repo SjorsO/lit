@@ -1,6 +1,6 @@
 # Test that only one lit command can run at a time
 
-lit clone "https://github.com/SjorsO/lit.git" > /dev/null
+lit init "https://github.com/SjorsO/lit.git" > /dev/null
 
 project_path="$world_path/case/lit"
 
@@ -16,7 +16,7 @@ cd "$project_path"
 mkdir "$project_path/lit/lit-is-currently-running"
 
 set +e
-output=$(lit pull 2>&1)
+output=$(lit deploy 2>&1)
 status_code=$?
 set -e
 
@@ -40,7 +40,7 @@ assert_directory_exists "$project_path/lit/lit-is-currently-running" || exit 1
 rmdir "$project_path/lit/lit-is-currently-running"
 
 set +e
-output=$(lit pull 2>&1)
+output=$(lit deploy 2>&1)
 status_code=$?
 set -e
 

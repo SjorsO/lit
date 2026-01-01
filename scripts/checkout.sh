@@ -47,4 +47,4 @@ current_remote_commit=$(echo "$remote_branch_info" | grep -v "ref: refs/heads/" 
 
 echo "$new_branch" > "$project_base_path/lit/current-branch"
 
-bash "$lit_base_path/scripts/pull.sh" "$lit_base_path" "$project_base_path" "--use-commit-from-checkout" "$current_remote_commit"
+bash "$lit_base_path/scripts/deploy.sh" "$lit_base_path" "$project_base_path" "--use-commit-from-checkout" "$current_remote_commit"

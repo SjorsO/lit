@@ -1,6 +1,6 @@
 # Test that if before-activation hook fails, the deploy fails and release is cleaned up
 
-lit clone "https://github.com/SjorsO/lit.git" > /dev/null
+lit init "https://github.com/SjorsO/lit.git" > /dev/null
 
 project_path="$world_path/case/lit"
 
@@ -17,7 +17,7 @@ cd "$project_path"
 
 # First deploy should fail
 set +e
-output=$(lit pull 2>&1)
+output=$(lit deploy 2>&1)
 status_code=$?
 set -e
 
@@ -35,7 +35,7 @@ rm "$project_path/on-failure-called"
 echo '' > "$project_path/hooks/before-activation.sh"
 
 set +e
-output=$(lit pull 2>&1)
+output=$(lit deploy 2>&1)
 status_code=$?
 set -e
 
@@ -52,7 +52,7 @@ assert_file_missing "$project_path/on-failure-called" || exit 1
 echo 'exit 1' > "$project_path/hooks/before-activation.sh"
 
 set +e
-output=$(lit pull --force 2>&1)
+output=$(lit deploy --force 2>&1)
 status_code=$?
 set -e
 

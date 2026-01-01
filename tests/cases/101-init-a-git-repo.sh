@@ -1,5 +1,5 @@
 set +e
-output=$(lit clone "https://github.com/SjorsO/lit.git" 2>&1)
+output=$(lit init "https://github.com/SjorsO/lit.git" 2>&1)
 status_code=$?
 set -e
 

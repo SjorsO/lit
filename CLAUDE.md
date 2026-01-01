@@ -2,8 +2,8 @@
 Lit is a deployment tool for Laravel written in Bash.
 It supports deploying from git repositories or pre-built bundles (tar archives).
 
-Lit is always invoked via `lit.sh` (e.g., `bash lit.sh pull`). 
-Users either run it manually on the server or trigger it remotely via an SSH session (e.g., `ssh server "cd /path/to/project && lit pull"`).
+Lit is always invoked via `lit.sh` (e.g., `bash lit.sh deploy`).
+Users either run it manually on the server or trigger it remotely via an SSH session (e.g., `ssh server "cd /path/to/project && lit deploy"`).
 
 ## Running Tests
 ```bash
@@ -11,6 +11,7 @@ bash tests/run-tests.sh        # Run all tests
 bash tests/run-tests.sh 103    # Run a specific test case
 ```
 
+The test runner automatically resets the `tests/world` directory before each test - no manual cleanup needed.
 After you run a specific test, created files you can do assertions on are in `tests/world`.
 
 ## Notes

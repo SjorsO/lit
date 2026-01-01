@@ -8,7 +8,7 @@ project_base_path="$2"
 if [ "$3" = "--use-commit-from-checkout" ]; then
     current_remote_commit="$4"
 elif [ -n "$4" ] || ([ -n "$3" ] && [ "$3" != "--force" ]); then
-    printf 'usage: lit pull [--force]\n'
+    printf 'usage: lit deploy [--force]\n'
 
     exit 1
 fi
@@ -121,7 +121,7 @@ current_release_id=$(ls "$releases_directory" | sort --numeric-sort | tail -n1) 
 new_release_directory="$releases_directory/$((current_release_id + 1))"
 
 if [ "$source_type" = "git" ]; then
-    # If we are pulling after a "lit checkout", then we already have the commit.
+    # If we are deploying after a "lit checkout", then we already have the commit.
     if [[ -z "$current_remote_commit" ]]; then
         printf 'Reading "%s"... ' "$git_repository_url"
 
@@ -138,7 +138,7 @@ if [ "$source_type" = "git" ]; then
         if [ "$is_forcing" = true ]; then
             printf 'Using "--force", redeploying...\n'
         else
-            printf 'Run "lit pull --force" to redeploy\n'
+            printf 'Run "lit deploy --force" to redeploy\n'
 
             echo "[$(get_human_timestamp)] Not deploying because latest commit of \"$current_branch\" is already deployed (${current_remote_commit:0:11})" >> "$project_base_path/logs/lit.log"
 
@@ -303,7 +303,7 @@ elif [ "$source_type" = "bundle" ]; then
         else
             rm -f "$temp_bundle_path"
 
-            printf 'Run "lit pull --force" to redeploy\n'
+            printf 'Run "lit deploy --force" to redeploy\n'
 
             echo "[$(get_human_timestamp)] Not deploying because same bundle version is already deployed (hash: ${new_bundle_hash:0:11})" >> "$project_base_path/logs/lit.log"
 
@@ -408,7 +408,7 @@ fi
 
 bash "$lit_base_path/scripts/telemetry.sh" <<EOF &
 {
-    "action": "pull",
+    "action": "deploy",
     "os": "${OSTYPE:-not set}",
     "lit_version": "$(get_file_value "$lit_base_path/data/lit-version")",
     "lit_installation_id": "$(get_file_value "$lit_base_path/data/installation-id")",

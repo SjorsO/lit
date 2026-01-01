@@ -1,4 +1,4 @@
-lit clone "https://watchtower-static.fsn1.your-objectstorage.com/bundle-for-lit-tests.tar.zst" > /dev/null
+lit init "https://watchtower-static.fsn1.your-objectstorage.com/bundle-for-lit-tests.tar.zst" > /dev/null
 
 project_path="$world_path/case/bundle-for-lit-tests"
 
@@ -12,7 +12,7 @@ cd "$project_path"
 
 # First pull with empty .env should fail
 set +e
-output=$(lit pull 2>&1)
+output=$(lit deploy 2>&1)
 status_code=$?
 set -e
 
@@ -24,7 +24,7 @@ assert_file_missing "$project_path/current" || exit 1
 echo "APP_KEY=test" > "$project_path/.env"
 
 set +e
-output=$(lit pull 2>&1)
+output=$(lit deploy 2>&1)
 status_code=$?
 set -e
 
@@ -50,18 +50,18 @@ assert_symlink "$project_path/releases/1/storage" || exit 1
 
 # Pull again - should skip because same bundle hash
 set +e
-output=$(lit pull 2>&1)
+output=$(lit deploy 2>&1)
 status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
 assert_string_contains "$output" "is already deployed" || exit 1
-assert_string_contains "$output" "Run \"lit pull --force\" to redeploy" || exit 1
+assert_string_contains "$output" "Run \"lit deploy --force\" to redeploy" || exit 1
 assert_file_missing "$project_path/releases/2" || exit 1
 
 # Pull with --force should redeploy
 set +e
-output=$(lit pull --force 2>&1)
+output=$(lit deploy --force 2>&1)
 status_code=$?
 set -e
 
@@ -78,7 +78,7 @@ mv "$project_path/releases/2" "$project_path/releases/9"
 ln -snf "$project_path/releases/9" "$project_path/current"
 
 set +e
-output=$(lit pull --force 2>&1)
+output=$(lit deploy --force 2>&1)
 status_code=$?
 set -e
 
@@ -92,7 +92,7 @@ assert_string_contains "$current_target" "releases/10" || exit 1
 
 # Another deploy to verify cleanup continues working
 set +e
-output=$(lit pull --force 2>&1)
+output=$(lit deploy --force 2>&1)
 status_code=$?
 set -e
 

@@ -1,6 +1,6 @@
 # Test that if bundle download fails, it handles gracefully
 
-lit clone "https://example.com/nonexistent-bundle.tar.gz" > /dev/null
+lit init "https://example.com/nonexistent-bundle.tar.gz" > /dev/null
 
 project_path="$world_path/case/nonexistent-bundle"
 
@@ -12,7 +12,7 @@ echo 'echo "$2" > "$1/on-failure-called"' > "$project_path/hooks/on-failure.sh"
 cd "$project_path"
 
 set +e
-output=$(lit pull 2>&1)
+output=$(lit deploy 2>&1)
 status_code=$?
 set -e
 

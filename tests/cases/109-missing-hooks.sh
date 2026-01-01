@@ -1,6 +1,6 @@
 # Test that missing hooks print "Wanted to run" messages
 
-lit clone "https://github.com/SjorsO/lit.git" > /dev/null
+lit init "https://github.com/SjorsO/lit.git" > /dev/null
 
 project_path="$world_path/case/lit"
 
@@ -14,7 +14,7 @@ echo "APP_KEY=test" > "$project_path/.env"
 cd "$project_path"
 
 set +e
-output=$(lit pull 2>&1)
+output=$(lit deploy 2>&1)
 status_code=$?
 set -e
 

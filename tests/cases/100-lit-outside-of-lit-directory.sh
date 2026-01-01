@@ -1,6 +1,6 @@
 set +e
 
-output=$(lit pull 2>&1)
+output=$(lit deploy 2>&1)
 
 status_code=$?
 
