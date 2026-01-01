@@ -3,10 +3,7 @@ output=$(lit clone "https://github.com/SjorsO/lit.git" 2>&1)
 status_code=$?
 set -e
 
-if [ "$status_code" -ne 0 ]; then
-    printf 'lit clone failed with status %s:\n%s\n' "$status_code" "$output"
-    exit 1
-fi
+assert_same 0 "$status_code" || exit 1
 
 project_path="$world_path/case/lit"
 
@@ -30,7 +27,11 @@ assert_file_exists "$project_path/.env" || exit 1
 assert_file_content "$project_path/.env" "" || exit 1
 
 # Assert current symlink doesn't exist yet (created after first deployment)
-assert_not_exists "$project_path/current" || exit 1
+assert_file_missing "$project_path/current" || exit 1
 
 # Assert before-caching hook isn't created (only created when caching is enabled)
-assert_not_exists "$project_path/hooks/before-caching.sh" || exit 1
+assert_file_missing "$project_path/hooks/before-caching.sh" || exit 1
+
+# Assert bundle files don't exist
+assert_file_missing "$project_path/lit/bundle-url" || exit 1
+assert_file_missing "$project_path/lit/current-bundle-hash" || exit 1

@@ -73,11 +73,11 @@ assert_files_match() {
     fi
 }
 
-assert_not_exists() {
-    local path="$1"
+assert_file_missing() {
+    local file_path="$1"
 
-    if [ -e "$path" ]; then
-        printf 'Expected path to not exist: %s\n' "$path"
+    if [ -e "$file_path" ]; then
+        printf 'Expected file to not exist: %s\n' "$file_path"
 
         return 1
     fi
