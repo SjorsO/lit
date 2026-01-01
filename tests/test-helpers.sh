@@ -76,8 +76,18 @@ assert_files_match() {
 assert_file_missing() {
     local file_path="$1"
 
-    if [ -e "$file_path" ]; then
+    if [ -e "$file_path" ] || [ -L "$file_path" ]; then
         printf 'Expected file to not exist: %s\n' "$file_path"
+
+        return 1
+    fi
+}
+
+assert_symlink() {
+    local file_path="$1"
+
+    if [ ! -L "$file_path" ]; then
+        printf 'Expected symlink: %s\n' "$file_path"
 
         return 1
     fi
