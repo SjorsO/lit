@@ -14,6 +14,13 @@ fi
 
 source "$lit_base_path/scripts/helpers.sh"
 
+source_type="$(get_file_value "$project_base_path/lit/source-type")"
+
+if [ "$source_type" != "git" ]; then
+    echo "Cannot change branches because you are not deploying from git"
+
+    exit 1
+fi
 
 git_repository_url="$(get_file_value "$project_base_path/lit/git-repository-url")"
 current_branch="$(get_file_value "$project_base_path/lit/current-branch")"
@@ -24,7 +31,7 @@ if [ "$current_branch" = "$new_branch" ]; then
     exit 1
 fi
 
-printf "Switching to branch \"$new_branch\"... "
+printf 'Switching to branch "%s"... ' "$new_branch"
 
 remote_branch_info=$(git ls-remote --symref "$git_repository_url" "$new_branch")
 

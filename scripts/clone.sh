@@ -4,17 +4,28 @@ set -e
 
 lit_base_path="$1"
 base_path="$2"
-git_repository_url="$3"
+source_url="$3"
 
 source "$lit_base_path/scripts/helpers.sh"
 
-if [ -z "$git_repository_url" ]; then
-    echo "usage: lit clone <git_repository_url>"
+if [ -z "$source_url" ]; then
+    echo "usage: lit clone <url>"
+    echo ""
+    echo "Examples:"
+    echo "  lit clone https://github.com/user/repo.git"
+    echo "  lit clone https://example.com/releases/app.tar.gz"
 
     exit 1
 fi
 
-project_name=$(basename "$git_repository_url" .git)
+if [[ "$source_url" == *.git ]] || [[ "$source_url" == git@* ]]; then
+    source_type="git"
+    project_name=$(basename "$source_url" .git)
+else
+    source_type="bundle"
+    project_name=$(basename "$source_url" | sed -E 's/\.(tar\.(gz|zst)|tgz)$//')
+fi
+
 project_path="$base_path/$project_name"
 
 if [ "$(ls -A "$project_path" 2>/dev/null)" ]; then
@@ -24,28 +35,36 @@ if [ "$(ls -A "$project_path" 2>/dev/null)" ]; then
 fi
 
 mkdir -p "$project_path"
-
 mkdir -p "$project_path/lit"
 
-echo "$git_repository_url" > "$project_path/lit/git-repository-url"
+echo "$source_type" > "$project_path/lit/source-type"
 
-printf 'Reading "%s"... ' "$git_repository_url"
+if [ "$source_type" = "git" ]; then
+    echo "$source_url" > "$project_path/lit/git-repository-url"
 
-default_branch_info=$(git ls-remote --symref "$git_repository_url" HEAD)
+    printf 'Reading "%s"... ' "$source_url"
 
-default_branch=$(echo "$default_branch_info" | grep "ref: refs/heads/" | sed 's/ref: refs\/heads\///' | cut -f1)
+    default_branch_info=$(git ls-remote --symref "$source_url" HEAD)
 
-echo "$default_branch" > "$project_path/lit/current-branch"
-echo "not deployed yet" > "$project_path/lit/current-commit"
+    default_branch=$(echo "$default_branch_info" | grep "ref: refs/heads/" | sed 's/ref: refs\/heads\///' | cut -f1)
 
-echo "Done!"
-echo ""
-echo "Current branch set to \"$default_branch\""
+    echo "$default_branch" > "$project_path/lit/current-branch"
+    echo "not deployed yet" > "$project_path/lit/current-commit"
+
+    echo "Done!"
+    echo ""
+    echo "Current branch set to \"$default_branch\""
+elif [ "$source_type" = "bundle" ]; then
+    echo "$source_url" > "$project_path/lit/bundle-url"
+
+    echo "Bundle URL set to \"$source_url\""
+fi
+
 echo ""
 
 mkdir -p "$project_path/hooks"
-cp "$lit_base_path/stubs/before-activation.sh.stub" "$project_path/hooks/before-activation.sh"
-cp "$lit_base_path/stubs/after-activation.sh.stub" "$project_path/hooks/after-activation.sh"
+cp "$lit_base_path/stubs/hooks-for-$source_type/before-activation.sh.stub" "$project_path/hooks/before-activation.sh"
+cp "$lit_base_path/stubs/hooks-for-$source_type/after-activation.sh.stub" "$project_path/hooks/after-activation.sh"
 
 touch "$project_path/.env"
 
@@ -60,7 +79,13 @@ echo "- Review these hooks:"
 echo "  - \"hooks/before-activation.sh\""
 echo "  - \"hooks/after-activation.sh\""
 echo ""
-echo "After that, either:"
-echo "- Run \"lit pull\" to deploy the current branch ($default_branch)"
-echo "- Run \"lit checkout <branch>\" to deploy a different branch"
+
+if [ "$source_type" = "git" ]; then
+    echo "After that, either:"
+    echo "- Run \"lit pull\" to deploy the current branch ($default_branch)"
+    echo "- Run \"lit checkout <branch>\" to deploy a different branch"
+elif [ "$source_type" = "bundle" ]; then
+    echo "After that, run \"lit pull\" to download and deploy the bundle"
+fi
+
 echo ""

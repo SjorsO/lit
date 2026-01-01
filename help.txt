@@ -3,17 +3,17 @@
 │                                                                              │
 │ Common Lit commands:                                                         │
 │                                                                              │
-│   clone <git_repo_url> Clone a git repository into a new Lit directory       │
+│   clone <url>          Clone a git repo or bundle URL into a new Lit dir     │
 │   migrate              Migrate an existing Git repository directory to Lit   │
-│   pull                 Git pull the current branch and deploy it             │
+│   pull                 Run a new deployment                                  │
 │   checkout <branch>    Git checkout the given branch and deploy it           │
 │   log                  Forwards to "git log" for the current release         │
 │   status               Show information about the current Lit directory      │
 │                                                                              │
 │ Other commands:                                                              │
 │                                                                              │
-│   enable-caching       Enable release caching                                │
-│   disable-caching      Disable release caching                               │
+│   enable-caching       Enable git release caching                            │
+│   disable-caching      Disable git release caching                           │
 │   enable-telemetry     Enable anonymous telemetry to help improve Lit        │
 │   disable-telemetry    Completely disable telemetry                          │
 │                                                                              │

@@ -37,7 +37,7 @@ project_base_path="$(pwd)"
 command="$1"
 
 if [ ! -f "$lit_base_path/data/installation-id" ]; then
-    echo "You are running Lit for the first time, you have to use \"source lit.sh\""
+    echo "You are running Lit for the first time, run \"source lit.sh\" instead"
 
     exit 1
 fi
@@ -69,7 +69,13 @@ echo "[$(get_human_timestamp)] lit $*" >> "$project_base_path/logs/lit-output.lo
 
 # Don't log "git log" to "lit-output.log"
 if [ "$command" = "log" ]; then
-    git --git-dir "$(pwd)/current/.git" log "${@:2}"
+    if [ ! -d "$project_base_path/current/.git" ]; then
+        echo "No git repository found in the current release"
+
+        exit 1
+    fi
+
+    git --git-dir "$project_base_path/current/.git" log "${@:2}"
 
     exit 0
 fi
