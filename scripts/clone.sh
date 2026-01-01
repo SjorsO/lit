@@ -57,6 +57,8 @@ if [ "$source_type" = "git" ]; then
 elif [ "$source_type" = "bundle" ]; then
     echo "$source_url" > "$project_path/lit/bundle-url"
 
+    echo "not deployed yet" > "$project_path/lit/current-bundle-hash"
+
     echo "Bundle URL set to \"$source_url\""
 fi
 

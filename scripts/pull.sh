@@ -58,6 +58,7 @@ if [ "$source_type" = "git" ]; then
     current_commit="$(get_file_value "$project_base_path/lit/current-commit")"
 elif [ "$source_type" = "bundle" ]; then
     bundle_url="$(get_file_value "$project_base_path/lit/bundle-url")"
+    current_bundle_hash="$(get_file_value "$project_base_path/lit/current-bundle-hash")"
 fi
 
 on_exit() {
@@ -70,9 +71,9 @@ on_exit() {
     fi
 
     if [[ "$release_activated" == true ]] && [ "$source_type" = "git" ]; then
-        echo "[$(get_human_timestamp)] Deployed branch \"$current_branch\" (${current_commit:0:11})" >> "$project_base_path/logs/lit.log"
+        echo "[$(get_human_timestamp)] Deployed branch \"$current_branch\" (commit: ${current_commit:0:11})" >> "$project_base_path/logs/lit.log"
     elif [[ "$release_activated" == true ]] && [ "$source_type" = "bundle" ]; then
-        echo "[$(get_human_timestamp)] Deployed bundle from \"$bundle_url\"" >> "$project_base_path/logs/lit.log"
+        echo "[$(get_human_timestamp)] Deployed bundle (hash: ${new_bundle_hash:0:11})" >> "$project_base_path/logs/lit.log"
     elif [[ "$release_directory_created" == true ]]; then
         echo "[$(get_human_timestamp)] Warning: Had errors, did not activate new release" >> "$project_base_path/logs/lit.log"
     fi
@@ -254,6 +255,41 @@ elif [ "$source_type" = "bundle" ]; then
     caching_enabled=false
     used_cache=false
 
+    printf 'Downloading bundle from "%s"... ' "$bundle_url"
+
+    temp_bundle_path="$project_base_path/lit/bundle-for-current-deployment.tar"
+
+    rm -f "$temp_bundle_path"
+
+    if ! curl --fail --silent --show-error --location "$bundle_url" -o "$temp_bundle_path"; then
+        echo ""
+        echo "Failed to download bundle from \"$bundle_url\""
+
+        rm -f "$temp_bundle_path"
+
+        exit 1
+    fi
+
+    echo ""
+
+    new_bundle_hash="$(shasum "$temp_bundle_path" | cut -d' ' -f1)"
+
+    if [ "$current_bundle_hash" = "$new_bundle_hash" ]; then
+        echo "Bundle is already deployed (hash: ${new_bundle_hash:0:11})"
+
+        if [ "$is_forcing" = true ]; then
+            echo 'Using "--force", redeploying...'
+        else
+            rm -f "$temp_bundle_path"
+
+            echo 'Run "lit pull --force" to redeploy'
+
+            echo "[$(get_human_timestamp)] Not deploying because same bundle version is already deployed (hash: ${new_bundle_hash:0:11})" >> "$project_base_path/logs/lit.log"
+
+            exit 0
+        fi
+    fi
+
     echo "Creating \"$new_release_directory\" for the new release..."
 
     mkdir "$new_release_directory"
@@ -262,16 +298,7 @@ elif [ "$source_type" = "bundle" ]; then
 
     cd "$new_release_directory"
 
-    printf 'Downloading bundle from "%s"... ' "$bundle_url"
-
-    if ! curl --fail --silent --show-error --location "$bundle_url" -o "$new_release_directory/lit-bundle.tar"; then
-        echo ""
-        echo "Failed to download bundle from \"$bundle_url\""
-
-        exit 1
-    fi
-
-    echo ""
+    mv "$temp_bundle_path" "$new_release_directory/lit-bundle.tar"
 
     printf "Extracting bundle... "
 
@@ -319,6 +346,8 @@ release_activated=true
 
 if [ "$source_type" = "git" ]; then
     echo "$current_commit" > "$project_base_path/lit/current-commit"
+elif [ "$source_type" = "bundle" ]; then
+    echo "$new_bundle_hash" > "$project_base_path/lit/current-bundle-hash"
 fi
 
 if [ -f "$project_base_path/hooks/after-activation.sh" ]; then
@@ -353,7 +382,7 @@ salt=$(get_file_value "$lit_base_path/data/telemetry-salt")
 if [ "$source_type" = "git" ]; then
     deployed_identifier="$(echo "$salt$current_commit" | shasum | cut -d' ' -f1)"
 elif [ "$source_type" = "bundle" ]; then
-    deployed_identifier="$(echo "$salt$bundle_url" | shasum | cut -d' ' -f1)"
+    deployed_identifier="$(echo "$salt$new_bundle_hash" | shasum | cut -d' ' -f1)"
 fi
 
 bash "$lit_base_path/scripts/telemetry.sh" <<EOF &

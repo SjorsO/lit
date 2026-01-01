@@ -28,12 +28,14 @@ if [ "$source_type" = "git" ]; then
 EOF
 elif [ "$source_type" = "bundle" ]; then
     bundle_url="$(get_file_value "$project_base_path/lit/bundle-url")"
+    current_bundle_hash="$(get_file_value "$project_base_path/lit/current-bundle-hash")"
 
     while IFS= read -r line; do
         lines+=("$line")
     done <<EOF
- Deploying from: bundle
-     Bundle URL: $bundle_url
+     Deploying from: bundle
+         Bundle URL: $bundle_url
+Current bundle hash: $current_bundle_hash
 EOF
 fi
 
