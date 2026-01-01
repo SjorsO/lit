@@ -4,7 +4,6 @@
 │ Common Lit commands:                                                         │
 │                                                                              │
 │   clone <url>          Clone a git repo or bundle URL into a new Lit dir     │
-│   migrate              Migrate an existing Git repository directory to Lit   │
 │   pull                 Run a new deployment                                  │
 │   checkout <branch>    Git checkout the given branch and deploy it           │
 │   log                  Forwards to "git log" for the current release         │

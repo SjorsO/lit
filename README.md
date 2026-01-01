@@ -17,15 +17,11 @@ git clone --quiet https://github.com/SjorsO/lit.git && source lit/lit.sh
 
 ## Usage
 - `lit clone <git repository url>` clones a git repository into a new Lit directory
-- `lit migrate` migrates a project deployed with Git to Lit
 - `lit pull` pulls the current branch and deploys it
 - `lit checkout <branch>` switches and deploys another branch
 - `lit log` runs `git log` for the current release
 
 ## Getting started
-If your Laravel project is already deployed with `git pull`, then you can migrate to Lit by running `lit migrate`.
-This command sets up Lit's directory structure and walks you through the next steps.
-
 To deploy a Laravel project with Lit, run `lit clone <git repository url>`, and follow the on-screen instructions.
 
 After setting up a Lit directory, you can customize the deployment by editing the `hooks/before-activation.sh` and `hooks/after-activation.sh` hooks.
