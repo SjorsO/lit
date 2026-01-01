@@ -2,7 +2,7 @@
 > Lit is still in beta. Commands and features may change.
 
 <p align="center">
-    <img src="https://github.com/SjorsO/lit" style="max-width:100%;">
+    <img src="https://sjorso.com/images/logos/lit-logo.png" style="max-width:100%;">
 </p>
 
 # Lit
