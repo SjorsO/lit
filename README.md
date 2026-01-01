@@ -1,10 +1,14 @@
 > [!WARNING]
 > Lit is still in beta. Commands and features may change.
 
-# Lit
-Lit is a drop-in replacement for deploying Laravel projects with `git pull`.
+<p align="center">
+    <img src="https://github.com/SjorsO/lit" style="max-width:100%;">
+</p>
 
-Lit makes `git pull` better by adding:
+# Lit
+Lit is a CLI tool for zero-downtime Laravel deployments.
+
+Lit provides:
 - Automated deployments: deploy your whole project by just running `lit pull`
 - Zero downtime: safely deploy and always keep your app online
 - Detailed logs: know exactly which commit was deployed and when

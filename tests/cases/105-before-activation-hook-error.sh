@@ -8,6 +8,9 @@ project_path="$world_path/case/lit"
 echo 'exit 1' > "$project_path/hooks/before-activation.sh"
 echo '' > "$project_path/hooks/after-activation.sh"
 
+# Set up on-failure hook to record that it was called
+echo 'echo "$2" > "$1/on-failure-called"' > "$project_path/hooks/on-failure.sh"
+
 echo "APP_KEY=test" > "$project_path/.env"
 
 cd "$project_path"
@@ -23,6 +26,11 @@ assert_file_missing "$project_path/releases/1" || exit 1
 assert_file_missing "$project_path/current" || exit 1
 assert_string_contains "$output" "Deleting new but unactivated release" || exit 1
 
+# on-failure hook should have been called with has_activated_release=false
+assert_file_exists "$project_path/on-failure-called" || exit 1
+assert_file_content "$project_path/on-failure-called" "false" || exit 1
+rm "$project_path/on-failure-called"
+
 # Fix the hook, second deploy should succeed
 echo '' > "$project_path/hooks/before-activation.sh"
 
@@ -36,6 +44,9 @@ assert_directory_exists "$project_path/releases/1" || exit 1
 assert_symlink "$project_path/current" || exit 1
 current_target=$(readlink "$project_path/current")
 assert_string_contains "$current_target" "releases/1" || exit 1
+
+# on-failure hook should NOT have been called
+assert_file_missing "$project_path/on-failure-called" || exit 1
 
 # Break the hook again, third deploy should fail
 echo 'exit 1' > "$project_path/hooks/before-activation.sh"
@@ -60,3 +71,7 @@ assert_string_contains "$current_target" "releases/1" || exit 1
 
 # Output should mention the failed release was deleted
 assert_string_contains "$output" "Deleting new but unactivated release" || exit 1
+
+# on-failure hook should have been called with has_activated_release=false
+assert_file_exists "$project_path/on-failure-called" || exit 1
+assert_file_content "$project_path/on-failure-called" "false" || exit 1

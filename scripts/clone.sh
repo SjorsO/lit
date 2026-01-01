@@ -67,6 +67,7 @@ printf '\n'
 mkdir -p "$project_path/hooks"
 cp "$lit_base_path/stubs/hooks-for-$source_type/before-activation.sh.stub" "$project_path/hooks/before-activation.sh"
 cp "$lit_base_path/stubs/hooks-for-$source_type/after-activation.sh.stub" "$project_path/hooks/after-activation.sh"
+cp "$lit_base_path/stubs/on-failure.sh.stub" "$project_path/hooks/on-failure.sh"
 
 touch "$project_path/.env"
 
@@ -80,6 +81,7 @@ printf -- '- Fill in the ".env" file\n'
 printf -- '- Review these hooks:\n'
 printf '  - "hooks/before-activation.sh"\n'
 printf '  - "hooks/after-activation.sh"\n'
+printf '  - "hooks/on-failure.sh"\n'
 printf '\n'
 
 if [ "$source_type" = "git" ]; then

@@ -21,6 +21,7 @@ assert_file_content "$project_path/lit/current-commit" "not deployed yet" || exi
 # Assert hooks are copied from the git stubs
 assert_files_match "$project_path/hooks/before-activation.sh" "$world_path/lit/stubs/hooks-for-git/before-activation.sh.stub" || exit 1
 assert_files_match "$project_path/hooks/after-activation.sh" "$world_path/lit/stubs/hooks-for-git/after-activation.sh.stub" || exit 1
+assert_files_match "$project_path/hooks/on-failure.sh" "$world_path/lit/stubs/on-failure.sh.stub" || exit 1
 
 # Assert .env file exists and is empty
 assert_file_exists "$project_path/.env" || exit 1

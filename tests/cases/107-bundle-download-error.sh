@@ -6,6 +6,9 @@ project_path="$world_path/case/nonexistent-bundle"
 
 echo "APP_KEY=test" > "$project_path/.env"
 
+# Set up on-failure hook to record that it was called
+echo 'echo "$2" > "$1/on-failure-called"' > "$project_path/hooks/on-failure.sh"
+
 cd "$project_path"
 
 set +e
@@ -28,3 +31,7 @@ assert_string_contains "$output" "Failed to download bundle" || exit 1
 # Log should contain the download failure
 log_content=$(cat "$project_path/logs/lit.log")
 assert_string_contains "$log_content" "Failed to download bundle" || exit 1
+
+# on-failure hook should have been called with has_activated_release=false
+assert_file_exists "$project_path/on-failure-called" || exit 1
+assert_file_content "$project_path/on-failure-called" "false" || exit 1

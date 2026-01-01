@@ -103,3 +103,14 @@ assert_string_contains() {
         return 1
     fi
 }
+
+assert_string_not_contains() {
+    local haystack="$1"
+    local needle="$2"
+
+    if [[ "$haystack" == *"$needle"* ]]; then
+        printf 'Expected string to NOT contain "%s"\n' "$needle"
+
+        return 1
+    fi
+}

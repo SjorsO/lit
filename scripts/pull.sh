@@ -68,6 +68,8 @@ on_exit() {
         printf 'Deleting new but unactivated release directory "%s"\n' "$new_release_directory"
 
         rm -rf "$new_release_directory"
+
+        cd "$project_base_path"
     fi
 
     if [[ "$release_activated" == true ]] && [ "$source_type" = "git" ]; then
@@ -84,6 +86,17 @@ on_exit() {
         printf '>\n'
         printf '> Warning: The new release has been activated!\n'
         printf '>\n'
+    fi
+
+    if [[ "$script_status_code" -ne 0 ]]; then
+        if [ -f "$project_base_path/hooks/on-failure.sh" ]; then
+            if ! cat "$project_base_path/hooks/on-failure.sh" | bash -se -- "$project_base_path" "$release_activated"; then
+                printf 'The on-failure hook failed\n'
+                echo "[$(get_human_timestamp)] The on-failure hook failed" >> "$project_base_path/logs/lit.log"
+            fi
+        else
+            printf 'Wanted to run "%s/hooks/on-failure.sh" but it does not exist\n' "$project_base_path"
+        fi
     fi
 
     printf 'Finished %s (in %s seconds)\n' "$([ "$script_status_code" -ne 0 ] && echo "with errors" || echo "successfully")" "$(( $(date +%s) - started_at ))"

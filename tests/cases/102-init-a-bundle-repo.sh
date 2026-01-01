@@ -20,6 +20,7 @@ assert_file_content "$project_path/lit/current-bundle-hash" "not deployed yet" |
 # Assert hooks are copied from the bundle stubs
 assert_files_match "$project_path/hooks/before-activation.sh" "$world_path/lit/stubs/hooks-for-bundle/before-activation.sh.stub" || exit 1
 assert_files_match "$project_path/hooks/after-activation.sh" "$world_path/lit/stubs/hooks-for-bundle/after-activation.sh.stub" || exit 1
+assert_files_match "$project_path/hooks/on-failure.sh" "$world_path/lit/stubs/on-failure.sh.stub" || exit 1
 
 # Assert .env file exists and is empty
 assert_file_exists "$project_path/.env" || exit 1
