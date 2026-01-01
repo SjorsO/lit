@@ -10,6 +10,8 @@ if [ ! -f "$tests_base_path/run-tests.sh" ]; then
     exit 1
 fi
 
+case_filter="$1"
+
 reset_environment() {
     local tests_base_path="$1"
     local world_path="$tests_base_path/world"
@@ -28,7 +30,7 @@ reset_environment() {
     echo "testing" > "$world_path/lit/data/installation-id"
 }
 
-for case_file in "$tests_base_path/cases/"*.sh; do
+for case_file in "$tests_base_path/cases/${case_filter}"*.sh; do
     reset_environment "$tests_base_path"
 
     case_name=$(basename "$case_file")
@@ -40,7 +42,7 @@ for case_file in "$tests_base_path/cases/"*.sh; do
     original_directory=$(pwd)
     set +e
     cd "$tests_base_path/world/case" || exit 1
-    output=$(bash "$case_file" "$tests_base_path/world" "$tests_base_path/test-helpers.sh" 2>&1)
+    output=$(bash "$tests_base_path/start-case.sh" "$tests_base_path/world" "$case_file" 2>&1)
     status_code=$?
     set -e
     cd "$original_directory" || exit 1

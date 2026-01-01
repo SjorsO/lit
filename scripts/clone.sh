@@ -75,17 +75,17 @@ mkdir -p "$project_path/releases"
 printf 'Finished cloning into "%s"\n' "$project_name"
 printf '\n'
 printf 'Next steps:\n'
-printf '- cd "%s"\n' "$project_name"
-printf '- Fill in the ".env" file\n'
-printf '- Review these hooks:\n'
+printf -- '- cd "%s"\n' "$project_name"
+printf -- '- Fill in the ".env" file\n'
+printf -- '- Review these hooks:\n'
 printf '  - "hooks/before-activation.sh"\n'
 printf '  - "hooks/after-activation.sh"\n'
 printf '\n'
 
 if [ "$source_type" = "git" ]; then
     printf 'After that, either:\n'
-    printf '- Run "lit pull" to deploy the current branch (%s)\n' "$default_branch"
-    printf '- Run "lit checkout <branch>" to deploy a different branch\n'
+    printf -- '- Run "lit pull" to deploy the current branch (%s)\n' "$default_branch"
+    printf -- '- Run "lit checkout <branch>" to deploy a different branch\n'
 elif [ "$source_type" = "bundle" ]; then
     printf 'After that, run "lit pull" to download and deploy the bundle\n'
 fi
