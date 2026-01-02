@@ -116,7 +116,8 @@ mkdir "$lock_directory_path"
 
 has_created_lock_directory=true
 
-echo "3" > "$lit_base_path/data/lit-version"
+# This version number is automatically incremented with a git pre-commit hook.
+echo "4" > "$lit_base_path/data/lit-version"
 
 if [ -f "$lit_base_path/data/telemetry-enabled" ] && [ ! -s "$lit_base_path/data/telemetry-salt" ]; then
     generate_uuid > "$lit_base_path/data/telemetry-salt"

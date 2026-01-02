@@ -27,8 +27,9 @@ assert_string_not_contains "$output" "Reusing deployment from cache" || exit 1
 assert_directory_exists "$project_path/releases/1" || exit 1
 assert_file_exists "$project_path/releases/1/cache-marker" || exit 1
 
-# Save the main branch cache marker value
+# Save the main branch cache marker value and cache file path
 main_cache_marker=$(cat "$project_path/releases/1/cache-marker")
+main_cache_file=$(find "$world_path/lit/releases" -name "*.tar.*" | head -1)
 
 # Checkout another-branch - should build and cache for that branch
 set +e
@@ -49,6 +50,16 @@ if [ "$main_cache_marker" = "$another_branch_cache_marker" ]; then
     exit 1
 fi
 
+# Set the main branch cache file to 3 days old
+if is_macos; then
+    touch -t "$(date -v-3d '+%Y%m%d%H%M')" "$main_cache_file"
+else
+    touch -d "3 days ago" "$main_cache_file"
+fi
+
+# Create a reference file to compare timestamps
+touch "$world_path/timestamp-reference"
+
 # Checkout main again - should use cache with same marker value
 set +e
 output=$(lit checkout main 2>&1)
@@ -60,6 +71,12 @@ assert_string_contains "$output" "Reusing deployment from cache" || exit 1
 assert_string_not_contains "$output" "Caching release" || exit 1
 assert_directory_exists "$project_path/releases/3" || exit 1
 assert_file_content "$project_path/releases/3/cache-marker" "$main_cache_marker" || exit 1
+
+# Cache file should have been touched (newer than or equal to reference)
+if [ "$main_cache_file" -ot "$world_path/timestamp-reference" ]; then
+    printf 'Expected cache file to be touched after reuse\n'
+    exit 1
+fi
 # Verify before/after release hooks still run with cached releases
 assert_file_exists "$project_path/releases/3/before-release-ran" || exit 1
 assert_file_exists "$project_path/releases/3/after-release-ran" || exit 1

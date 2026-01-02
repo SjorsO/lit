@@ -135,3 +135,7 @@ assert_string_not_contains() {
         return 1
     fi
 }
+
+is_macos() {
+    [[ "$OSTYPE" == "darwin"* ]]
+}

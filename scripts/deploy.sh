@@ -179,6 +179,9 @@ if [ "$source_type" = "git" ]; then
         if [ -n "$tar_file_path" ]; then
             printf 'Reusing deployment from cache'
 
+            # Update timestamp so this cache entry isn't pruned
+            touch "$tar_file_path"
+
             current_commit="$current_remote_commit"
             used_cache=true
         else
@@ -403,6 +406,12 @@ for old_release_directory in $(ls "$releases_directory" | sort --numeric-sort --
 
     printf '\n'
 done
+
+# Prune cached releases older than 7 days
+if [ -n "$lit_base_path" ] && [ -d "$lit_base_path/releases" ]; then
+    find "$lit_base_path/releases" -maxdepth 1 -type f -name "*.tar.zst" -mtime +7 -delete 2>/dev/null
+    find "$lit_base_path/releases" -maxdepth 1 -type f -name "*.tar.gz" -mtime +7 -delete 2>/dev/null
+fi
 
 if [ ! -f "$lit_base_path/data/telemetry-enabled" ]; then
     printf 'Not sending telemetry. You can run "lit enable-telemetry" to enable anonymous telemetry.\n'
