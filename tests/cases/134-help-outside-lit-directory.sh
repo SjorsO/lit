@@ -38,3 +38,24 @@ assert_string_contains "$output" "usage: lit <command>" || exit 1
 # Help should not be logged
 log_content=$(cat "$world_path/case/lit/logs/lit-output.log" 2>/dev/null || echo "")
 assert_string_not_contains "$log_content" "lit help" || exit 1
+
+# Test that lit deploy fails inside the lit installation directory
+cd "$world_path/lit"
+
+set +e
+output=$(lit deploy 2>&1)
+status_code=$?
+set -e
+
+assert_same 1 "$status_code" || exit 1
+assert_string_contains "$output" "This is not a Lit directory" || exit 1
+
+cd "$world_path"
+
+set +e
+output=$(lit deploy 2>&1)
+status_code=$?
+set -e
+
+assert_same 1 "$status_code" || exit 1
+assert_string_contains "$output" "This is not a Lit directory" || exit 1

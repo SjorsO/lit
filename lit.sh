@@ -52,7 +52,9 @@ elif [ "$command" = "help" ]; then
     exit 0
 fi
 
-if [ ! -d "$project_base_path/lit" ]; then
+# Lit's installation directory is also called "lit", but that isn't actually a lit directory. So check
+# if it doesn't contain "lit.sh" too.
+if [ ! -d "$project_base_path/lit" ] || [ -f "$project_base_path/lit/lit.sh" ]; then
     printf 'This is not a Lit directory\n'
 
     exit 1
