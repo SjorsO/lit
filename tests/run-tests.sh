@@ -50,6 +50,9 @@ if [ ${#case_files[@]} -eq 0 ]; then
     exit 1
 fi
 
+failed_tests=()
+failed_outputs=()
+
 for case_file in "${case_files[@]}"; do
     reset_environment "$tests_base_path"
 
@@ -71,10 +74,21 @@ for case_file in "${case_files[@]}"; do
         printf '✓\n'
     else
         printf '✗\n'
-        printf '%s\n' "$output"
-
-        exit 1
+        failed_tests+=("$case_name")
+        failed_outputs+=("$output")
     fi
 done
+
+if [ ${#failed_tests[@]} -gt 0 ]; then
+    printf '\n'
+    for i in "${!failed_tests[@]}"; do
+        printf '=== %s ===\n' "${failed_tests[$i]}"
+        printf '%s\n\n' "${failed_outputs[$i]}"
+    done
+
+    printf '%s test(s) failed (in %s seconds)\n' "${#failed_tests[@]}" "$(( $(date +%s) - started_at ))"
+
+    exit 1
+fi
 
 printf '\nAll tests passed (in %s seconds)\n' "$(( $(date +%s) - started_at ))"
