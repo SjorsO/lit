@@ -17,6 +17,7 @@ After you run a specific test, created files you can do assertions on are in `te
 ## Notes
 - Always verify that path variables are where we expect them to be (by checking if files/directories that we expect there actually exist, for example). Never take the risk of doing something in the wrong directory.
 - The lit repository (https://github.com/SjorsO/lit.git) has a branch called "another-branch" that can be used for testing `lit checkout`
+- In usage strings: required args use `<arg>`, optional args use `[arg]`, optional flags use `[--flag]`
 - Use `printf` instead of `echo` for output (more portable)
 - Use single quotes for printf format strings: `printf 'Hello %s\n' "$name"`
 - When printf format starts with a dash, use `--` to terminate options: `printf -- '- item\n'`

@@ -43,7 +43,7 @@ if [ ! -f "$lit_base_path/data/installation-id" ]; then
 fi
 
 if [ "$command" = "init" ]; then
-    bash "$lit_base_path/scripts/init.sh" "$lit_base_path" "$project_base_path" "$2"
+    bash "$lit_base_path/scripts/init.sh" "$lit_base_path" "$project_base_path" "$2" "$3" "$4"
 
     exit $?
 elif [ "$command" = "help" ]; then

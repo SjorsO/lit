@@ -5,14 +5,16 @@ set -e
 lit_base_path="$1"
 base_path="$2"
 source_url="$3"
+custom_project_name="$4"
 
 source "$lit_base_path/scripts/helpers.sh"
 
-if [ -z "$source_url" ]; then
-    printf 'usage: lit init <url>\n'
+if [ -z "$source_url" ] || [ -n "$5" ]; then
+    printf 'usage: lit init <url> [project-name]\n'
     printf '\n'
     printf 'Examples:\n'
     printf '  lit init https://github.com/user/repo.git\n'
+    printf '  lit init https://github.com/user/repo.git my-project\n'
     printf '  lit init https://example.com/releases/app.tar.gz\n'
 
     exit 1
@@ -20,9 +22,21 @@ fi
 
 if [[ "$source_url" == *.git ]] || [[ "$source_url" == git@* ]]; then
     source_type="git"
-    project_name=$(basename "$source_url" .git)
 else
     source_type="bundle"
+fi
+
+if [ -n "$custom_project_name" ]; then
+    if ! [[ "$custom_project_name" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+        printf 'Project name "%s" contains invalid characters. Only a-z, 0-9, _, - and . are allowed.\n' "$custom_project_name"
+
+        exit 1
+    fi
+
+    project_name="$custom_project_name"
+elif [ "$source_type" = "git" ]; then
+    project_name=$(basename "$source_url" .git)
+else
     project_name=$(basename "$source_url" | sed -E 's/\.(tar\.(gz|zst)|tgz)$//')
 fi
 

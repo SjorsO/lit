@@ -20,7 +20,7 @@ git clone --quiet https://github.com/SjorsO/lit.git && source lit/lit.sh
 ```
 
 ## Usage
-- `lit init <url>` initializes a new Lit directory from a git repository or bundle URL
+- `lit init <url> [name]` initializes a new Lit directory from a git repository or bundle URL
 - `lit deploy` deploys the current branch
 - `lit checkout <branch>` switches and deploys another branch
 - `lit log` runs `git log` for the current release
