@@ -84,7 +84,8 @@ fi
 
 # Run flush-opcache before the lock so it can run during a deploy
 if [ "$command" = "flush-opcache" ]; then
-    # If not running during a deploy, set up logging
+    # If we call "flush-opcache" during a deployment, then logging is already set up. If we call this
+    # logging code twice then we log everything twice.
     if [ ! -d "$project_base_path/lit/lit-is-currently-running" ]; then
         exec > >(tee -a "$project_base_path/logs/lit-output.log") 2>&1
     fi
@@ -129,7 +130,7 @@ mkdir "$lock_directory_path"
 has_created_lock_directory=true
 
 # This version number is automatically incremented with a git pre-commit hook.
-echo "7" > "$lit_base_path/data/lit-version"
+echo "8" > "$lit_base_path/data/lit-version"
 
 if [ -f "$lit_base_path/data/telemetry-enabled" ] && [ ! -s "$lit_base_path/data/telemetry-salt" ]; then
     generate_uuid > "$lit_base_path/data/telemetry-salt"

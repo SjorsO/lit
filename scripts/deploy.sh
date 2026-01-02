@@ -128,7 +128,7 @@ new_release_directory="$releases_directory/$((current_release_id + 1))"
 if [ "$source_type" = "git" ]; then
     # If we are deploying after a "lit checkout", then we already have the commit.
     if [[ -z "$current_remote_commit" ]]; then
-        printf 'Reading "%s"... ' "$git_repository_url"
+        printf 'Reading branch "%s" of "%s"... ' "$current_branch" "$git_repository_url"
 
         remote_branch_info=$(git ls-remote --symref "$git_repository_url" "$current_branch")
 

@@ -29,6 +29,7 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
+assert_string_contains "$output" 'Reading branch "main" of "https://github.com/SjorsO/lit.git"' || exit 1
 
 # Assert hooks ran with $1 (project_base_directory)
 assert_file_exists "$project_path/before-release-ran" || exit 1
