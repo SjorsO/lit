@@ -162,7 +162,7 @@ echo ""
 echo "╰────────────────────────────────────────────────────────────────────────╯"
 echo ""
 
-generate_uuid > "$lit_base_path/data/installation-id"
+uuidgen | tr '[:upper:]' '[:lower:]' > "$lit_base_path/data/installation-id"
 
 if [ "$alias_created" = true ]; then
     exit 100

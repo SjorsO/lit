@@ -185,7 +185,7 @@ if [ "$source_type" = "git" ]; then
             current_commit="$current_remote_commit"
             used_cache=true
         else
-            temp_directory_path="$lit_base_path/releases/wip_$(generate_uuid)"
+            temp_directory_path="$lit_base_path/releases/wip_$(uuidgen | tr '[:upper:]' '[:lower:]')"
 
             mkdir -p "$temp_directory_path"
 

@@ -30,8 +30,13 @@ set -e
 # Should succeed (source returns 0 after install)
 assert_same 0 "$status_code" || exit 1
 
-# installation-id should be created
+# installation-id should be created and contain a lowercase UUID
 assert_file_exists "$world_path/lit/data/installation-id" || exit 1
+installation_id=$(cat "$world_path/lit/data/installation-id")
+if [[ ! "$installation_id" =~ ^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$ ]]; then
+    printf 'Expected installation-id to be a UUID, got "%s"\n' "$installation_id"
+    exit 1
+fi
 
 # telemetry should NOT be enabled
 assert_file_missing "$world_path/lit/data/telemetry-enabled" || exit 1
