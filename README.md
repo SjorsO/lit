@@ -6,7 +6,7 @@
 </p>
 
 # Lit
-Lit is a CLI tool for zero-downtime Laravel deployments.
+Lit is a CLI for zero-downtime Laravel deployments.
 
 Lit provides:
 - Automated deployments: deploy your whole project by just running `lit deploy`
