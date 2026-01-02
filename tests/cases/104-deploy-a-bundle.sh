@@ -23,12 +23,18 @@ assert_file_missing "$project_path/current" || exit 1
 # Fill in .env and pull again
 echo "APP_KEY=test" > "$project_path/.env"
 
+# Create caching-enabled file (should be deleted during bundle deploy)
+touch "$project_path/lit/caching-enabled"
+
 set +e
 output=$(lit deploy 2>&1)
 status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
+
+# Caching-enabled file should be deleted during bundle deploy
+assert_file_missing "$project_path/lit/caching-enabled" || exit 1
 
 # Assert hooks ran with $1 (project_base_directory)
 assert_file_exists "$project_path/before-activation-ran" || exit 1

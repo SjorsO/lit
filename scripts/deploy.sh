@@ -267,6 +267,10 @@ elif [ "$source_type" = "bundle" ]; then
     caching_enabled=false
     used_cache=false
 
+    # Caching is not supported for bundles. Silently delete this file if it exists to prevent any
+    # confusion in the status command or in telemetry.
+    rm -f "$project_base_path/lit/caching-enabled"
+
     printf 'Downloading bundle from "%s"... ' "$bundle_url"
 
     temp_bundle_path="$project_base_path/lit/bundle-for-current-deployment.tar"
