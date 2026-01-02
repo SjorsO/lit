@@ -25,3 +25,4 @@ After you run a specific test, created files you can do assertions on are in `te
 - Lit should work on macOS and on Linux (no Windows support)
 - Prefer explicit variable names over positional parameters in complex scripts
 - Log important events to `$project_base_path/logs/lit.log` with timestamp: `echo "[$(get_human_timestamp)] Message" >> "$project_base_path/logs/lit.log"`
+- When writing new tests, don't run them automatically, I'll do that manually.
