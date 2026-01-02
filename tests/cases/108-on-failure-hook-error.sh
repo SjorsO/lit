@@ -4,9 +4,9 @@ lit init "https://github.com/SjorsO/lit.git" > /dev/null
 
 project_path="$world_path/case/lit"
 
-# Make before-activation hook fail to trigger on-failure
-echo 'exit 1' > "$project_path/hooks/before-activation.sh"
-echo '' > "$project_path/hooks/after-activation.sh"
+# Make before-release hook fail to trigger on-failure
+echo 'exit 1' > "$project_path/hooks/before-release.sh"
+echo '' > "$project_path/hooks/after-release.sh"
 
 # Make on-failure hook also fail
 echo 'exit 1' > "$project_path/hooks/on-failure.sh"
@@ -20,7 +20,7 @@ output=$(lit deploy 2>&1)
 status_code=$?
 set -e
 
-# Deploy should fail (due to before-activation hook)
+# Deploy should fail (due to before-release hook)
 assert_same 1 "$status_code" || exit 1
 
 # Output should mention the on-failure hook failed

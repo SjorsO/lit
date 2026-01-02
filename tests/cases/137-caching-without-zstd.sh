@@ -11,8 +11,8 @@ cd "$project_path"
 lit enable-caching > /dev/null
 
 # Override hooks to do nothing
-echo '# no-op' > "$project_path/hooks/before-activation.sh"
-echo '# no-op' > "$project_path/hooks/after-activation.sh"
+echo '# no-op' > "$project_path/hooks/before-release.sh"
+echo '# no-op' > "$project_path/hooks/after-release.sh"
 echo '# no-op' > "$project_path/hooks/before-caching.sh"
 
 # Build a new PATH that excludes ALL directories containing zstd

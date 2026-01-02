@@ -32,6 +32,6 @@ assert_string_contains "$output" "Failed to download bundle" || exit 1
 log_content=$(cat "$project_path/logs/lit.log")
 assert_string_contains "$log_content" "Failed to download bundle" || exit 1
 
-# on-failure hook should have been called with has_activated_release=false
+# on-failure hook should have been called with was_released=false
 assert_file_exists "$project_path/on-failure-called" || exit 1
 assert_file_content "$project_path/on-failure-called" "false" || exit 1

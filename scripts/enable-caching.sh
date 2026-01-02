@@ -30,8 +30,8 @@ if [ ! -f "$project_base_path/hooks/before-caching.sh" ]; then
     printf '\n'
     printf 'Make sure to review and update these hooks:\n'
     printf -- '- "hooks/before-caching.sh"\n'
-    printf -- '- "hooks/before-activation.sh"\n'
-    printf -- '- "hooks/after-activation.sh"\n'
+    printf -- '- "hooks/before-release.sh"\n'
+    printf -- '- "hooks/after-release.sh"\n'
     printf '\n'
 fi
 

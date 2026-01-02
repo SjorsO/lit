@@ -44,7 +44,7 @@ if [[ ! -s "$real_env_file_path" ]]; then
 fi
 
 release_directory_created=false
-release_activated=false
+was_released=false
 
 if [ "$source_type" = "git" ]; then
     git_repository_url="$(get_file_value "$project_base_path/lit/git-repository-url")"
@@ -58,35 +58,35 @@ fi
 on_exit() {
     script_status_code=$?
 
-    if [[ "$release_directory_created" == true && "$release_activated" == false ]]; then
-        printf 'Deleting new but unactivated release directory "%s"\n' "$new_release_directory"
+    if [[ "$release_directory_created" == true && "$was_released" == false ]]; then
+        printf 'Deleting new but unreleased release directory "%s"\n' "$new_release_directory"
 
         rm -rf "$new_release_directory"
 
         cd "$project_base_path"
     fi
 
-    if [[ "$release_activated" == true ]] && [ "$source_type" = "git" ]; then
+    if [[ "$was_released" == true ]] && [ "$source_type" = "git" ]; then
         echo "[$(get_human_timestamp)] Deployed branch \"$current_branch\" (commit: ${current_commit:0:11})" >> "$project_base_path/logs/lit.log"
-    elif [[ "$release_activated" == true ]] && [ "$source_type" = "bundle" ]; then
+    elif [[ "$was_released" == true ]] && [ "$source_type" = "bundle" ]; then
         echo "[$(get_human_timestamp)] Deployed bundle (hash: ${new_bundle_hash:0:11})" >> "$project_base_path/logs/lit.log"
     elif [[ "$release_directory_created" == true ]]; then
-        echo "[$(get_human_timestamp)] Warning: Had errors, did not activate new release" >> "$project_base_path/logs/lit.log"
-    elif [[ "$script_status_code" -ne 0 ]] && [[ "$release_activated" == false ]]; then
-        echo "[$(get_human_timestamp)] Deploy failed, new release was not activated" >> "$project_base_path/logs/lit.log"
+        echo "[$(get_human_timestamp)] Warning: Had errors, new deployment was not released" >> "$project_base_path/logs/lit.log"
+    elif [[ "$script_status_code" -ne 0 ]] && [[ "$was_released" == false ]]; then
+        echo "[$(get_human_timestamp)] Deploy failed, new deployment was not released" >> "$project_base_path/logs/lit.log"
     fi
 
-    if [[ "$release_activated" == true ]] && [[ "$script_status_code" -ne 0 ]]; then
-        echo "[$(get_human_timestamp)] Warning: Had errors, but new release was still activated" >> "$project_base_path/logs/lit.log"
+    if [[ "$was_released" == true ]] && [[ "$script_status_code" -ne 0 ]]; then
+        echo "[$(get_human_timestamp)] Warning: Had errors, but new deployment was still released" >> "$project_base_path/logs/lit.log"
 
         printf '>\n'
-        printf '> Warning: The new release has been activated!\n'
+        printf '> Warning: The new deployment was still released!\n'
         printf '>\n'
     fi
 
     if [[ "$script_status_code" -ne 0 ]]; then
         if [ -f "$project_base_path/hooks/on-failure.sh" ]; then
-            if ! cat "$project_base_path/hooks/on-failure.sh" | bash -se -- "$project_base_path" "$release_activated"; then
+            if ! cat "$project_base_path/hooks/on-failure.sh" | bash -se -- "$project_base_path" "$was_released"; then
                 printf 'The on-failure hook failed\n'
                 echo "[$(get_human_timestamp)] The on-failure hook failed" >> "$project_base_path/logs/lit.log"
             fi
@@ -353,20 +353,20 @@ if [ "$caching_enabled" = "false" ] && [ -f "$project_base_path/hooks/before-cac
     printf 'Hook "hooks/before-caching.sh" exists but will not be used because release caching is disabled\n'
 fi
 
-if [ -f "$project_base_path/hooks/before-activation.sh" ]; then
+if [ -f "$project_base_path/hooks/before-release.sh" ]; then
     hook_entry_directory=$(pwd)
-    cat "$project_base_path/hooks/before-activation.sh" | bash -se -- "$project_base_path" "$new_release_directory"
+    cat "$project_base_path/hooks/before-release.sh" | bash -se -- "$project_base_path" "$new_release_directory"
     cd "$hook_entry_directory" || exit 1
 else
-    printf 'Wanted to run "%s/hooks/before-activation.sh" but it does not exist\n' "$project_base_path"
+    printf 'Wanted to run "%s/hooks/before-release.sh" but it does not exist\n' "$project_base_path"
 fi
 
-printf 'Activating new release "%s"\n' "$new_release_directory"
+printf 'Releasing the new deployment "%s"\n' "$new_release_directory"
 
 # Create a symlink to enable the release
 ln "$(is_macos && echo "-nsf" || echo "-nsfr")" "$new_release_directory" "$current_directory_path"
 
-release_activated=true
+was_released=true
 
 if [ "$source_type" = "git" ]; then
     echo "$current_commit" > "$project_base_path/lit/current-commit"
@@ -374,12 +374,12 @@ elif [ "$source_type" = "bundle" ]; then
     echo "$new_bundle_hash" > "$project_base_path/lit/current-bundle-hash"
 fi
 
-if [ -f "$project_base_path/hooks/after-activation.sh" ]; then
+if [ -f "$project_base_path/hooks/after-release.sh" ]; then
     hook_entry_directory=$(pwd)
-    cat "$project_base_path/hooks/after-activation.sh" | bash -se -- "$project_base_path" "$new_release_directory"
+    cat "$project_base_path/hooks/after-release.sh" | bash -se -- "$project_base_path" "$new_release_directory"
     cd "$hook_entry_directory" || exit 1
 else
-    printf 'Wanted to run "%s/hooks/after-activation.sh" but it does not exist\n' "$project_base_path"
+    printf 'Wanted to run "%s/hooks/after-release.sh" but it does not exist\n' "$project_base_path"
 fi
 
 # Only keep 2 release directories

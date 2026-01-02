@@ -28,7 +28,7 @@ git clone --quiet https://github.com/SjorsO/lit.git && source lit/lit.sh
 ## Getting started
 To deploy a Laravel project with Lit, run `lit init <url>`, and follow the on-screen instructions.
 
-After setting up a Lit directory, you can customize the deployment by editing the `hooks/before-activation.sh` and `hooks/after-activation.sh` hooks.
+After setting up a Lit directory, you can customize the deployment by editing the `hooks/before-release.sh` and `hooks/after-release.sh` hooks.
 
 When everything is configured, deploy the latest commit of your current branch by running `lit deploy`.
 
@@ -36,7 +36,7 @@ When everything is configured, deploy the latest commit of your current branch b
 Lit deployments are zero downtime, just like deployments done by Laravel Forge, Laravel Envoyer, and Deployer.
 
 In a nutshell, zero downtime deployments prepare each new release in a separate directory from the active release.
-The new release is only activated once it has been fully built without errors.
+The new release is only released once it has been fully built without errors.
 If anything fails during deployment, the release is gracefully deleted without affecting the currently active release.
 
 For example, if a typical deployment using git has errors during `composer install` or `npm run build`, then your application is in a broken state.

@@ -81,8 +81,8 @@ fi
 printf '\n'
 
 mkdir -p "$project_path/hooks"
-cp "$lit_base_path/stubs/hooks-for-$source_type/before-activation.sh.stub" "$project_path/hooks/before-activation.sh"
-cp "$lit_base_path/stubs/hooks-for-$source_type/after-activation.sh.stub" "$project_path/hooks/after-activation.sh"
+cp "$lit_base_path/stubs/hooks-for-$source_type/before-release.sh.stub" "$project_path/hooks/before-release.sh"
+cp "$lit_base_path/stubs/hooks-for-$source_type/after-release.sh.stub" "$project_path/hooks/after-release.sh"
 cp "$lit_base_path/stubs/on-failure.sh.stub" "$project_path/hooks/on-failure.sh"
 
 touch "$project_path/.env"
@@ -95,8 +95,8 @@ printf 'Next steps:\n'
 printf -- '- cd "%s"\n' "$project_name"
 printf -- '- Fill in the ".env" file\n'
 printf -- '- Review these hooks:\n'
-printf '  - "hooks/before-activation.sh"\n'
-printf '  - "hooks/after-activation.sh"\n'
+printf '  - "hooks/before-release.sh"\n'
+printf '  - "hooks/after-release.sh"\n'
 printf '  - "hooks/on-failure.sh"\n'
 printf '\n'
 

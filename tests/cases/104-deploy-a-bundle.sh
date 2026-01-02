@@ -5,8 +5,8 @@ project_path="$world_path/case/bundle-for-lit-tests"
 # Replace hooks to verify $1 and $2 are correct directories
 # $1 (project_base_directory) should contain lit/ and logs/
 # $2 (new_release_directory) should be a directory with the extracted bundle
-echo '[ -d "$1/lit" ] && [ -d "$1/logs" ] && [ -d "$2" ] && touch "$1/before-activation-ran" && touch "$2/before-activation-release"' > "$project_path/hooks/before-activation.sh"
-echo '[ -d "$1/lit" ] && [ -d "$1/logs" ] && [ -d "$2" ] && touch "$1/after-activation-ran" && touch "$2/after-activation-release"' > "$project_path/hooks/after-activation.sh"
+echo '[ -d "$1/lit" ] && [ -d "$1/logs" ] && [ -d "$2" ] && touch "$1/before-release-ran" && touch "$2/before-release-release"' > "$project_path/hooks/before-release.sh"
+echo '[ -d "$1/lit" ] && [ -d "$1/logs" ] && [ -d "$2" ] && touch "$1/after-release-ran" && touch "$2/after-release-release"' > "$project_path/hooks/after-release.sh"
 
 cd "$project_path"
 
@@ -37,12 +37,12 @@ assert_same 0 "$status_code" || exit 1
 assert_file_missing "$project_path/lit/caching-enabled" || exit 1
 
 # Assert hooks ran with $1 (project_base_directory)
-assert_file_exists "$project_path/before-activation-ran" || exit 1
-assert_file_exists "$project_path/after-activation-ran" || exit 1
+assert_file_exists "$project_path/before-release-ran" || exit 1
+assert_file_exists "$project_path/after-release-ran" || exit 1
 
 # Assert hooks ran with $2 (new_release_directory)
-assert_file_exists "$project_path/releases/1/before-activation-release" || exit 1
-assert_file_exists "$project_path/releases/1/after-activation-release" || exit 1
+assert_file_exists "$project_path/releases/1/before-release-release" || exit 1
+assert_file_exists "$project_path/releases/1/after-release-release" || exit 1
 
 # Assert current symlink exists and points to release 1
 assert_symlink "$project_path/current" || exit 1

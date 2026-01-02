@@ -4,8 +4,8 @@ lit init "https://watchtower-static.fsn1.your-objectstorage.com/bundle-for-lit-t
 
 project_path="$world_path/case/bundle-for-lit-tests"
 
-echo '' > "$project_path/hooks/before-activation.sh"
-echo '' > "$project_path/hooks/after-activation.sh"
+echo '' > "$project_path/hooks/before-release.sh"
+echo '' > "$project_path/hooks/after-release.sh"
 echo "APP_KEY=test" > "$project_path/.env"
 
 cd "$project_path"

@@ -1,2 +1,2 @@
 project_base_directory="$1"
-has_activated_release="$2"
+was_released="$2"

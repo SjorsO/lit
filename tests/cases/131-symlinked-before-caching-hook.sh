@@ -10,8 +10,8 @@ project2_path="$world_path/case/project2"
 
 # Setup both projects
 for project_path in "$project1_path" "$project2_path"; do
-    echo '' > "$project_path/hooks/before-activation.sh"
-    echo '' > "$project_path/hooks/after-activation.sh"
+    echo '' > "$project_path/hooks/before-release.sh"
+    echo '' > "$project_path/hooks/after-release.sh"
     echo "APP_KEY=test" > "$project_path/.env"
 
     cd "$project_path"

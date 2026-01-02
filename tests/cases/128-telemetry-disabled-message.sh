@@ -4,8 +4,8 @@ lit init "https://github.com/SjorsO/lit.git" > /dev/null
 
 project_path="$world_path/case/lit"
 
-echo '' > "$project_path/hooks/before-activation.sh"
-echo '' > "$project_path/hooks/after-activation.sh"
+echo '' > "$project_path/hooks/before-release.sh"
+echo '' > "$project_path/hooks/after-release.sh"
 echo "APP_KEY=test" > "$project_path/.env"
 
 cd "$project_path"
