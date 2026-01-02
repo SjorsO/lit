@@ -58,7 +58,7 @@ for case_file in "${case_files[@]}"; do
 
     case_name=$(basename "$case_file")
 
-    printf '%-*s ' "$max_name_length" "$case_name"
+    printf '%-*s    ' "$max_name_length" "$case_name"
 
     mkdir -p "$tests_base_path/world/case"
 
