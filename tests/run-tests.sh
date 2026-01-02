@@ -11,6 +11,7 @@ if [ ! -f "$tests_base_path/run-tests.sh" ]; then
 fi
 
 case_filter="$1"
+started_at=$(date +%s)
 
 reset_environment() {
     local tests_base_path="$1"
@@ -30,12 +31,31 @@ reset_environment() {
     echo "testing" > "$world_path/lit/data/installation-id"
 }
 
+case_files=()
+max_name_length=0
+
+shopt -s nullglob
 for case_file in "$tests_base_path/cases/${case_filter}"*.sh; do
+    case_files+=("$case_file")
+    case_name=$(basename "$case_file")
+
+    if [ ${#case_name} -gt "$max_name_length" ]; then
+        max_name_length=${#case_name}
+    fi
+done
+
+if [ ${#case_files[@]} -eq 0 ]; then
+    printf 'No tests found matching "%s"\n' "$case_filter"
+
+    exit 1
+fi
+
+for case_file in "${case_files[@]}"; do
     reset_environment "$tests_base_path"
 
     case_name=$(basename "$case_file")
 
-    printf 'Running %s... ' "$case_name"
+    printf '%-*s ' "$max_name_length" "$case_name"
 
     mkdir -p "$tests_base_path/world/case"
 
@@ -57,4 +77,4 @@ for case_file in "$tests_base_path/cases/${case_filter}"*.sh; do
     fi
 done
 
-printf '\nAll tests passed\n'
+printf '\nAll tests passed (in %s seconds)\n' "$(( $(date +%s) - started_at ))"
