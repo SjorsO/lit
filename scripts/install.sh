@@ -13,13 +13,15 @@ fi
 on_exit() {
     script_status_code=$?
 
-    tput cnorm
+    # Restore cursor (only if we have a terminal)
+    [ -t 1 ] && tput cnorm 2>/dev/null || true
 
     exit "$script_status_code"
 }
 trap on_exit EXIT
 
-tput civis
+# Hide cursor (only if we have a terminal)
+[ -t 1 ] && tput civis 2>/dev/null || true
 
 yes_no_menu() {
     local current=0
