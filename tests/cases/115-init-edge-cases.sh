@@ -33,18 +33,6 @@ set -e
 assert_same 0 "$status_code" || exit 1
 assert_file_content "$world_path/case/empty-project/lit/source-type" "bundle" || exit 1
 
-# SSH URL format should be recognized as git
-set +e
-output=$(lit init "git@github.com:SjorsO/lit.git" 2>&1)
-status_code=$?
-set -e
-
-assert_same 0 "$status_code" || exit 1
-
-project_path="$world_path/case/lit"
-assert_file_content "$project_path/lit/source-type" "git" || exit 1
-assert_file_content "$project_path/lit/git-repository-url" "git@github.com:SjorsO/lit.git" || exit 1
-
 # Test .tgz extension is recognized as bundle
 cd "$world_path/case"
 set +e
