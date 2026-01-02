@@ -11,9 +11,10 @@
 │                                                                              │
 │ Other commands:                                                              │
 │                                                                              │
+│   flush-opcache        Flush PHP-FPM OPCache                                 │
 │   enable-caching       Enable git release caching                            │
 │   disable-caching      Disable git release caching                           │
-│   enable-telemetry     Enable anonymous telemetry to help improve Lit        │
+│   enable-telemetry     Enable anonymous telemetry                            │
 │   disable-telemetry    Completely disable telemetry                          │
 │                                                                              │
 │ For more info, visit: https://github.com/SjorsO/lit                          │

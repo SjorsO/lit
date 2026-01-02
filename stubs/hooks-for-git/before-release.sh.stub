@@ -1,5 +1,6 @@
 project_base_directory="$1"
 new_release_directory="$2"
+lit_base_path="$3"
 
 composer install --no-interaction --no-progress --optimize-autoloader --no-dev
 

@@ -206,7 +206,7 @@ if [ "$source_type" = "git" ]; then
             if [ -n "$before_caching_hook_path" ]; then
                 printf 'Running "%s/hooks/before-caching.sh"...\n' "$(basename "$project_base_path")"
 
-                bash "$before_caching_hook_path" "$temp_directory_path"
+                bash "$before_caching_hook_path" "$temp_directory_path" "$project_base_path" "$lit_base_path"
             else
                 printf 'Wanted to run "%s/hooks/before-caching.sh" but it does not exist\n' "$project_base_path"
             fi
@@ -367,7 +367,7 @@ fi
 
 if [ -f "$project_base_path/hooks/before-release.sh" ]; then
     hook_entry_directory=$(pwd)
-    cat "$project_base_path/hooks/before-release.sh" | bash -se -- "$project_base_path" "$new_release_directory"
+    cat "$project_base_path/hooks/before-release.sh" | bash -se -- "$project_base_path" "$new_release_directory" "$lit_base_path"
     cd "$hook_entry_directory" || exit 1
 else
     printf 'Wanted to run "%s/hooks/before-release.sh" but it does not exist\n' "$project_base_path"
@@ -388,7 +388,7 @@ fi
 
 if [ -f "$project_base_path/hooks/after-release.sh" ]; then
     hook_entry_directory=$(pwd)
-    cat "$project_base_path/hooks/after-release.sh" | bash -se -- "$project_base_path" "$new_release_directory"
+    cat "$project_base_path/hooks/after-release.sh" | bash -se -- "$project_base_path" "$new_release_directory" "$lit_base_path"
     cd "$hook_entry_directory" || exit 1
 else
     printf 'Wanted to run "%s/hooks/after-release.sh" but it does not exist\n' "$project_base_path"
@@ -414,8 +414,6 @@ if [ -n "$lit_base_path" ] && [ -d "$lit_base_path/releases" ]; then
 fi
 
 if [ ! -f "$lit_base_path/data/telemetry-enabled" ]; then
-    printf 'Not sending telemetry. You can run "lit enable-telemetry" to enable anonymous telemetry.\n'
-
     exit 0
 fi
 

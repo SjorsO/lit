@@ -19,9 +19,13 @@ for project_path in "$project1_path" "$project2_path"; do
     rm "$project_path/hooks/before-caching.sh"
 done
 
-# Create a shared hook outside both projects
+# Create a shared hook outside both projects that verifies all 3 arguments
 mkdir -p "$world_path/case/shared-hooks"
-echo 'touch "$1/shared-hook-ran"' > "$world_path/case/shared-hooks/before-caching.sh"
+cat > "$world_path/case/shared-hooks/before-caching.sh" << 'EOF'
+touch "$1/shared-hook-ran"
+echo "$2" > "$1/before-caching-arg2"
+echo "$3" > "$1/before-caching-arg3"
+EOF
 
 # Symlink the shared hook to both projects
 ln -s "$world_path/case/shared-hooks/before-caching.sh" "$project1_path/hooks/before-caching.sh"
@@ -36,6 +40,12 @@ set -e
 
 assert_same 0 "$status_code" || exit 1
 assert_file_exists "$project1_path/releases/1/shared-hook-ran" || exit 1
+
+# Verify before-caching hook received correct $2 (project_base_path) and $3 (lit_base_path)
+before_caching_arg2=$(cat "$project1_path/releases/1/before-caching-arg2")
+assert_file_content "$project1_path/releases/1/before-caching-arg2" "$project1_path" || exit 1
+before_caching_arg3=$(cat "$project1_path/releases/1/before-caching-arg3")
+assert_file_exists "$before_caching_arg3/lit.sh" || exit 1
 
 # Deploy project2 - should reuse cache from project1
 cd "$project2_path"
