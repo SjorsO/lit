@@ -50,6 +50,12 @@ if [ ${#case_files[@]} -eq 0 ]; then
     exit 1
 fi
 
+shuffled_files=()
+while IFS= read -r file; do
+    shuffled_files+=("$file")
+done < <(printf '%s\n' "${case_files[@]}" | sort -R)
+case_files=("${shuffled_files[@]}")
+
 failed_tests=()
 failed_outputs=()
 
