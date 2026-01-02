@@ -1,10 +1,16 @@
 #!/bin/bash
 
-if ! command -v curl >/dev/null 2>&1; then
+json="$(cat)"
+
+if echo "$json" | grep -q '"lit_installation_id": "testing"'; then
+    echo "$json" >> /tmp/lit-telemetry
+
     exit 0
 fi
 
-json="$(cat)"
+if ! command -v curl >/dev/null 2>&1; then
+    exit 0
+fi
 
 curl --request POST https://sjorso.com/lit-telemetry \
     --header "Content-Type: application/json" \

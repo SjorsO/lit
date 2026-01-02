@@ -34,6 +34,17 @@ if [ "$(ls -A "$project_path" 2>/dev/null)" ]; then
     exit 1
 fi
 
+if [ "$source_type" = "git" ]; then
+    printf 'Reading "%s"... ' "$source_url"
+
+    default_branch_info=$(git ls-remote --symref "$source_url" HEAD)
+
+    default_branch=$(echo "$default_branch_info" | grep "ref: refs/heads/" | sed 's/ref: refs\/heads\///' | cut -f1)
+
+    printf 'Done!\n'
+    printf '\n'
+fi
+
 mkdir -p "$project_path"
 mkdir -p "$project_path/lit"
 
@@ -41,18 +52,9 @@ echo "$source_type" > "$project_path/lit/source-type"
 
 if [ "$source_type" = "git" ]; then
     echo "$source_url" > "$project_path/lit/git-repository-url"
-
-    printf 'Reading "%s"... ' "$source_url"
-
-    default_branch_info=$(git ls-remote --symref "$source_url" HEAD)
-
-    default_branch=$(echo "$default_branch_info" | grep "ref: refs/heads/" | sed 's/ref: refs\/heads\///' | cut -f1)
-
     echo "$default_branch" > "$project_path/lit/current-branch"
     echo "not deployed yet" > "$project_path/lit/current-commit"
 
-    printf 'Done!\n'
-    printf '\n'
     printf 'Current branch set to "%s"\n' "$default_branch"
 elif [ "$source_type" = "bundle" ]; then
     echo "$source_url" > "$project_path/lit/bundle-url"

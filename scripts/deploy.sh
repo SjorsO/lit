@@ -30,14 +30,8 @@ started_at=$(date +%s)
 releases_directory="$project_base_path/releases"
 current_directory_path="$project_base_path/current"
 
-# Projects previously deployed with Deployer have a "shared" directory
-if [[ -d "$project_base_path/shared/storage" ]] && [[ -f "$project_base_path/shared/.env" ]]; then
-    real_storage_directory_path="$project_base_path/shared/storage"
-    real_env_file_path="$project_base_path/shared/.env"
-else
-    real_storage_directory_path="$project_base_path/storage"
-    real_env_file_path="$project_base_path/.env"
-fi
+real_storage_directory_path="$project_base_path/storage"
+real_env_file_path="$project_base_path/.env"
 
 if [[ ! -s "$real_env_file_path" ]]; then
     touch "$real_env_file_path"
@@ -78,6 +72,8 @@ on_exit() {
         echo "[$(get_human_timestamp)] Deployed bundle (hash: ${new_bundle_hash:0:11})" >> "$project_base_path/logs/lit.log"
     elif [[ "$release_directory_created" == true ]]; then
         echo "[$(get_human_timestamp)] Warning: Had errors, did not activate new release" >> "$project_base_path/logs/lit.log"
+    elif [[ "$script_status_code" -ne 0 ]] && [[ "$release_activated" == false ]]; then
+        echo "[$(get_human_timestamp)] Deploy failed, new release was not activated" >> "$project_base_path/logs/lit.log"
     fi
 
     if [[ "$release_activated" == true ]] && [[ "$script_status_code" -ne 0 ]]; then
@@ -152,15 +148,14 @@ if [ "$source_type" = "git" ]; then
     if [ "$caching_enabled" = true ]; then
         if [ -L "$project_base_path/hooks/before-caching.sh" ]; then
             before_caching_hook_path="$(readlink -f "$project_base_path/hooks/before-caching.sh")"
+            before_caching_hook_hash="$(sha1sum "$before_caching_hook_path" | cut -d' ' -f1)"
         elif [ -f "$project_base_path/hooks/before-caching.sh" ]; then
             before_caching_hook_path="$project_base_path/hooks/before-caching.sh"
+            before_caching_hook_hash="$(sha1sum "$before_caching_hook_path" | cut -d' ' -f1)"
         else
-            printf 'Hook does not exist: "%s/hooks/before-caching.sh"\n' "$(basename "$project_base_path")"
-
-            before_caching_hook_path="$project_base_path/lit/caching-enabled"
+            before_caching_hook_path=""
+            before_caching_hook_hash="no-hook"
         fi
-
-        before_caching_hook_hash="$(sha1sum "$before_caching_hook_path" | cut -d' ' -f1)"
 
         tar_file_path=""
 
@@ -196,9 +191,13 @@ if [ "$source_type" = "git" ]; then
 
             current_commit="$(git rev-parse HEAD)"
 
-            printf 'Running "%s/hooks/before-caching.sh"...\n' "$(basename "$project_base_path")"
+            if [ -n "$before_caching_hook_path" ]; then
+                printf 'Running "%s/hooks/before-caching.sh"...\n' "$(basename "$project_base_path")"
 
-            bash "$before_caching_hook_path" "$temp_directory_path"
+                bash "$before_caching_hook_path" "$temp_directory_path"
+            else
+                printf 'Wanted to run "%s/hooks/before-caching.sh" but it does not exist\n' "$project_base_path"
+            fi
 
             staging_directory_path="$lit_base_path/releases/$current_commit-$before_caching_hook_hash"
 
@@ -213,13 +212,13 @@ if [ "$source_type" = "git" ]; then
             cd "$lit_base_path/releases"
 
             if command -v zstd >/dev/null 2>&1; then
-                printf 'Caching release (zstd)... '
+                printf 'Caching release... '
 
                 tar --use-compress-program "zstd -T0 -3" -cf "$staging_directory_path.tar.zst" "$(basename "$staging_directory_path")"
 
                 tar_file_path="$staging_directory_path.tar.zst"
             else
-                printf 'Caching release... '
+                printf 'Caching release... (tip: install "zstd" for faster caching)'
 
                 tar -czf "$staging_directory_path.tar.gz" "$(basename "$staging_directory_path")"
 
