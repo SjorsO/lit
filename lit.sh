@@ -116,7 +116,7 @@ mkdir "$lock_directory_path"
 
 has_created_lock_directory=true
 
-echo "2" > "$lit_base_path/data/lit-version"
+echo "3" > "$lit_base_path/data/lit-version"
 
 if [ -f "$lit_base_path/data/telemetry-enabled" ] && [ ! -s "$lit_base_path/data/telemetry-salt" ]; then
     generate_uuid > "$lit_base_path/data/telemetry-salt"

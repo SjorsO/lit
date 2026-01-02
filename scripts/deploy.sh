@@ -66,6 +66,15 @@ on_exit() {
         cd "$project_base_path"
     fi
 
+    # Clean up temp directories from cache building if they still exist
+    if [[ -n "$temp_directory_path" && -d "$temp_directory_path" ]]; then
+        rm -rf "$temp_directory_path"
+    fi
+
+    if [[ -n "$staging_directory_path" && -d "$staging_directory_path" ]]; then
+        rm -rf "$staging_directory_path"
+    fi
+
     if [[ "$was_released" == true ]] && [ "$source_type" = "git" ]; then
         echo "[$(get_human_timestamp)] Deployed branch \"$current_branch\" (commit: ${current_commit:0:11})" >> "$project_base_path/logs/lit.log"
     elif [[ "$was_released" == true ]] && [ "$source_type" = "bundle" ]; then
