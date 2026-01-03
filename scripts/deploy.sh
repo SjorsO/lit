@@ -464,9 +464,32 @@ for old_release_directory in $(ls "$releases_directory" | sort --numeric-sort --
     printf '\n'
 done
 
-# Prune cached releases older than 7 days
+# Prune cached releases older than 7 days, and limit total cache size to 500MB
 if [ -n "$lit_base_path" ] && [ -d "$lit_base_path/cached-releases" ]; then
     find "$lit_base_path/cached-releases" -maxdepth 1 -type f -name "*.tar" -mtime +7 -delete 2>/dev/null
+
+    max_cache_kb=$((500 * 1024))
+
+    while true; do
+        total_kb=$(du -sk "$lit_base_path/cached-releases" 2>/dev/null | cut -f1 || echo 0)
+
+        if [ "$total_kb" -le "$max_cache_kb" ]; then
+            break
+        fi
+
+        # Always keep at least 1 cache file
+        if [ "$(ls "$lit_base_path/cached-releases"/*.tar 2>/dev/null | wc -l)" -le 1 ]; then
+            break
+        fi
+
+        oldest_file=$(ls -t "$lit_base_path/cached-releases"/*.tar 2>/dev/null | tail -1)
+
+        if [ -z "$oldest_file" ]; then
+            break
+        fi
+
+        rm -f "$oldest_file"
+    done
 fi
 
 if [ ! -f "$lit_base_path/data/telemetry-enabled" ]; then
