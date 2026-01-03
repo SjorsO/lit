@@ -78,7 +78,7 @@ on_exit() {
     if [[ "$was_released" == true ]] && [ "$source_type" = "git" ]; then
         echo "[$(get_human_timestamp)] Deployed branch \"$current_branch\" (commit: ${current_commit:0:11})" >> "$project_base_path/logs/lit.log"
     elif [[ "$was_released" == true ]] && [ "$source_type" = "bundle" ]; then
-        echo "[$(get_human_timestamp)] Deployed bundle (hash: ${new_bundle_hash:0:11})" >> "$project_base_path/logs/lit.log"
+        echo "[$(get_human_timestamp)] Deployed bundle (hash: $new_bundle_hash)" >> "$project_base_path/logs/lit.log"
     elif [[ "$release_directory_created" == true ]]; then
         echo "[$(get_human_timestamp)] Warning: Had errors, new deployment was not released" >> "$project_base_path/logs/lit.log"
     elif [[ "$script_status_code" -ne 0 ]] && [[ "$was_released" == false ]]; then
@@ -168,11 +168,11 @@ if [ "$source_type" = "git" ]; then
 
         tar_file_path=""
 
-        if [ -f "$lit_base_path/releases/$current_remote_commit-$before_caching_hook_hash.tar.zst" ]; then
-            tar_file_path="$lit_base_path/releases/$current_remote_commit-$before_caching_hook_hash.tar.zst"
-        elif [ -f "$lit_base_path/releases/$current_remote_commit-$before_caching_hook_hash.tar.gz" ]; then
-            tar_file_path="$lit_base_path/releases/$current_remote_commit-$before_caching_hook_hash.tar.gz"
-        elif ls "$lit_base_path/releases/$current_remote_commit-"* >/dev/null 2>&1; then
+        if [ -f "$lit_base_path/cached-releases/$current_remote_commit-$before_caching_hook_hash.tar.zst" ]; then
+            tar_file_path="$lit_base_path/cached-releases/$current_remote_commit-$before_caching_hook_hash.tar.zst"
+        elif [ -f "$lit_base_path/cached-releases/$current_remote_commit-$before_caching_hook_hash.tar.gz" ]; then
+            tar_file_path="$lit_base_path/cached-releases/$current_remote_commit-$before_caching_hook_hash.tar.gz"
+        elif ls "$lit_base_path/cached-releases/$current_remote_commit-"* >/dev/null 2>&1; then
             printf 'Cached release found but hook changed, rebuilding...\n'
         fi
 
@@ -185,7 +185,7 @@ if [ "$source_type" = "git" ]; then
             current_commit="$current_remote_commit"
             used_cache=true
         else
-            temp_directory_path="$lit_base_path/releases/wip_$(uuidgen | tr '[:upper:]' '[:lower:]')"
+            temp_directory_path="$lit_base_path/cached-releases/wip_$(uuidgen | tr '[:upper:]' '[:lower:]')"
 
             mkdir -p "$temp_directory_path"
 
@@ -211,7 +211,7 @@ if [ "$source_type" = "git" ]; then
                 printf 'Wanted to run "%s/hooks/before-caching.sh" but it does not exist\n' "$project_base_path"
             fi
 
-            staging_directory_path="$lit_base_path/releases/$current_commit-$before_caching_hook_hash"
+            staging_directory_path="$lit_base_path/cached-releases/$current_commit-$before_caching_hook_hash"
 
             if [ -d "$staging_directory_path" ]; then
                 rm -rf "$staging_directory_path"
@@ -221,7 +221,7 @@ if [ "$source_type" = "git" ]; then
 
             mv "$temp_directory_path" "$staging_directory_path"
 
-            cd "$lit_base_path/releases"
+            cd "$lit_base_path/cached-releases"
 
             if command -v zstd >/dev/null 2>&1; then
                 printf 'Caching release... '
@@ -279,12 +279,14 @@ elif [ "$source_type" = "bundle" ]; then
     caching_enabled=false
     used_cache=false
 
-    # Caching is not supported for bundles. Silently delete this file if it exists to prevent any
-    # confusion in the status command or in telemetry.
+    # This file is only for git deployments, it should never exist unless the project was incorrectly
+    # converted from git to a bundle. Delete this file to prevent any confusion in the status command or in telemetry.
     rm -f "$project_base_path/lit/caching-enabled"
 
     bundle_hash_url="${bundle_url}.hash"
     remote_bundle_hash_from_hash_file=""
+
+    mkdir -p "$lit_base_path/cached-releases"
 
     if [ "$is_forcing" = false ]; then
         # To avoid downloading the full bundle, download just a file containing the bundle hash.
@@ -307,10 +309,10 @@ elif [ "$source_type" = "bundle" ]; then
                 printf 'Hash file contents: %s\n' "$curl_output"
                 remote_bundle_hash_from_hash_file=""
             elif [ "$current_bundle_hash" = "$remote_bundle_hash_from_hash_file" ]; then
-                printf 'Bundle is already deployed (hash: %s)\n' "${remote_bundle_hash_from_hash_file:0:11}"
+                printf 'Bundle is already deployed (hash: %s)\n' "$remote_bundle_hash_from_hash_file"
                 printf 'Run "lit deploy --force" to redeploy\n'
 
-                echo "[$(get_human_timestamp)] Not deploying because same bundle version is already deployed (hash: ${remote_bundle_hash_from_hash_file:0:11})" >> "$project_base_path/logs/lit.log"
+                echo "[$(get_human_timestamp)] Not deploying because same bundle version is already deployed (hash: $remote_bundle_hash_from_hash_file)" >> "$project_base_path/logs/lit.log"
 
                 exit 0
             fi
@@ -319,39 +321,53 @@ elif [ "$source_type" = "bundle" ]; then
         fi
     fi
 
-    printf 'Downloading bundle from "%s"... ' "$bundle_url"
-
     temp_bundle_path="$project_base_path/lit/bundle-for-current-deployment.tar"
+    cached_bundle_path="$lit_base_path/cached-releases/$remote_bundle_hash_from_hash_file.tar"
 
-    rm -f "$temp_bundle_path"
+    if [ -n "$remote_bundle_hash_from_hash_file" ] && [ -f "$cached_bundle_path" ]; then
+        printf 'Using cached bundle (hash: %s)\n' "$remote_bundle_hash_from_hash_file"
 
-    set +e
-    curl_result=$(curl --fail --silent --show-error --location --write-out '%{time_total}' "$bundle_url" -o "$temp_bundle_path" 2>&1)
-    curl_exit_code=$?
-    set -e
+        cp "$cached_bundle_path" "$temp_bundle_path"
 
-    if [ $curl_exit_code -ne 0 ]; then
-        printf '\n'
-        printf 'Failed to download bundle from "%s"\n' "$bundle_url"
-        printf '%s\n' "$curl_result"
+        touch "$cached_bundle_path"
 
-        echo "[$(get_human_timestamp)] Failed to download bundle from \"$bundle_url\"" >> "$project_base_path/logs/lit.log"
+        new_bundle_hash="$remote_bundle_hash_from_hash_file"
+        used_cache=true
+    else
+        printf 'Downloading bundle from "%s"... ' "$bundle_url"
 
         rm -f "$temp_bundle_path"
 
-        exit 1
-    fi
+        set +e
+        curl_result=$(curl --fail --silent --show-error --location --write-out '%{time_total}' "$bundle_url" -o "$temp_bundle_path" 2>&1)
+        curl_exit_code=$?
+        set -e
 
-    printf '(%s in %s seconds)\n' "$(ls -lah "$temp_bundle_path" | awk '{print $5}')" "$(echo "$curl_result" | awk '{printf "%.2f", $1}')"
+        if [ $curl_exit_code -ne 0 ]; then
+            printf '\n'
+            printf 'Failed to download bundle from "%s"\n' "$bundle_url"
+            printf '%s\n' "$curl_result"
 
-    new_bundle_hash="$(shasum "$temp_bundle_path" | cut -d' ' -f1)"
+            echo "[$(get_human_timestamp)] Failed to download bundle from \"$bundle_url\"" >> "$project_base_path/logs/lit.log"
 
-    if [ -n "$remote_bundle_hash_from_hash_file" ] && [ "$remote_bundle_hash_from_hash_file" != "$new_bundle_hash" ]; then
-        printf 'Warning: the hash from "%s" does not match the actual hash from "%s"\n' "$bundle_hash_url" "$bundle_url"
+            rm -f "$temp_bundle_path"
+
+            exit 1
+        fi
+
+        printf '(%s in %s seconds)\n' "$(ls -lah "$temp_bundle_path" | awk '{print $5}')" "$(echo "$curl_result" | awk '{printf "%.2f", $1}')"
+
+        new_bundle_hash="$(shasum "$temp_bundle_path" | cut -d' ' -f1)"
+
+        if [ -n "$remote_bundle_hash_from_hash_file" ] && [ "$remote_bundle_hash_from_hash_file" != "$new_bundle_hash" ]; then
+            printf 'Warning: the hash from "%s" does not match the actual hash from "%s"\n' "$bundle_hash_url" "$bundle_url"
+        fi
+
+        cp "$temp_bundle_path" "$lit_base_path/cached-releases/$new_bundle_hash.tar"
     fi
 
     if [ "$current_bundle_hash" = "$new_bundle_hash" ]; then
-        printf 'Bundle is already deployed (hash: %s)\n' "${new_bundle_hash:0:11}"
+        printf 'Bundle is already deployed (hash: %s)\n' "$new_bundle_hash"
 
         if [ "$is_forcing" = true ]; then
             printf 'Using "--force", redeploying...\n'
@@ -360,7 +376,7 @@ elif [ "$source_type" = "bundle" ]; then
 
             printf 'Run "lit deploy --force" to redeploy\n'
 
-            echo "[$(get_human_timestamp)] Not deploying because same bundle version is already deployed (hash: ${new_bundle_hash:0:11})" >> "$project_base_path/logs/lit.log"
+            echo "[$(get_human_timestamp)] Not deploying because same bundle version is already deployed (hash: $new_bundle_hash)" >> "$project_base_path/logs/lit.log"
 
             exit 0
         fi
@@ -448,9 +464,10 @@ for old_release_directory in $(ls "$releases_directory" | sort --numeric-sort --
 done
 
 # Prune cached releases older than 7 days
-if [ -n "$lit_base_path" ] && [ -d "$lit_base_path/releases" ]; then
-    find "$lit_base_path/releases" -maxdepth 1 -type f -name "*.tar.zst" -mtime +7 -delete 2>/dev/null
-    find "$lit_base_path/releases" -maxdepth 1 -type f -name "*.tar.gz" -mtime +7 -delete 2>/dev/null
+if [ -n "$lit_base_path" ] && [ -d "$lit_base_path/cached-releases" ]; then
+    find "$lit_base_path/cached-releases" -maxdepth 1 -type f -name "*.tar" -mtime +7 -delete 2>/dev/null
+    find "$lit_base_path/cached-releases" -maxdepth 1 -type f -name "*.tar.zst" -mtime +7 -delete 2>/dev/null
+    find "$lit_base_path/cached-releases" -maxdepth 1 -type f -name "*.tar.gz" -mtime +7 -delete 2>/dev/null
 fi
 
 if [ ! -f "$lit_base_path/data/telemetry-enabled" ]; then

@@ -26,6 +26,9 @@ echo "APP_KEY=test" > "$project_path/.env"
 # Create caching-enabled file (should be deleted during bundle deploy)
 touch "$project_path/lit/caching-enabled"
 
+# Clear bundle cache to ensure we test the download path
+rm -f "$world_path/lit/cached-releases/"*.tar
+
 set +e
 output=$(lit deploy 2>&1)
 status_code=$?
@@ -72,6 +75,7 @@ assert_string_contains "$output" "Run \"lit deploy --force\" to redeploy" || exi
 assert_file_missing "$project_path/releases/2" || exit 1
 
 # Pull with --force should redeploy
+rm -f "$world_path/lit/cached-releases/"*.tar
 set +e
 output=$(lit deploy --force 2>&1)
 status_code=$?
@@ -89,6 +93,7 @@ assert_string_contains "$current_target" "releases/2" || exit 1
 mv "$project_path/releases/2" "$project_path/releases/9"
 ln -snf "$project_path/releases/9" "$project_path/current"
 
+rm -f "$world_path/lit/cached-releases/"*.tar
 set +e
 output=$(lit deploy --force 2>&1)
 status_code=$?
@@ -103,6 +108,7 @@ current_target=$(readlink "$project_path/current")
 assert_string_contains "$current_target" "releases/10" || exit 1
 
 # Another deploy to verify cleanup continues working
+rm -f "$world_path/lit/cached-releases/"*.tar
 set +e
 output=$(lit deploy --force 2>&1)
 status_code=$?

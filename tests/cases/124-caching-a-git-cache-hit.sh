@@ -29,7 +29,7 @@ assert_file_exists "$project_path/releases/1/cache-marker" || exit 1
 
 # Save the main branch cache marker value and cache file path
 main_cache_marker=$(cat "$project_path/releases/1/cache-marker")
-main_cache_file=$(find "$world_path/lit/releases" -name "*.tar.*" | head -1)
+main_cache_file=$(find "$world_path/lit/cached-releases" -name "*.tar.*" | head -1)
 
 # Checkout another-branch - should build and cache for that branch
 set +e
