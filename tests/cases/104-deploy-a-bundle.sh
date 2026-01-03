@@ -36,6 +36,8 @@ assert_same 0 "$status_code" || exit 1
 # This bundle URL has a .hash file, so it should use it for pre-checking
 assert_string_contains "$output" "Checking bundle version" || exit 1
 assert_string_not_contains "$output" "hash file does not exist" || exit 1
+assert_string_matches "$output" 'Checking bundle version.*\.hash"\.\.\. \(in [0-9]+\.[0-9]+ seconds\)' || exit 1
+assert_string_matches "$output" 'Downloading bundle.*\.tar\.zst"\.\.\. \(63K in [0-9]+\.[0-9]+ seconds\)' || exit 1
 
 # Caching-enabled file should be deleted during bundle deploy
 assert_file_missing "$project_path/lit/caching-enabled" || exit 1

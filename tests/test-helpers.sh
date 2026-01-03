@@ -136,6 +136,18 @@ assert_string_not_contains() {
     fi
 }
 
+assert_string_matches() {
+    local haystack="$1"
+    local pattern="$2"
+
+    if ! [[ "$haystack" =~ $pattern ]]; then
+        _assert_failed
+        printf 'Expected string to match pattern "%s"\n' "$pattern"
+
+        return 1
+    fi
+}
+
 is_macos() {
     [[ "$OSTYPE" == "darwin"* ]]
 }

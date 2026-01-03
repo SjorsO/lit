@@ -291,17 +291,19 @@ elif [ "$source_type" = "bundle" ]; then
         printf 'Checking bundle version from "%s"... ' "$bundle_hash_url"
 
         set +e
-        curl_output=$(curl --fail --silent --show-error --location "$bundle_hash_url" 2>&1)
+        curl_result=$(curl --fail --silent --show-error --location --write-out $'\n__CURL_TIME__:%{time_total}' "$bundle_hash_url" 2>&1)
         curl_exit_code=$?
         set -e
+
+        curl_output=$(echo "$curl_result" | grep -v '^__CURL_TIME__:')
+
+        printf '(in %s seconds)\n' "$(echo "$curl_result" | grep '^__CURL_TIME__:' | cut -d: -f2 | awk '{printf "%.2f", $1}')"
 
         if [ $curl_exit_code -eq 0 ]; then
             remote_bundle_hash_from_hash_file=$(echo "$curl_output" | tr -d '[:space:]')
 
-            printf '\n'
-
             if ! [[ "$remote_bundle_hash_from_hash_file" =~ ^[a-fA-F0-9]{40}$ ]]; then
-                printf 'Warning: "%s" does not contain a valid SHA1 hash"\n' "$bundle_hash_url"
+                printf 'Warning: "%s" does not contain a valid SHA1 hash\n' "$bundle_hash_url"
                 printf 'Hash file contents: %s\n' "$curl_output"
                 remote_bundle_hash_from_hash_file=""
             elif [ "$current_bundle_hash" = "$remote_bundle_hash_from_hash_file" ]; then
@@ -313,7 +315,7 @@ elif [ "$source_type" = "bundle" ]; then
                 exit 0
             fi
         else
-            printf '\nWarning: %s\n' "$curl_output"
+            printf 'Warning: %s\n' "$curl_output"
         fi
     fi
 
@@ -323,9 +325,15 @@ elif [ "$source_type" = "bundle" ]; then
 
     rm -f "$temp_bundle_path"
 
-    if ! curl --fail --silent --show-error --location "$bundle_url" -o "$temp_bundle_path"; then
+    set +e
+    curl_result=$(curl --fail --silent --show-error --location --write-out '%{time_total}' "$bundle_url" -o "$temp_bundle_path" 2>&1)
+    curl_exit_code=$?
+    set -e
+
+    if [ $curl_exit_code -ne 0 ]; then
         printf '\n'
         printf 'Failed to download bundle from "%s"\n' "$bundle_url"
+        printf '%s\n' "$curl_result"
 
         echo "[$(get_human_timestamp)] Failed to download bundle from \"$bundle_url\"" >> "$project_base_path/logs/lit.log"
 
@@ -334,13 +342,7 @@ elif [ "$source_type" = "bundle" ]; then
         exit 1
     fi
 
-    if is_macos; then
-        bundle_size_in_bytes=$(stat -f%z "$temp_bundle_path")
-    else
-        bundle_size_in_bytes=$(stat -c%s "$temp_bundle_path")
-    fi
-
-    printf '(%s MB)\n' "$((bundle_size_in_bytes / 1048576))"
+    printf '(%s in %s seconds)\n' "$(ls -lah "$temp_bundle_path" | awk '{print $5}')" "$(echo "$curl_result" | awk '{printf "%.2f", $1}')"
 
     new_bundle_hash="$(shasum "$temp_bundle_path" | cut -d' ' -f1)"
 
