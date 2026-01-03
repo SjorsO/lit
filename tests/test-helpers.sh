@@ -148,6 +148,54 @@ assert_string_matches() {
     fi
 }
 
+# Assert that consecutive lines in output start with the given prefixes (in order)
+# Usage: assert_lines_in_order "$output" "prefix1" "prefix2" "prefix3" ...
+assert_lines_in_order() {
+    local haystack="$1"
+    shift
+    local prefixes=("$@")
+
+    # Convert haystack to array of lines
+    local lines=()
+    while IFS= read -r line; do
+        lines+=("$line")
+    done <<< "$haystack"
+
+    # Find the first line that starts with the first prefix
+    local start_index=-1
+    for i in "${!lines[@]}"; do
+        if [[ "${lines[$i]}" == "${prefixes[0]}"* ]]; then
+            start_index=$i
+            break
+        fi
+    done
+
+    if [ "$start_index" -eq -1 ]; then
+        _assert_failed
+        printf 'Could not find line starting with "%s"\n' "${prefixes[0]}"
+        return 1
+    fi
+
+    # Check that consecutive lines start with the subsequent prefixes
+    for i in "${!prefixes[@]}"; do
+        local line_index=$((start_index + i))
+        local prefix="${prefixes[$i]}"
+
+        if [ $line_index -ge ${#lines[@]} ]; then
+            _assert_failed
+            printf 'Not enough lines in output for prefix "%s"\n' "$prefix"
+            return 1
+        fi
+
+        if [[ "${lines[$line_index]}" != "$prefix"* ]]; then
+            _assert_failed
+            printf 'Expected line %d to start with "%s"\n' "$((line_index + 1))" "$prefix"
+            printf 'Actual line: "%s"\n' "${lines[$line_index]}"
+            return 1
+        fi
+    done
+}
+
 is_macos() {
     [[ "$OSTYPE" == "darwin"* ]]
 }

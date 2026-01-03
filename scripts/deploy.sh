@@ -370,8 +370,11 @@ elif [ "$source_type" = "bundle" ]; then
 
         if [ ! -f "$lit_base_path/cached-releases/$new_bundle_hash.tar" ]; then
             printf 'Adding bundle to cache (%s)\n' "$lit_base_path/cached-releases/$new_bundle_hash.tar"
+
             cp "$temp_bundle_path" "$lit_base_path/cached-releases/$new_bundle_hash.tar"
         else
+            printf 'Bundle exists in cache, but using the downloaded bundle instead\n'
+
             touch "$lit_base_path/cached-releases/$new_bundle_hash.tar"
         fi
     fi
