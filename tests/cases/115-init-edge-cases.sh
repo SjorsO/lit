@@ -33,16 +33,6 @@ set -e
 assert_same 0 "$status_code" || exit 1
 assert_file_content "$world_path/case/empty-project/lit/source-type" "bundle" || exit 1
 
-# Test .tgz extension is recognized as bundle
-cd "$world_path/case"
-set +e
-output=$(lit init "https://example.com/releases/my-app.tgz" 2>&1)
-status_code=$?
-set -e
-
-assert_same 0 "$status_code" || exit 1
-assert_file_content "$world_path/case/my-app/lit/source-type" "bundle" || exit 1
-
 # Test .tar.zst extension is recognized as bundle and stripped properly
 cd "$world_path/case"
 set +e

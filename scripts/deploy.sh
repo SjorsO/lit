@@ -283,6 +283,43 @@ elif [ "$source_type" = "bundle" ]; then
     # confusion in the status command or in telemetry.
     rm -f "$project_base_path/lit/caching-enabled"
 
+    bundle_hash_url="${bundle_url}.hash"
+    remote_bundle_hash_from_hash_file=""
+
+    # To avoid downloading the full bundle, download just a file containing the bundle hash.
+    printf 'Checking bundle version from "%s"... ' "$bundle_hash_url"
+
+    set +e
+    curl_output=$(curl --fail --silent --show-error --location "$bundle_hash_url" 2>&1)
+    curl_exit_code=$?
+    set -e
+
+    if [ $curl_exit_code -eq 0 ]; then
+        remote_bundle_hash_from_hash_file=$(echo "$curl_output" | tr -d '[:space:]')
+
+        printf '\n'
+
+        if ! [[ "$remote_bundle_hash_from_hash_file" =~ ^[a-fA-F0-9]{40}$ ]]; then
+            printf 'Warning: "%s" does not contain a valid SHA1 hash"\n' "$bundle_hash_url"
+            printf 'Hash file contents: %s\n' "$curl_output"
+            remote_bundle_hash_from_hash_file=""
+        elif [ "$current_bundle_hash" = "$remote_bundle_hash_from_hash_file" ]; then
+            printf 'Bundle is already deployed (hash: %s)\n' "${remote_bundle_hash_from_hash_file:0:11}"
+
+            if [ "$is_forcing" = true ]; then
+                printf 'Using "--force", redeploying...\n'
+            else
+                printf 'Run "lit deploy --force" to redeploy\n'
+
+                echo "[$(get_human_timestamp)] Not deploying because same bundle version is already deployed (hash: ${remote_bundle_hash_from_hash_file:0:11})" >> "$project_base_path/logs/lit.log"
+
+                exit 0
+            fi
+        fi
+    else
+        printf '\nWarning: %s\n' "$curl_output"
+    fi
+
     printf 'Downloading bundle from "%s"... ' "$bundle_url"
 
     temp_bundle_path="$project_base_path/lit/bundle-for-current-deployment.tar"
@@ -309,6 +346,10 @@ elif [ "$source_type" = "bundle" ]; then
     printf '(%s MB)\n' "$((bundle_size_in_bytes / 1048576))"
 
     new_bundle_hash="$(shasum "$temp_bundle_path" | cut -d' ' -f1)"
+
+    if [ -n "$remote_bundle_hash_from_hash_file" ] && [ "$remote_bundle_hash_from_hash_file" != "$new_bundle_hash" ]; then
+        printf 'Warning: the hash from "%s" does not match the actual hash from "%s"\n' "$bundle_hash_url" "$bundle_url"
+    fi
 
     if [ "$current_bundle_hash" = "$new_bundle_hash" ]; then
         printf 'Bundle is already deployed (hash: %s)\n' "${new_bundle_hash:0:11}"

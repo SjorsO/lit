@@ -33,6 +33,10 @@ set -e
 
 assert_same 0 "$status_code" || exit 1
 
+# This bundle URL has a .hash file, so it should use it for pre-checking
+assert_string_contains "$output" "Checking bundle version" || exit 1
+assert_string_not_contains "$output" "hash file does not exist" || exit 1
+
 # Caching-enabled file should be deleted during bundle deploy
 assert_file_missing "$project_path/lit/caching-enabled" || exit 1
 
@@ -118,4 +122,5 @@ set -e
 assert_same 0 "$status_code" || exit 1
 assert_string_contains "$output" "Deploying from: bundle" || exit 1
 assert_string_contains "$output" "Bundle URL: https://watchtower-static.fsn1.your-objectstorage.com/bundle-for-lit-tests.tar.zst" || exit 1
+assert_string_contains "$output" "Bundle hash URL: https://watchtower-static.fsn1.your-objectstorage.com/bundle-for-lit-tests.tar.zst.hash" || exit 1
 assert_string_contains "$output" "Current bundle hash:" || exit 1

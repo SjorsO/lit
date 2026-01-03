@@ -35,6 +35,7 @@ elif [ "$source_type" = "bundle" ]; then
     done <<EOF
      Deploying from: bundle
          Bundle URL: $bundle_url
+    Bundle hash URL: ${bundle_url}.hash
 Current bundle hash: $current_bundle_hash
 EOF
 fi

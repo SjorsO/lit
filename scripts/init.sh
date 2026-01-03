@@ -37,7 +37,7 @@ if [ -n "$custom_project_name" ]; then
 elif [ "$source_type" = "git" ]; then
     project_name=$(basename "$source_url" .git)
 else
-    project_name=$(basename "$source_url" | sed -E 's/\.(tar\.(gz|zst)|tgz)$//')
+    project_name=$(basename "$source_url" | sed -E 's/\.tar(\.(gz|zst))?$//')
 fi
 
 project_path="$base_path/$project_name"
