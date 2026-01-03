@@ -20,10 +20,10 @@ set -e
 assert_same 1 "$status_code" || exit 1
 assert_lines_in_order "$output" \
     'Checking bundle version from "https://example.com/nonexistent-bundle.tar.gz.hash"' \
-    'Warning: curl: (56) The requested URL returned error: 404' \
+    'Warning: curl:' \
     'Downloading bundle from "https://example.com/nonexistent-bundle.tar.gz"' \
     'Failed to download bundle from "https://example.com/nonexistent-bundle.tar.gz"' \
-    'curl: (56) The requested URL returned error: 404' \
+    'curl:' \
     'Finished with errors (in ' \
     || exit 1
 

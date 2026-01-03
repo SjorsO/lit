@@ -46,15 +46,6 @@ fi
 release_directory_created=false
 was_released=false
 
-if [ "$source_type" = "git" ]; then
-    git_repository_url="$(get_file_value "$project_base_path/lit/git-repository-url")"
-    current_branch="$(get_file_value "$project_base_path/lit/current-branch")"
-    current_commit="$(get_file_value "$project_base_path/lit/current-commit")"
-elif [ "$source_type" = "bundle" ]; then
-    bundle_url="$(get_file_value "$project_base_path/lit/bundle-url")"
-    current_bundle_hash="$(get_file_value "$project_base_path/lit/current-bundle-hash")"
-fi
-
 on_exit() {
     script_status_code=$?
 
@@ -126,13 +117,15 @@ current_release_id=$(ls "$releases_directory" | sort --numeric-sort | tail -n1) 
 new_release_directory="$releases_directory/$((current_release_id + 1))"
 
 if [ "$source_type" = "git" ]; then
+    git_repository_url="$(get_file_value "$project_base_path/lit/git-repository-url")"
+    current_branch="$(get_file_value "$project_base_path/lit/current-branch")"
+    current_commit="$(get_file_value "$project_base_path/lit/current-commit")"
+
     # If we are deploying after a "lit checkout", then we already have the commit.
     if [[ -z "$current_remote_commit" ]]; then
         printf 'Reading branch "%s" of "%s"... ' "$current_branch" "$git_repository_url"
 
-        remote_branch_info=$(git ls-remote --symref "$git_repository_url" "$current_branch")
-
-        current_remote_commit=$(echo "$remote_branch_info" | grep -v "ref: refs/heads/" | cut -f1)
+        current_remote_commit=$(git ls-remote --symref "$git_repository_url" "$current_branch" | grep -v "ref: refs/heads/" | cut -f1)
 
         printf '\n'
     fi
@@ -276,6 +269,9 @@ if [ "$source_type" = "git" ]; then
         current_commit="$(git rev-parse HEAD)"
     fi
 elif [ "$source_type" = "bundle" ]; then
+    bundle_url="$(get_file_value "$project_base_path/lit/bundle-url")"
+    current_bundle_hash="$(get_file_value "$project_base_path/lit/current-bundle-hash")"
+
     caching_enabled=false
     used_cache=false
 
