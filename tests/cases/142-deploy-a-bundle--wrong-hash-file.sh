@@ -22,30 +22,31 @@ assert_same 0 "$status_code" || exit 1
 assert_string_contains "$output" "Checking bundle version" || exit 1
 assert_string_contains "$output" "Warning: the hash from" || exit 1
 assert_string_contains "$output" "does not match the actual hash" || exit 1
+assert_string_contains "$output" 'Warning: actual bundle hash "08f40c79ea2ee1f4d392e28b42672dacd3af923f", hash from hash file "1234567890000000000000000000000000000000"' || exit 1
 assert_string_contains "$output" "Downloading bundle" || exit 1
 assert_directory_exists "$project_path/releases/1" || exit 1
 
 # The stored hash should be the ACTUAL bundle hash, not the wrong hash from the .hash file
 assert_file_content "$project_path/lit/current-bundle-hash" "08f40c79ea2ee1f4d392e28b42672dacd3af923f" || exit 1
 
-# Second deploy - should still download (because .hash is wrong) but not deploy (because actual hash matches)
+# Second deploy - should download (wrong hash means no cache hit) but not deploy (because actual hash matches)
 set +e
 output=$(lit deploy 2>&1)
 status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
+assert_string_contains "$output" "Downloading bundle" || exit 1
 assert_string_contains "$output" "Warning: the hash from" || exit 1
 assert_string_contains "$output" "Bundle is already deployed" || exit 1
 assert_file_missing "$project_path/releases/2" || exit 1
 
-# Force deploy - skips hash check entirely
+# Force deploy - still checks hash file (for cache) but doesn't skip if already deployed
 set +e
 output=$(lit deploy --force 2>&1)
 status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_string_not_contains "$output" "Checking bundle version" || exit 1
-assert_string_contains "$output" "Downloading bundle" || exit 1
+assert_string_contains "$output" "Checking bundle version" || exit 1
 assert_directory_exists "$project_path/releases/2" || exit 1

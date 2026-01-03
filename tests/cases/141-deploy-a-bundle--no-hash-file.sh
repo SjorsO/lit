@@ -35,13 +35,12 @@ assert_string_contains "$output" "Warning:" || exit 1
 assert_string_contains "$output" "Bundle is already deployed" || exit 1
 assert_file_missing "$project_path/releases/2" || exit 1
 
-# Force deploy - skips hash check entirely
+# Force deploy - still checks hash file (for cache) but doesn't skip if already deployed
 set +e
 output=$(lit deploy --force 2>&1)
 status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_string_not_contains "$output" "Checking bundle version" || exit 1
-assert_string_contains "$output" "Downloading bundle" || exit 1
+assert_string_contains "$output" "Checking bundle version" || exit 1
 assert_directory_exists "$project_path/releases/2" || exit 1

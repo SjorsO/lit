@@ -288,43 +288,47 @@ elif [ "$source_type" = "bundle" ]; then
 
     mkdir -p "$lit_base_path/cached-releases"
 
-    if [ "$is_forcing" = false ]; then
-        # To avoid downloading the full bundle, download just a file containing the bundle hash.
-        printf 'Checking bundle version from "%s"... ' "$bundle_hash_url"
+    # To avoid downloading the full bundle, download just a file containing the bundle hash.
+    printf 'Checking bundle version from "%s"... ' "$bundle_hash_url"
 
-        set +e
-        curl_result=$(curl --fail --silent --show-error --location --write-out $'\n__CURL_TIME__:%{time_total}' "$bundle_hash_url" 2>&1)
-        curl_exit_code=$?
-        set -e
+    set +e
+    curl_result=$(curl --fail --silent --show-error --location --write-out $'\n__CURL_TIME__:%{time_total}' "$bundle_hash_url" 2>&1)
+    curl_exit_code=$?
+    set -e
 
-        curl_output=$(echo "$curl_result" | grep -v '^__CURL_TIME__:')
+    curl_output=$(echo "$curl_result" | grep -v '^__CURL_TIME__:')
 
-        printf '(in %s seconds)\n' "$(echo "$curl_result" | grep '^__CURL_TIME__:' | cut -d: -f2 | awk '{printf "%.2f", $1}')"
+    printf '(in %s seconds)\n' "$(echo "$curl_result" | grep '^__CURL_TIME__:' | cut -d: -f2 | awk '{printf "%.2f", $1}')"
 
-        if [ $curl_exit_code -eq 0 ]; then
-            remote_bundle_hash_from_hash_file=$(echo "$curl_output" | tr -d '[:space:]')
+    if [ $curl_exit_code -eq 0 ]; then
+        remote_bundle_hash_from_hash_file=$(echo "$curl_output" | tr -d '[:space:]')
 
-            if ! [[ "$remote_bundle_hash_from_hash_file" =~ ^[a-fA-F0-9]{40}$ ]]; then
-                printf 'Warning: "%s" does not contain a valid SHA1 hash\n' "$bundle_hash_url"
-                printf 'Hash file contents: %s\n' "$curl_output"
-                remote_bundle_hash_from_hash_file=""
-            elif [ "$current_bundle_hash" = "$remote_bundle_hash_from_hash_file" ]; then
-                printf 'Bundle is already deployed (hash: %s)\n' "$remote_bundle_hash_from_hash_file"
-                printf 'Run "lit deploy --force" to redeploy\n'
+        if ! [[ "$remote_bundle_hash_from_hash_file" =~ ^[a-fA-F0-9]{40}$ ]]; then
+            printf 'Warning: "%s" does not contain a valid SHA1 hash\n' "$bundle_hash_url"
+            printf 'Hash file contents: %s\n' "$curl_output"
+            remote_bundle_hash_from_hash_file=""
+        elif [ "$is_forcing" = false ] && [ "$current_bundle_hash" = "$remote_bundle_hash_from_hash_file" ]; then
+            printf 'Bundle is already deployed (hash: %s)\n' "$remote_bundle_hash_from_hash_file"
+            printf 'Run "lit deploy --force" to redeploy\n'
 
-                echo "[$(get_human_timestamp)] Not deploying because same bundle version is already deployed (hash: $remote_bundle_hash_from_hash_file)" >> "$project_base_path/logs/lit.log"
+            echo "[$(get_human_timestamp)] Not deploying because same bundle version is already deployed (hash: $remote_bundle_hash_from_hash_file)" >> "$project_base_path/logs/lit.log"
 
-                exit 0
-            fi
-        else
-            printf 'Warning: %s\n' "$curl_output"
+            exit 0
         fi
+    else
+        printf 'Warning: %s\n' "$curl_output"
     fi
 
     temp_bundle_path="$project_base_path/lit/bundle-for-current-deployment.tar"
-    cached_bundle_path="$lit_base_path/cached-releases/$remote_bundle_hash_from_hash_file.tar"
 
-    if [ -n "$remote_bundle_hash_from_hash_file" ] && [ -f "$cached_bundle_path" ]; then
+    # Try to find bundle in cache by .hash file hash
+    cached_bundle_path=""
+
+    if [ -n "$remote_bundle_hash_from_hash_file" ] && [ -f "$lit_base_path/cached-releases/$remote_bundle_hash_from_hash_file.tar" ]; then
+        cached_bundle_path="$lit_base_path/cached-releases/$remote_bundle_hash_from_hash_file.tar"
+    fi
+
+    if [ -n "$cached_bundle_path" ]; then
         printf 'Using cached bundle (hash: %s)\n' "$remote_bundle_hash_from_hash_file"
 
         cp "$cached_bundle_path" "$temp_bundle_path"
@@ -361,9 +365,15 @@ elif [ "$source_type" = "bundle" ]; then
 
         if [ -n "$remote_bundle_hash_from_hash_file" ] && [ "$remote_bundle_hash_from_hash_file" != "$new_bundle_hash" ]; then
             printf 'Warning: the hash from "%s" does not match the actual hash from "%s"\n' "$bundle_hash_url" "$bundle_url"
+            printf 'Warning: actual bundle hash "%s", hash from hash file "%s"\n' "$new_bundle_hash" "$remote_bundle_hash_from_hash_file"
         fi
 
-        cp "$temp_bundle_path" "$lit_base_path/cached-releases/$new_bundle_hash.tar"
+        if [ ! -f "$lit_base_path/cached-releases/$new_bundle_hash.tar" ]; then
+            printf 'Adding bundle to cache (%s)\n' "$lit_base_path/cached-releases/$new_bundle_hash.tar"
+            cp "$temp_bundle_path" "$lit_base_path/cached-releases/$new_bundle_hash.tar"
+        else
+            touch "$lit_base_path/cached-releases/$new_bundle_hash.tar"
+        fi
     fi
 
     if [ "$current_bundle_hash" = "$new_bundle_hash" ]; then

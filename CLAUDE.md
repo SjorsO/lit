@@ -27,3 +27,4 @@ After you run a specific test, created files you can do assertions on are in `te
 - Log important events to `$project_base_path/logs/lit.log` with timestamp: `echo "[$(get_human_timestamp)] Message" >> "$project_base_path/logs/lit.log"`
 - When writing new tests, don't run them automatically, I'll do that manually.
 - You should never run "lit.sh deploy" or anything like that to check output. Run a unit test instead and read the "lit-output.log".
+- Print only the first 11 chars of git commits, but print all 40 chars of sha1 hashes
