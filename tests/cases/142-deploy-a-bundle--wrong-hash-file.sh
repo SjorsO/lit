@@ -39,12 +39,13 @@ assert_string_contains "$output" "Warning: the hash from" || exit 1
 assert_string_contains "$output" "Bundle is already deployed" || exit 1
 assert_file_missing "$project_path/releases/2" || exit 1
 
-# Force deploy - should redeploy even when hash matches
+# Force deploy - skips hash check entirely
 set +e
 output=$(lit deploy --force 2>&1)
 status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_string_contains "$output" 'Using "--force", redeploying' || exit 1
+assert_string_not_contains "$output" "Checking bundle version" || exit 1
+assert_string_contains "$output" "Downloading bundle" || exit 1
 assert_directory_exists "$project_path/releases/2" || exit 1

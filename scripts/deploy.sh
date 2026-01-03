@@ -286,38 +286,35 @@ elif [ "$source_type" = "bundle" ]; then
     bundle_hash_url="${bundle_url}.hash"
     remote_bundle_hash_from_hash_file=""
 
-    # To avoid downloading the full bundle, download just a file containing the bundle hash.
-    printf 'Checking bundle version from "%s"... ' "$bundle_hash_url"
+    if [ "$is_forcing" = false ]; then
+        # To avoid downloading the full bundle, download just a file containing the bundle hash.
+        printf 'Checking bundle version from "%s"... ' "$bundle_hash_url"
 
-    set +e
-    curl_output=$(curl --fail --silent --show-error --location "$bundle_hash_url" 2>&1)
-    curl_exit_code=$?
-    set -e
+        set +e
+        curl_output=$(curl --fail --silent --show-error --location "$bundle_hash_url" 2>&1)
+        curl_exit_code=$?
+        set -e
 
-    if [ $curl_exit_code -eq 0 ]; then
-        remote_bundle_hash_from_hash_file=$(echo "$curl_output" | tr -d '[:space:]')
+        if [ $curl_exit_code -eq 0 ]; then
+            remote_bundle_hash_from_hash_file=$(echo "$curl_output" | tr -d '[:space:]')
 
-        printf '\n'
+            printf '\n'
 
-        if ! [[ "$remote_bundle_hash_from_hash_file" =~ ^[a-fA-F0-9]{40}$ ]]; then
-            printf 'Warning: "%s" does not contain a valid SHA1 hash"\n' "$bundle_hash_url"
-            printf 'Hash file contents: %s\n' "$curl_output"
-            remote_bundle_hash_from_hash_file=""
-        elif [ "$current_bundle_hash" = "$remote_bundle_hash_from_hash_file" ]; then
-            printf 'Bundle is already deployed (hash: %s)\n' "${remote_bundle_hash_from_hash_file:0:11}"
-
-            if [ "$is_forcing" = true ]; then
-                printf 'Using "--force", redeploying...\n'
-            else
+            if ! [[ "$remote_bundle_hash_from_hash_file" =~ ^[a-fA-F0-9]{40}$ ]]; then
+                printf 'Warning: "%s" does not contain a valid SHA1 hash"\n' "$bundle_hash_url"
+                printf 'Hash file contents: %s\n' "$curl_output"
+                remote_bundle_hash_from_hash_file=""
+            elif [ "$current_bundle_hash" = "$remote_bundle_hash_from_hash_file" ]; then
+                printf 'Bundle is already deployed (hash: %s)\n' "${remote_bundle_hash_from_hash_file:0:11}"
                 printf 'Run "lit deploy --force" to redeploy\n'
 
                 echo "[$(get_human_timestamp)] Not deploying because same bundle version is already deployed (hash: ${remote_bundle_hash_from_hash_file:0:11})" >> "$project_base_path/logs/lit.log"
 
                 exit 0
             fi
+        else
+            printf '\nWarning: %s\n' "$curl_output"
         fi
-    else
-        printf '\nWarning: %s\n' "$curl_output"
     fi
 
     printf 'Downloading bundle from "%s"... ' "$bundle_url"
