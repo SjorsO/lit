@@ -161,11 +161,9 @@ if [ "$source_type" = "git" ]; then
 
         tar_file_path=""
 
-        if [ -f "$lit_base_path/cached-releases/$current_remote_commit-$before_caching_hook_hash.tar.zst" ]; then
-            tar_file_path="$lit_base_path/cached-releases/$current_remote_commit-$before_caching_hook_hash.tar.zst"
-        elif [ -f "$lit_base_path/cached-releases/$current_remote_commit-$before_caching_hook_hash.tar.gz" ]; then
-            tar_file_path="$lit_base_path/cached-releases/$current_remote_commit-$before_caching_hook_hash.tar.gz"
-        elif ls "$lit_base_path/cached-releases/$current_remote_commit-"* >/dev/null 2>&1; then
+        if [ -f "$lit_base_path/cached-releases/$current_remote_commit-$before_caching_hook_hash.tar" ]; then
+            tar_file_path="$lit_base_path/cached-releases/$current_remote_commit-$before_caching_hook_hash.tar"
+        elif ls "$lit_base_path/cached-releases/$current_remote_commit-"*.tar >/dev/null 2>&1; then
             printf 'Cached release found but hook changed, rebuilding...\n'
         fi
 
@@ -205,12 +203,10 @@ if [ "$source_type" = "git" ]; then
             fi
 
             staging_directory_path="$lit_base_path/cached-releases/$current_commit-$before_caching_hook_hash"
+            tar_file_path="$staging_directory_path.tar"
 
-            if [ -d "$staging_directory_path" ]; then
-                rm -rf "$staging_directory_path"
-                rm -f "$staging_directory_path.tar.zst"
-                rm -f "$staging_directory_path.tar.gz"
-            fi
+            rm -rf "$staging_directory_path"
+            rm -f "$tar_file_path"
 
             mv "$temp_directory_path" "$staging_directory_path"
 
@@ -219,15 +215,11 @@ if [ "$source_type" = "git" ]; then
             if command -v zstd >/dev/null 2>&1; then
                 printf 'Caching release... '
 
-                tar --use-compress-program "zstd -T0 -3" -cf "$staging_directory_path.tar.zst" "$(basename "$staging_directory_path")"
-
-                tar_file_path="$staging_directory_path.tar.zst"
+                tar --use-compress-program "zstd -T0 -3" -cf "$tar_file_path" "$(basename "$staging_directory_path")"
             else
                 printf 'Caching release... (tip: install "zstd" for faster caching)'
 
-                tar -czf "$staging_directory_path.tar.gz" "$(basename "$staging_directory_path")"
-
-                tar_file_path="$staging_directory_path.tar.gz"
+                tar -czf "$tar_file_path" "$(basename "$staging_directory_path")"
             fi
 
             rm -rf "$staging_directory_path"
@@ -475,8 +467,6 @@ done
 # Prune cached releases older than 7 days
 if [ -n "$lit_base_path" ] && [ -d "$lit_base_path/cached-releases" ]; then
     find "$lit_base_path/cached-releases" -maxdepth 1 -type f -name "*.tar" -mtime +7 -delete 2>/dev/null
-    find "$lit_base_path/cached-releases" -maxdepth 1 -type f -name "*.tar.zst" -mtime +7 -delete 2>/dev/null
-    find "$lit_base_path/cached-releases" -maxdepth 1 -type f -name "*.tar.gz" -mtime +7 -delete 2>/dev/null
 fi
 
 if [ ! -f "$lit_base_path/data/telemetry-enabled" ]; then

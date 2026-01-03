@@ -17,29 +17,29 @@ echo '# no-op' > "$project_path/hooks/before-caching.sh"
 
 # Create fake old cached releases (8 days old)
 mkdir -p "$world_path/lit/cached-releases"
-touch "$world_path/lit/cached-releases/old-cache-abc123.tar.zst"
-touch "$world_path/lit/cached-releases/old-cache-def456.tar.gz"
+touch "$world_path/lit/cached-releases/old-cache-abc123.tar"
+touch "$world_path/lit/cached-releases/old-cache-def456.tar"
 touch "$world_path/lit/cached-releases/old-cache-bundle789.tar"
 
 # Set modification time to 8 days ago
 if is_macos; then
-    touch -t "$(date -v-8d '+%Y%m%d%H%M')" "$world_path/lit/cached-releases/old-cache-abc123.tar.zst"
-    touch -t "$(date -v-8d '+%Y%m%d%H%M')" "$world_path/lit/cached-releases/old-cache-def456.tar.gz"
+    touch -t "$(date -v-8d '+%Y%m%d%H%M')" "$world_path/lit/cached-releases/old-cache-abc123.tar"
+    touch -t "$(date -v-8d '+%Y%m%d%H%M')" "$world_path/lit/cached-releases/old-cache-def456.tar"
     touch -t "$(date -v-8d '+%Y%m%d%H%M')" "$world_path/lit/cached-releases/old-cache-bundle789.tar"
 else
-    touch -d "8 days ago" "$world_path/lit/cached-releases/old-cache-abc123.tar.zst"
-    touch -d "8 days ago" "$world_path/lit/cached-releases/old-cache-def456.tar.gz"
+    touch -d "8 days ago" "$world_path/lit/cached-releases/old-cache-abc123.tar"
+    touch -d "8 days ago" "$world_path/lit/cached-releases/old-cache-def456.tar"
     touch -d "8 days ago" "$world_path/lit/cached-releases/old-cache-bundle789.tar"
 fi
 
 # Create a recent cached release (should NOT be deleted)
-touch "$world_path/lit/cached-releases/recent-cache-ghi789.tar.zst"
+touch "$world_path/lit/cached-releases/recent-cache-ghi789.tar"
 
 # Verify all files exist before deploy
-assert_file_exists "$world_path/lit/cached-releases/old-cache-abc123.tar.zst" || exit 1
-assert_file_exists "$world_path/lit/cached-releases/old-cache-def456.tar.gz" || exit 1
+assert_file_exists "$world_path/lit/cached-releases/old-cache-abc123.tar" || exit 1
+assert_file_exists "$world_path/lit/cached-releases/old-cache-def456.tar" || exit 1
 assert_file_exists "$world_path/lit/cached-releases/old-cache-bundle789.tar" || exit 1
-assert_file_exists "$world_path/lit/cached-releases/recent-cache-ghi789.tar.zst" || exit 1
+assert_file_exists "$world_path/lit/cached-releases/recent-cache-ghi789.tar" || exit 1
 
 # Deploy (this should prune old cached releases)
 set +e
@@ -50,13 +50,13 @@ set -e
 assert_same 0 "$status_code" || exit 1
 
 # Old cached releases should be deleted
-assert_file_missing "$world_path/lit/cached-releases/old-cache-abc123.tar.zst" || exit 1
-assert_file_missing "$world_path/lit/cached-releases/old-cache-def456.tar.gz" || exit 1
+assert_file_missing "$world_path/lit/cached-releases/old-cache-abc123.tar" || exit 1
+assert_file_missing "$world_path/lit/cached-releases/old-cache-def456.tar" || exit 1
 assert_file_missing "$world_path/lit/cached-releases/old-cache-bundle789.tar" || exit 1
 
 # Recent cached release should still exist
-assert_file_exists "$world_path/lit/cached-releases/recent-cache-ghi789.tar.zst" || exit 1
+assert_file_exists "$world_path/lit/cached-releases/recent-cache-ghi789.tar" || exit 1
 
 # The actual cache created by this deploy should also exist
-cache_count=$(find "$world_path/lit/cached-releases" -name "*.tar.*" | wc -l)
+cache_count=$(find "$world_path/lit/cached-releases" -name "*.tar" | wc -l)
 assert_same 2 "$(echo "$cache_count" | tr -d ' ')" || exit 1
