@@ -29,7 +29,15 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_string_contains "$output" 'Reading branch "main" of "https://github.com/SjorsO/lit.git"' || exit 1
+assert_lines_in_order "$output" \
+    'Reading branch "main" of "https://github.com/SjorsO/lit.git"' \
+    "Creating \"$project_path/releases/1\" for the new release" \
+    'Cloning repository' \
+    'Creating a symlink to the storage directory' \
+    'Creating a symlink to the .env file' \
+    "Releasing the new deployment \"$project_path/releases/1\"" \
+    'Finished successfully' \
+    || exit 1
 
 # Assert hooks ran with $1 (project_base_directory)
 assert_file_exists "$project_path/before-release-ran" || exit 1
@@ -56,8 +64,12 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_string_contains "$output" "is already deployed" || exit 1
-assert_string_contains "$output" "Run \"lit deploy --force\" to redeploy" || exit 1
+assert_lines_in_order "$output" \
+    'Reading branch "main" of "https://github.com/SjorsO/lit.git"' \
+    'Latest commit of "main" is already deployed' \
+    'Run "lit deploy --force" to redeploy' \
+    'Finished successfully' \
+    || exit 1
 assert_file_missing "$project_path/releases/2" || exit 1
 
 # Pull with --force should redeploy
@@ -67,6 +79,17 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
+assert_lines_in_order "$output" \
+    'Reading branch "main" of "https://github.com/SjorsO/lit.git"' \
+    'Latest commit of "main" is already deployed' \
+    'Using "--force", redeploying...' \
+    "Creating \"$project_path/releases/2\" for the new release" \
+    'Cloning repository' \
+    'Creating a symlink to the storage directory' \
+    'Creating a symlink to the .env file' \
+    "Releasing the new deployment \"$project_path/releases/2\"" \
+    'Finished successfully' \
+    || exit 1
 assert_directory_exists "$project_path/releases/2" || exit 1
 assert_symlink "$project_path/current" || exit 1
 

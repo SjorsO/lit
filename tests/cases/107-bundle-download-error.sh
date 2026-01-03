@@ -18,15 +18,20 @@ set -e
 
 # Deploy should fail
 assert_same 1 "$status_code" || exit 1
+assert_lines_in_order "$output" \
+    'Checking bundle version from "https://example.com/nonexistent-bundle.tar.gz.hash"' \
+    'Warning: curl: (56) The requested URL returned error: 404' \
+    'Downloading bundle from "https://example.com/nonexistent-bundle.tar.gz"' \
+    'Failed to download bundle from "https://example.com/nonexistent-bundle.tar.gz"' \
+    'curl: (56) The requested URL returned error: 404' \
+    'Finished with errors (in ' \
+    || exit 1
 
 # No release should be created
 assert_file_missing "$project_path/releases/1" || exit 1
 
 # Current symlink should not exist
 assert_file_missing "$project_path/current" || exit 1
-
-# Output should mention download failure
-assert_string_contains "$output" "Failed to download bundle" || exit 1
 
 # Log should contain the download failure
 log_content=$(cat "$project_path/logs/lit.log")

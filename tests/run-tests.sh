@@ -35,13 +35,16 @@ case_files=()
 max_name_length=0
 
 shopt -s nullglob
-for case_file in "$tests_base_path/cases/${case_filter}"*.sh; do
-    case_files+=("$case_file")
-    case_name=$(basename "$case_file")
 
+for case_file in "$tests_base_path/cases/"*.sh; do
+    case_name=$(basename "$case_file")
     if [ ${#case_name} -gt "$max_name_length" ]; then
         max_name_length=${#case_name}
     fi
+done
+
+for case_file in "$tests_base_path/cases/${case_filter}"*.sh; do
+    case_files+=("$case_file")
 done
 
 if [ ${#case_files[@]} -eq 0 ]; then

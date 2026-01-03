@@ -343,14 +343,14 @@ elif [ "$source_type" = "bundle" ]; then
         rm -f "$temp_bundle_path"
 
         set +e
-        curl_result=$(curl --fail --silent --show-error --location --write-out '%{time_total}' "$bundle_url" -o "$temp_bundle_path" 2>&1)
+        curl_result=$(curl --fail --silent --show-error --location --write-out $'\n__CURL_TIME__:%{time_total}' "$bundle_url" -o "$temp_bundle_path" 2>&1)
         curl_exit_code=$?
         set -e
 
         if [ $curl_exit_code -ne 0 ]; then
             printf '\n'
             printf 'Failed to download bundle from "%s"\n' "$bundle_url"
-            printf '%s\n' "$curl_result"
+            printf '%s\n' "$(echo "$curl_result" | grep -v '^__CURL_TIME__:')"
 
             echo "[$(get_human_timestamp)] Failed to download bundle from \"$bundle_url\"" >> "$project_base_path/logs/lit.log"
 
@@ -359,7 +359,7 @@ elif [ "$source_type" = "bundle" ]; then
             exit 1
         fi
 
-        printf '(%s in %s seconds)\n' "$(ls -lah "$temp_bundle_path" | awk '{print $5}')" "$(echo "$curl_result" | awk '{printf "%.2f", $1}')"
+        printf '(%s in %s seconds)\n' "$(ls -lah "$temp_bundle_path" | awk '{print $5}')" "$(echo "$curl_result" | grep '^__CURL_TIME__:' | cut -d: -f2 | awk '{printf "%.2f", $1}')"
 
         new_bundle_hash="$(shasum "$temp_bundle_path" | cut -d' ' -f1)"
 
