@@ -20,3 +20,15 @@ lit() {
 
 # shellcheck disable=SC1090
 source "$case_file"
+
+# If we're inside of a directory that has been deleted, then this error happens.
+# This should never happen, so assert this after every test.
+for log_file in "$world_path"/case/*/logs/lit-output.log; do
+    if [ -f "$log_file" ]; then
+        if grep -q "shell-init\|getcwd" "$log_file"; then
+            printf 'Error: Found shell-init or getcwd error in %s\n' "$log_file"
+            grep "shell-init\|getcwd" "$log_file"
+            exit 1
+        fi
+    fi
+done

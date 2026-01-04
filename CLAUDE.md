@@ -7,12 +7,16 @@ Users either run it manually on the server or trigger it remotely via an SSH ses
 
 ## Running Tests
 ```bash
-bash tests/run-tests.sh        # Run all tests
-bash tests/run-tests.sh 103    # Run a specific test case
+bash tests/run-tests.sh              # Run all tests sequentially
+bash tests/run-tests.sh 103          # Run a specific test case
+bash tests/run-tests-in-parallel.sh  # Run all tests in parallel
 ```
 
-The test runner automatically resets the `tests/world` directory before each test - no manual cleanup needed.
+The sequential test runner automatically resets the `tests/world` directory before each test - no manual cleanup needed.
 After you run a specific test, created files you can do assertions on are in `tests/world`.
+
+The parallel test runner creates `tests/worlds/` with a separate world per test (`worlds/world-104/`, etc.).
+After running, all log files are collected into `worlds/_lit-logs/` and `worlds/_lit-output-logs/` for inspection.
 
 ## Notes
 - Always verify that path variables are where we expect them to be (by checking if files/directories that we expect there actually exist, for example). Never take the risk of doing something in the wrong directory.
@@ -28,3 +32,5 @@ After you run a specific test, created files you can do assertions on are in `te
 - When writing new tests, don't run them automatically, I'll do that manually.
 - You should never run "lit.sh deploy" or anything like that to check output. Run a unit test instead and read the "lit-output.log".
 - Print only the first 11 chars of git commits, but print all 40 chars of sha1 hashes
+- All test cases need a unique 3 digit prefix
+- In `deploy.sh`, hooks have to be called using `cat "$path_to_script" | bash -se -- "$var1" "$var2"`, this has been proven to work reliably.
