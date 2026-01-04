@@ -33,4 +33,4 @@ After running, all log files are collected into `worlds/_lit-logs/` and `worlds/
 - You should never run "lit.sh deploy" or anything like that to check output. Run a unit test instead and read the "lit-output.log".
 - Print only the first 11 chars of git commits, but print all 40 chars of sha1 hashes
 - All test cases need a unique 3 digit prefix
-- In `deploy.sh`, hooks have to be called using `cat "$path_to_script" | bash -se -- "$var1" "$var2"`, this has been proven to work reliably.
+- In `deploy.sh`, hooks have to be called using `cat "$path_to_script" | bash -se -- "$var1" "$var2"`, this has been proven to work reliably. (and the -e ensures they fail properly)

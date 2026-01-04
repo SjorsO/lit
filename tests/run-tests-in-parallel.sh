@@ -2,6 +2,12 @@
 
 set -e
 
+if [ $# -gt 0 ]; then
+    printf 'The parallel test runner does not support arguments\n'
+
+    exit 1
+fi
+
 tests_base_path="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 
 if [ ! -f "$tests_base_path/run-tests-in-parallel.sh" ]; then
