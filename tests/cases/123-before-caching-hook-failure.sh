@@ -27,9 +27,9 @@ assert_same 1 "$status_code" || exit 1
 # No release should be created
 assert_file_missing "$project_path/releases/1" || exit 1
 
-# Log should contain failure message
+# Log should contain failure message in single-line format
 log_content=$(cat "$project_path/logs/lit.log")
-assert_string_contains "$log_content" "Deploy failed" || exit 1
+assert_string_contains "$log_content" "lit deploy → failed" || exit 1
 
 # on-failure hook should have been called
 echo 'touch "$1/on-failure-ran"' > "$project_path/hooks/on-failure.sh"

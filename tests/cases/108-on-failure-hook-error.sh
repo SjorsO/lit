@@ -29,9 +29,9 @@ assert_string_contains "$output" "The on-failure hook failed" || exit 1
 # Output should still show "Finished with errors"
 assert_string_contains "$output" "Finished with errors" || exit 1
 
-# Log should contain the on-failure hook failure
+# Log should contain the failure (on-failure hook failure is shown in stdout, not lit.log)
 log_content=$(cat "$project_path/logs/lit.log")
-assert_string_contains "$log_content" "The on-failure hook failed" || exit 1
+assert_string_contains "$log_content" "lit deploy → failed" || exit 1
 
 # Output should NOT contain getcwd error (would happen if we're still in deleted directory)
 assert_string_not_contains "$output" "cannot access parent directories" || exit 1

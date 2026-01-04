@@ -10,6 +10,8 @@ if [ "$3" = "--use-commit-from-checkout" ]; then
 elif [ -n "$4" ] || ([ -n "$3" ] && [ "$3" != "--force" ]); then
     printf 'usage: lit deploy [--force]\n'
 
+    echo "failed (invalid usage)" > "$project_base_path/lit/log-result"
+
     exit 1
 fi
 
@@ -19,8 +21,11 @@ source "$lit_base_path/scripts/helpers.sh"
 
 source_type="$(get_file_value "$project_base_path/lit/source-type")"
 
+# This should never happen unless the file is manually edited.
 if [ "$source_type" != "git" ] && [ "$source_type" != "bundle" ]; then
     printf 'Invalid source type: "%s"\n' "$source_type"
+
+    echo "failed (invalid source type)" > "$project_base_path/lit/log-result"
 
     exit 1
 fi
@@ -38,7 +43,7 @@ if [[ ! -s "$real_env_file_path" ]]; then
 
     printf 'Your ".env" file is empty, try again when you have filled it in\n'
 
-    echo "[$(get_human_timestamp)] Did not deploy because the \".env\" file is empty" >> "$project_base_path/logs/lit.log"
+    echo 'aborted, the ".env" file is empty' > "$project_base_path/lit/log-result"
 
     exit 1
 fi
@@ -66,18 +71,24 @@ on_exit() {
         rm -rf "$staging_directory_path"
     fi
 
-    if [[ "$was_released" == true ]] && [ "$source_type" = "git" ]; then
-        echo "[$(get_human_timestamp)] Deployed branch \"$current_branch\" (commit: ${current_commit:0:11})" >> "$project_base_path/logs/lit.log"
-    elif [[ "$was_released" == true ]] && [ "$source_type" = "bundle" ]; then
-        echo "[$(get_human_timestamp)] Deployed bundle (hash: $new_bundle_hash)" >> "$project_base_path/logs/lit.log"
-    elif [[ "$release_directory_created" == true ]]; then
-        echo "[$(get_human_timestamp)] Warning: Had errors, new deployment was not released" >> "$project_base_path/logs/lit.log"
-    elif [[ "$script_status_code" -ne 0 ]] && [[ "$was_released" == false ]]; then
-        echo "[$(get_human_timestamp)] Deploy failed, new deployment was not released" >> "$project_base_path/logs/lit.log"
+    if [ ! -f "$project_base_path/lit/log-result" ]; then
+        if [[ "$was_released" == true ]] && [[ "$script_status_code" -ne 0 ]] && [ "$source_type" = "git" ]; then
+            echo "had errors, still deployed branch \"$current_branch\" (commit: ${current_commit:0:11})" > "$project_base_path/lit/log-result"
+        elif [[ "$was_released" == true ]] && [[ "$script_status_code" -ne 0 ]] && [ "$source_type" = "bundle" ]; then
+            echo "had errors, still deployed bundle (hash: $new_bundle_hash)" > "$project_base_path/lit/log-result"
+        elif [[ "$was_released" == true ]] && [ "$source_type" = "git" ]; then
+            echo "deployed branch \"$current_branch\" (commit: ${current_commit:0:11})" > "$project_base_path/lit/log-result"
+        elif [[ "$was_released" == true ]] && [ "$source_type" = "bundle" ]; then
+            echo "deployed bundle (hash: $new_bundle_hash)" > "$project_base_path/lit/log-result"
+        elif [[ "$release_directory_created" == true ]]; then
+            echo "failed, deployment was not released" > "$project_base_path/lit/log-result"
+        elif [[ "$script_status_code" -ne 0 ]] && [[ "$was_released" == false ]]; then
+            echo "failed" > "$project_base_path/lit/log-result"
+        fi
     fi
 
     if [[ "$was_released" == true ]] && [[ "$script_status_code" -ne 0 ]]; then
-        echo "[$(get_human_timestamp)] Warning: Had errors, but new deployment was still released" >> "$project_base_path/logs/lit.log"
+        # echo "[$(get_human_timestamp)] Warning: Had errors, but new deployment was still released" >> "$project_base_path/logs/lit.log"
 
         printf '>\n'
         printf '> Warning: The new deployment was still released!\n'
@@ -88,7 +99,8 @@ on_exit() {
         if [ -f "$project_base_path/hooks/on-failure.sh" ]; then
             if ! cat "$project_base_path/hooks/on-failure.sh" | bash -se -- "$project_base_path" "$was_released"; then
                 printf 'The on-failure hook failed\n'
-                echo "[$(get_human_timestamp)] The on-failure hook failed" >> "$project_base_path/logs/lit.log"
+
+                # echo "[$(get_human_timestamp)] The on-failure hook failed" >> "$project_base_path/logs/lit.log"
             fi
         else
             printf 'Wanted to run "%s/hooks/on-failure.sh" but it does not exist\n' "$project_base_path"
@@ -104,6 +116,8 @@ trap on_exit EXIT TERM
 for release_directory_path in "$releases_directory/"*/ ; do
     if [[ -e "$release_directory_path" ]] && ! [[ $release_directory_path =~ /[0-9]+/$ ]] ; then
        printf 'The name of existing release directory "%s" is not fully numeric, this should never happen\n' "$release_directory_path"
+
+       echo "failed, a release directory has an invalid name" > "$project_base_path/lit/log-result"
 
        exit 1
     fi
@@ -138,7 +152,7 @@ if [ "$source_type" = "git" ]; then
         else
             printf 'Run "lit deploy --force" to redeploy\n'
 
-            echo "[$(get_human_timestamp)] Not deploying because latest commit of \"$current_branch\" is already deployed (${current_remote_commit:0:11})" >> "$project_base_path/logs/lit.log"
+            echo "aborted, this commit is already deployed" > "$project_base_path/lit/log-result"
 
             exit 0
         fi
@@ -299,7 +313,7 @@ elif [ "$source_type" = "bundle" ]; then
             printf 'Bundle is already deployed (hash: %s)\n' "$remote_bundle_hash_from_hash_file"
             printf 'Run "lit deploy --force" to redeploy\n'
 
-            echo "[$(get_human_timestamp)] Not deploying because same bundle version is already deployed (hash: $remote_bundle_hash_from_hash_file)" >> "$project_base_path/logs/lit.log"
+            echo "aborted, same bundle is already deployed" > "$project_base_path/lit/log-result"
 
             exit 0
         fi
@@ -340,7 +354,7 @@ elif [ "$source_type" = "bundle" ]; then
             printf 'Failed to download bundle from "%s"\n' "$bundle_url"
             printf '%s\n' "$(echo "$curl_result" | grep -v '^__CURL_TIME__:')"
 
-            echo "[$(get_human_timestamp)] Failed to download bundle from \"$bundle_url\"" >> "$project_base_path/logs/lit.log"
+            echo "failed to download bundle" > "$project_base_path/lit/log-result"
 
             rm -f "$temp_bundle_path"
 
@@ -377,7 +391,7 @@ elif [ "$source_type" = "bundle" ]; then
 
             printf 'Run "lit deploy --force" to redeploy\n'
 
-            echo "[$(get_human_timestamp)] Not deploying because same bundle version is already deployed (hash: $new_bundle_hash)" >> "$project_base_path/logs/lit.log"
+            echo "aborted, same bundle is already deployed" > "$project_base_path/lit/log-result"
 
             exit 0
         fi

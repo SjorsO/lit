@@ -12,8 +12,8 @@ output=$(lit unknowncommand 2>&1)
 status_code=$?
 set -e
 
-# Should exit 0 and show help (not an error)
-assert_same 0 "$status_code" || exit 1
+# Should exit 1 and show help
+assert_same 1 "$status_code" || exit 1
 assert_string_contains "$output" "usage: lit <command>" || exit 1
 
 # No command at all should also show help
@@ -22,5 +22,5 @@ output=$(lit 2>&1)
 status_code=$?
 set -e
 
-assert_same 0 "$status_code" || exit 1
+assert_same 1 "$status_code" || exit 1
 assert_string_contains "$output" "usage: lit <command>" || exit 1

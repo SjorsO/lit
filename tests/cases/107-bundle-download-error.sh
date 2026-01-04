@@ -33,9 +33,9 @@ assert_file_missing "$project_path/releases/1" || exit 1
 # Current symlink should not exist
 assert_file_missing "$project_path/current" || exit 1
 
-# Log should contain the download failure
+# Log should contain the download failure in single-line format
 log_content=$(cat "$project_path/logs/lit.log")
-assert_string_contains "$log_content" "Failed to download bundle" || exit 1
+assert_string_contains "$log_content" "lit deploy → failed to download bundle" || exit 1
 
 # on-failure hook should have been called with was_released=false
 assert_file_exists "$project_path/on-failure-called" || exit 1

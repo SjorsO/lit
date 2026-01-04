@@ -52,8 +52,7 @@ elif [ "$command" = "help" ]; then
     exit 0
 fi
 
-# Lit's installation directory is also called "lit", but that isn't actually a lit directory. So check
-# if it doesn't contain "lit.sh" too.
+# Lit's installation directory is also called "lit", but that isn't actually a lit directory.
 if [ ! -d "$project_base_path/lit" ] || [ -f "$project_base_path/lit/lit.sh" ]; then
     printf 'This is not a Lit directory\n'
 
@@ -66,10 +65,7 @@ if [ ! -d "$project_base_path/logs" ]; then
     mkdir -p "$project_base_path/logs"
 fi
 
-echo "[$(get_human_timestamp)] lit $*" >> "$project_base_path/logs/lit.log"
-echo "[$(get_human_timestamp)] lit $*" >> "$project_base_path/logs/lit-output.log"
-
-# Don't log "git log" to "lit-output.log"
+# Don't log "lit log", silently pass it through to git
 if [ "$command" = "log" ]; then
     if [ ! -d "$project_base_path/current/.git" ]; then
         printf 'No git repository found in the current release\n'
@@ -82,23 +78,26 @@ if [ "$command" = "log" ]; then
     exit 0
 fi
 
-# Run flush-opcache before the lock so it can run during a deploy
-if [ "$command" = "flush-opcache" ]; then
-    # If we call "flush-opcache" during a deployment, then logging is already set up. If we call this
-    # logging code twice then we log everything twice.
-    if [ ! -d "$project_base_path/lit/lit-is-currently-running" ]; then
-        exec > >(tee -a "$project_base_path/logs/lit-output.log") 2>&1
-    fi
+lock_directory_path="$project_base_path/lit/lit-is-currently-running"
 
+# Allow running "lit flush-opcache" from inside a "lit deploy" without it logging to "lit.log"
+if [ "$command" = "flush-opcache" ] && [ "$__lit_allow_flush_opcache_without_lock" = "true" ]; then
     bash "$lit_base_path/scripts/flush-opcache.sh" "$project_base_path"
 
     exit $?
 fi
 
+start_time=$(date +%s)
+
+acquire_lit_log_lock
+echo "[$(get_human_timestamp)] lit $* (pending:$$)" >> "$project_base_path/logs/lit.log"
+release_lit_log_lock
+
+echo "[$(get_human_timestamp)] lit $*" >> "$project_base_path/logs/lit-output.log"
+
 # Write all output to both stdout and a log file
 exec > >(tee -a "$project_base_path/logs/lit-output.log") 2>&1
 
-lock_directory_path="$project_base_path/lit/lit-is-currently-running"
 has_created_lock_directory=false
 
 on_exit() {
@@ -107,6 +106,16 @@ on_exit() {
     if [[ "$has_created_lock_directory" == true ]]; then
         rmdir "$lock_directory_path"
     fi
+
+    log_result=""
+
+    if [ -f "$project_base_path/lit/log-result" ]; then
+        log_result=$(cat "$project_base_path/lit/log-result")
+
+        rm -f "$project_base_path/lit/log-result"
+    fi
+
+    replace_log_placeholder "$$" "$log_result" "$(($(date +%s) - start_time))"
 
     echo "[$(get_human_timestamp)] Finished" >> "$project_base_path/logs/lit-output.log"
 
@@ -119,7 +128,7 @@ if [ -d "$lock_directory_path" ]; then
     printf 'If this is wrong, manually run:\n'
     printf '    rmdir "%s"\n' "$lock_directory_path"
 
-    echo "[$(get_human_timestamp)] Aborted because another Lit command is currently running" >> "$project_base_path/logs/lit.log"
+    replace_log_placeholder "$$" "aborted, another lit command is currently running" "$(($(date +%s) - start_time))"
 
     exit 1
 fi
@@ -129,16 +138,18 @@ mkdir "$lock_directory_path"
 
 has_created_lock_directory=true
 
-# This version number is automatically incremented with a git pre-commit hook.
-echo "21" > "$lit_base_path/data/lit-version"
+# A git pre-commit hook automatically increments this version number.
+echo "22" > "$lit_base_path/data/lit-version"
 
 if [ -f "$lit_base_path/data/telemetry-enabled" ] && [ ! -s "$lit_base_path/data/telemetry-salt" ]; then
     uuidgen | tr '[:upper:]' '[:lower:]' > "$lit_base_path/data/telemetry-salt"
 fi
 
 if [ "$command" = "deploy" ]; then
+    export __lit_allow_flush_opcache_without_lock="true"
     bash "$lit_base_path/scripts/deploy.sh" "$lit_base_path" "$project_base_path" "$2" "$3"
 elif [ "$command" = "checkout" ]; then
+    export __lit_allow_flush_opcache_without_lock="true"
     bash "$lit_base_path/scripts/checkout.sh" "$lit_base_path" "$project_base_path" "$2" "$3"
 elif [ "$command" = "status" ]; then
     bash "$lit_base_path/scripts/status.sh" "$lit_base_path" "$project_base_path"
@@ -150,6 +161,12 @@ elif [ "$command" = "enable-telemetry" ]; then
     bash "$lit_base_path/scripts/enable-telemetry.sh" "$lit_base_path" "$project_base_path"
 elif [ "$command" = "disable-telemetry" ]; then
     bash "$lit_base_path/scripts/disable-telemetry.sh" "$lit_base_path" "$project_base_path"
+elif [ "$command" = "flush-opcache" ]; then
+    bash "$lit_base_path/scripts/flush-opcache.sh" "$project_base_path"
 else
+    echo "failed (unknown command)" > "$project_base_path/lit/log-result"
+
     cat "$lit_base_path/help.txt"
+
+    exit 1
 fi

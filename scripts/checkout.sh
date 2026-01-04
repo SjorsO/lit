@@ -9,6 +9,8 @@ new_branch="$3"
 if [ -z "$new_branch" ] || [ -n "$4" ]; then
     printf 'usage: lit checkout <branch>\n'
 
+    echo "failed (invalid usage)" > "$project_base_path/lit/log-result"
+
     exit 1
 fi
 
@@ -19,6 +21,8 @@ source_type="$(get_file_value "$project_base_path/lit/source-type")"
 if [ "$source_type" != "git" ]; then
     printf 'Cannot change branches because you are not deploying from git\n'
 
+    echo "failed (not a git project)" > "$project_base_path/lit/log-result"
+
     exit 1
 fi
 
@@ -27,6 +31,8 @@ current_branch="$(get_file_value "$project_base_path/lit/current-branch")"
 
 if [ "$current_branch" = "$new_branch" ]; then
     printf 'Current branch is already "%s"\n' "$new_branch"
+
+    echo "aborted, already on this branch" > "$project_base_path/lit/log-result"
 
     exit 1
 fi
@@ -39,6 +45,8 @@ printf '\n'
 
 if [ -z "$remote_branch_info" ]; then
     printf 'Branch "%s" does not exist on remote\n' "$new_branch"
+
+    echo "failed (branch does not exist)" > "$project_base_path/lit/log-result"
 
     exit 1
 fi
