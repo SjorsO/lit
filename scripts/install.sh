@@ -157,8 +157,6 @@ echo "├───────────────────────�
 echo ""
 echo "  All done, you're ready to use Lit."
 echo ""
-echo "  Enjoying Lit? Consider giving a star: https://github.com/SjorsO/lit"
-echo ""
 echo "╰────────────────────────────────────────────────────────────────────────╯"
 echo ""
 

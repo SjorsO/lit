@@ -11,9 +11,17 @@ Lit provides:
 - Detailed logs: know exactly which commit was deployed and when
 
 ## Install
-Here's how to install Lit on your server:
+Use git to install lit:
 ```
 git clone --quiet https://github.com/SjorsO/lit.git && source lit/lit.sh
+```
+Or, install from a release:
+```
+mkdir lit \
+  && curl --silent --output lit/lit.tar --location https://github.com/SjorsO/lit/releases/download/latest/lit.tar.gz \
+  && (cd lit && tar --extract --file lit.tar) \
+  && rm lit/lit.tar \
+  && source lit/lit.sh
 ```
 
 ## Usage
