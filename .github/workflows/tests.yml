@@ -5,22 +5,22 @@ on:
     branches: [main]
 
 jobs:
-#  Tests:
-#    runs-on: ${{ matrix.os }}
-#
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        os: [ubuntu-latest, macos-latest]
-#
-#    steps:
-#      - uses: actions/checkout@v4
-#
-#      - name: Run tests
-#        run: bash tests/run-tests-in-parallel.sh
+  Tests:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run tests
+        run: bash tests/run-tests-in-parallel.sh
 
   Release:
-    # needs: Tests
+    needs: Tests
     runs-on: ubuntu-latest
     permissions:
       contents: write
