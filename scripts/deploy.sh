@@ -54,12 +54,12 @@ was_released=false
 on_exit() {
     script_status_code=$?
 
+    cd "$project_base_path"
+
     if [[ "$release_directory_created" == true && "$was_released" == false ]]; then
         printf 'Deleting new but unreleased release directory "%s"\n' "$new_release_directory"
 
         rm -rf "$new_release_directory"
-
-        cd "$project_base_path"
     fi
 
     # Clean up temp directories from cache building if they still exist
@@ -88,8 +88,6 @@ on_exit() {
     fi
 
     if [[ "$was_released" == true ]] && [[ "$script_status_code" -ne 0 ]]; then
-        # echo "[$(get_human_timestamp)] Warning: Had errors, but new deployment was still released" >> "$project_base_path/logs/lit.log"
-
         printf '>\n'
         printf '> Warning: The new deployment was still released!\n'
         printf '>\n'
@@ -99,8 +97,6 @@ on_exit() {
         if [ -f "$project_base_path/hooks/on-failure.sh" ]; then
             if ! cat "$project_base_path/hooks/on-failure.sh" | bash -se -- "$project_base_path" "$was_released"; then
                 printf 'The on-failure hook failed\n'
-
-                # echo "[$(get_human_timestamp)] The on-failure hook failed" >> "$project_base_path/logs/lit.log"
             fi
         else
             printf 'Wanted to run "%s/hooks/on-failure.sh" but it does not exist\n' "$project_base_path"
@@ -211,7 +207,9 @@ if [ "$source_type" = "git" ]; then
             if [ -n "$before_caching_hook_path" ]; then
                 printf 'Running "%s/hooks/before-caching.sh"...\n' "$(basename "$project_base_path")"
 
-                bash "$before_caching_hook_path" "$temp_directory_path" "$project_base_path" "$lit_base_path"
+                hook_entry_directory=$(pwd)
+                cat "$before_caching_hook_path" | bash -se -- "$temp_directory_path" "$project_base_path" "$lit_base_path"
+                cd "$hook_entry_directory" || exit 1
             else
                 printf 'Wanted to run "%s/hooks/before-caching.sh" but it does not exist\n' "$project_base_path"
             fi
