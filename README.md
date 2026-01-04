@@ -3,19 +3,19 @@
 </p>
 
 # Lit
-Lit is a CLI for zero-downtime Laravel deployments.
+Lit is a CLI for deploying Laravel.
 
-Lit provides:
-- Automated deployments: deploy your whole project by just running `lit deploy`
-- Zero downtime: safely deploy and always keep your app online
-- Detailed logs: know exactly which commit was deployed and when
+Key features:
+- Fully automated zero-downtime deployments by running `lit deploy`
+- Configurable hooks for custom deployment logic
+- Detailed logs with exact deployment history
 
 ## Install
-Use git to install lit:
+Install lit with git:
 ```
 git clone --quiet https://github.com/SjorsO/lit.git && source lit/lit.sh
 ```
-Or, install from a release:
+Or, install the latest release:
 ```
 mkdir lit \
   && curl --silent --output lit/lit.tar --location https://github.com/SjorsO/lit/releases/download/latest/lit.tar.gz \
@@ -25,10 +25,22 @@ mkdir lit \
 ```
 
 ## Usage
-- `lit init <url> [name]` initializes a new Lit directory from a git repository or bundle URL
+For git deployments:
+- `lit init <git repository url> [name]` initializes a new Lit directory
 - `lit deploy` deploys the current branch
-- `lit checkout <branch>` switches and deploys another branch
-- `lit log` runs `git log` for the current release
+- `lit checkout <branch>` switches to a different branch and deploys it
+- `lit log` forwards to `git log` for the current release
+
+For bundle deployments:
+- `lit init <bundle download url> [name]` initializes a new Lit directory
+- `lit deploy` downloads the bundle from the URL and deploys it
+
+Other commands:
+- `lit flush-opcache` flush PHP-FPM OPCache by calling `opcache_reset()` via an HTTP request
+- `lit enable-caching` enables git release caching
+- `lit disable-caching` disables git release caching
+- `lit enable-telemetry` enables anonymous telemetry
+- `lit disable-telemetry` disables telemetry
 
 ## Getting started
 To deploy a Laravel project with Lit, run `lit init <url>`, and follow the on-screen instructions.
@@ -36,6 +48,9 @@ To deploy a Laravel project with Lit, run `lit init <url>`, and follow the on-sc
 After setting up a Lit directory, you can customize the deployment by editing the `hooks/before-release.sh` and `hooks/after-release.sh` hooks.
 
 When everything is configured, deploy the latest commit of your current branch by running `lit deploy`.
+
+## Migrating an existing project
+TODO:
 
 ## Zero downtime deployments
 Lit deployments are zero downtime, just like deployments done by Laravel Forge, Laravel Envoyer, and Deployer.
@@ -110,9 +125,7 @@ mkdir /home/{user}/www/{project}/logs/old
 Then add a logrotate configuration file at `/etc/logrotate.d/lit-log-rotation`:
 ```
 /home/{user}/www/{project}/logs/*.log {
-    monthly
-    minsize 5M
-    maxsize 10M
+    size 10M
     rotate 4
     compress
     delaycompress
