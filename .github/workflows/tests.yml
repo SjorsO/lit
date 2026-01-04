@@ -31,7 +31,7 @@ jobs:
           tar --create --gzip \
             --exclude="tests/*" \
             --exclude="CLAUDE.md" \
-            --exclude="LICENSE.md" \            
+            --exclude="LICENSE.md" \
             --file ~/lit.tar.gz *
 
       - name: Create release
