@@ -1,6 +1,6 @@
 .claude/
 data/
 logs/
-releases/
+cached-releases/
 tests/world/
 tests/worlds/

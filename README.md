@@ -52,6 +52,44 @@ When everything is configured, deploy the latest commit of your current branch b
 ## Migrating an existing project
 TODO:
 
+## Deploying a bundle
+Lit can download and deploy pre-built bundles.
+
+You can automate bundle creation in CI/CD.
+Below is a GitHub Actions snippet that makes a bundle and uploads it to a public Hetzner Object Storage bucket.
+```
+- name: Install dependencies
+  run: |
+    composer install --no-interaction --no-progress --optimize-autoloader --no-dev
+    npm ci
+    npm run build    
+
+- name: Make bundle
+  run: |
+    tar --create --use-compress-program "zstd -T0 -3" \
+      --exclude="bootstrap/cache/*" \
+      --exclude="node_modules" \
+      --exclude="public/storage" \
+      --exclude="storage" \
+      --exclude="tests" \
+      --file "/tmp/bundle.tar" *
+
+- name: Upload bundle
+  env:
+    AWS_ACCESS_KEY_ID: ${{ secrets.HETZNER_S3_ACCESS_KEY }}
+    AWS_SECRET_ACCESS_KEY: ${{ secrets.HETZNER_S3_SECRET_KEY }}
+    AWS_DEFAULT_REGION: "fsn1"
+  run: |
+    sha1sum "/tmp/bundle.tar" | awk '{print $1}' > "/tmp/bundle.tar.hash"
+    aws --endpoint-url "https://fsn1.your-objectstorage.com" s3 cp "/tmp/bundle.tar" "s3://bucket-name/your-bundle.tar"
+    aws --endpoint-url "https://fsn1.your-objectstorage.com" s3 cp "/tmp/bundle.tar.hash" "s3://bucket-name/your-bundle.tar.hash"
+```
+
+Once your bundle is available in the bucket, set up a lit project like this:
+```
+lit init https://bucket-name.fsn1.your-objectstorage.com/your-bundle.tar
+```
+
 ## Zero downtime deployments
 Lit deployments are zero downtime, just like deployments done by Laravel Forge, Laravel Envoyer, and Deployer.
 
