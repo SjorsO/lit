@@ -30,7 +30,7 @@ if [ "$source_type" != "git" ] && [ "$source_type" != "bundle" ]; then
     exit 1
 fi
 
-started_at=$(date +%s)
+started_at=$(current_time_in_ms)
 
 releases_directory="$project_base_path/releases"
 current_directory_path="$project_base_path/current"
@@ -103,7 +103,9 @@ on_exit() {
         fi
     fi
 
-    printf 'Finished %s (in %s seconds)\n' "$([ "$script_status_code" -ne 0 ] && echo "with errors" || echo "successfully")" "$(( $(date +%s) - started_at ))"
+    runtime_in_ms=$(( $(current_time_in_ms) - started_at ))
+
+    printf 'Finished %s (in %d.%ds)\n' "$([ "$script_status_code" -ne 0 ] && echo "with errors" || echo "successfully")" "$((runtime_in_ms / 1000))" "$((runtime_in_ms % 1000 / 100))"
 
     exit "$script_status_code"
 }

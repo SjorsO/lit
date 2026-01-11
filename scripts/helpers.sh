@@ -5,6 +5,18 @@ get_file_value() {
     sed -e 's/^[[:space:]]*//; s/[[:space:]]*$//' < "$1"
 }
 
+current_time_in_ms() {
+  if is_macos; then
+    if command -v php &> /dev/null; then
+      php -r 'echo intdiv(hrtime(true), 1000000), PHP_EOL;'
+    else
+      perl -MTime::HiRes=time -e 'printf "%d\n", time * 1000'
+    fi
+  else
+    date +%s%3N
+  fi
+}
+
 get_human_timestamp() {
     echo "$(date '+%Y-%m-%d %H:%M:%S')"
 }
