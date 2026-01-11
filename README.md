@@ -7,15 +7,16 @@ Lit is a CLI for deploying Laravel.
 
 Key features:
 - Fully automated zero-downtime deployments by running `lit deploy`
-- Configurable hooks for custom deployment logic
-- Detailed logs with exact deployment history
+- Deploy by pulling a git repository or by downloading a prepared bundle
+- Hooks for custom deployment logic
+- Logs with detailed deployment history
 
 ## Install
-Install lit with git:
+Install Lit with git:
 ```
 git clone --quiet https://github.com/SjorsO/lit.git && source lit/lit.sh
 ```
-Or, install the latest release:
+Or, install from a bundle:
 ```
 mkdir lit \
   && curl --silent --output lit/lit.tar --location https://github.com/SjorsO/lit/releases/download/latest/lit.tar.gz \
@@ -27,13 +28,13 @@ mkdir lit \
 ## Usage
 For git deployments:
 - `lit init <git repository url> [name]` initializes a new Lit directory
-- `lit deploy` deploys the current branch
+- `lit deploy` runs `git pull` and deploys the current branch
 - `lit checkout <branch>` switches to a different branch and deploys it
 - `lit log` forwards to `git log` for the current release
 
 For bundle deployments:
 - `lit init <bundle download url> [name]` initializes a new Lit directory
-- `lit deploy` downloads the bundle from the URL and deploys it
+- `lit deploy` downloads the bundle and deploys it
 
 Other commands:
 - `lit flush-opcache` flush PHP-FPM OPCache by calling `opcache_reset()` via an HTTP request
@@ -44,13 +45,32 @@ Other commands:
 
 ## Getting started
 To deploy a Laravel project with Lit, run `lit init <url>`, and follow the on-screen instructions.
-
-After setting up a Lit directory, you can customize the deployment by editing the `hooks/before-release.sh` and `hooks/after-release.sh` hooks.
-
-When everything is configured, deploy the latest commit of your current branch by running `lit deploy`.
+You'll be asked to fill in your .env file, and to review and update the `hooks/before-release.sh` and `hooks/after-release.sh` hooks.
+When you're done, run `lit deploy` to deploy your project.
 
 ## Migrating an existing project
-TODO:
+Follow these steps to migrate an existing project to Lit:
+```
+# Put your application maintenance mode
+cd old-project && php artisan down && cd ..
+
+# Create a new Lit project
+lit init <url> "lit-project"
+
+# Copy over your .env file
+cd lit-project
+rm .env
+cp old-project/.env .env
+
+# Copy your storage directory
+rm -rf storage
+cp -r old-project/storage storage
+
+# Run your first Lit deployment
+lit deploy
+
+# Edit your cron and queue workers to point to "/lit-project/current/artisan"
+```
 
 ## Deploying a bundle
 Lit can download and deploy pre-built bundles.
