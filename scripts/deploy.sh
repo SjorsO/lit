@@ -409,7 +409,8 @@ elif [ "$source_type" = "bundle" ]; then
 
     printf 'Extracting bundle... '
 
-    tar --extract --file "$new_release_directory/lit-bundle.tar"
+    # The "--warning" flag prevents warnings when the bundle was made on MacOS but extracted on Linux.
+    tar --extract --warning=no-unknown-keyword --file "$new_release_directory/lit-bundle.tar"
 
     rm -f "$new_release_directory/lit-bundle.tar"
 
