@@ -7,7 +7,7 @@ project_base_path="$2"
 
 source "$lit_base_path/scripts/helpers.sh"
 
-source_type="$(get_file_value "$project_base_path/lit/source-type")"
+source_type="$(get_source_type "$project_base_path")"
 
 lines=()
 

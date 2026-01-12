@@ -13,7 +13,6 @@ assert_directory_exists "$project_path/hooks" || exit 1
 assert_directory_exists "$project_path/releases" || exit 1
 
 # Assert lit config files have correct content
-assert_file_content "$project_path/lit/source-type" "git" || exit 1
 assert_file_content "$project_path/lit/git-repository-url" "https://github.com/SjorsO/lit.git" || exit 1
 assert_file_content "$project_path/lit/current-branch" "main" || exit 1
 assert_file_content "$project_path/lit/current-commit" "not deployed yet" || exit 1

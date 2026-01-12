@@ -1,5 +1,17 @@
 #!/bin/bash
 
+get_source_type() {
+    local project_path="$1"
+
+    if [ -f "$project_path/lit/git-repository-url" ]; then
+        echo "git"
+    elif [ -f "$project_path/lit/bundle-url" ]; then
+        echo "bundle"
+    else
+        echo ""
+    fi
+}
+
 get_file_value() {
     # Remove new lines and trim whitespace
     sed -e 's/^[[:space:]]*//; s/[[:space:]]*$//' < "$1"

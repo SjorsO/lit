@@ -62,8 +62,6 @@ fi
 mkdir -p "$project_path"
 mkdir -p "$project_path/lit"
 
-echo "$source_type" > "$project_path/lit/source-type"
-
 if [ "$source_type" = "git" ]; then
     echo "$source_url" > "$project_path/lit/git-repository-url"
     echo "$default_branch" > "$project_path/lit/current-branch"

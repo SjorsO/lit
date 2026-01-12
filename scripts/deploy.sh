@@ -19,9 +19,9 @@ is_forcing=$([ "$3" = "--force" ] && echo true || echo false)
 
 source "$lit_base_path/scripts/helpers.sh"
 
-source_type="$(get_file_value "$project_base_path/lit/source-type")"
+source_type="$(get_source_type "$project_base_path")"
 
-# This should never happen unless the file is manually edited.
+# This should never happen unless files were manually tampered with.
 if [ "$source_type" != "git" ] && [ "$source_type" != "bundle" ]; then
     printf 'Invalid source type: "%s"\n' "$source_type"
 

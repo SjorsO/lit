@@ -19,8 +19,8 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_file_exists "$world_path/case/this-does-not-exist/lit/source-type" || exit 1
-assert_file_content "$world_path/case/this-does-not-exist/lit/source-type" "bundle" || exit 1
+assert_file_exists "$world_path/case/this-does-not-exist/lit/bundle-url" || exit 1
+assert_file_content "$world_path/case/this-does-not-exist/lit/bundle-url" "https://example.com/this-does-not-exist.tar.gz" || exit 1
 
 # Invalid custom project names should be rejected
 set +e
@@ -55,7 +55,7 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_file_exists "$world_path/case/my-valid_project.name123/lit/source-type" || exit 1
+assert_file_exists "$world_path/case/my-valid_project.name123/lit/bundle-url" || exit 1
 
 # Too many arguments should fail
 set +e

@@ -13,7 +13,6 @@ assert_directory_exists "$project_path/hooks" || exit 1
 assert_directory_exists "$project_path/releases" || exit 1
 
 # Assert lit config files have correct content
-assert_file_content "$project_path/lit/source-type" "bundle" || exit 1
 assert_file_content "$project_path/lit/bundle-url" "https://example.com/releases/my-app.tar.gz" || exit 1
 assert_file_content "$project_path/lit/current-bundle-hash" "not deployed yet" || exit 1
 
