@@ -30,7 +30,7 @@ After running, all log files are collected into `worlds/_lit-logs/` and `worlds/
 - Prefer explicit variable names over positional parameters in complex scripts
 - Log important events to `$project_base_path/logs/lit.log` with timestamp: `echo "[$(get_human_timestamp)] Message" >> "$project_base_path/logs/lit.log"`
 - When writing new tests, don't run them automatically, I'll do that manually.
-- You should never run "lit.sh deploy" or anything like that to check output. Run a unit test instead and read the "lit-output.log".
+- Claude should never run "lit.sh deploy" or any other Lit command. Run a unit test instead and read the "lit-output.log".
 - Print only the first 11 chars of git commits, but print all 40 chars of sha1 hashes
 - All test cases need a unique 3 digit prefix
 - In `deploy.sh`, hooks have to be called using `cat "$path_to_script" | bash -se -- "$var1" "$var2"`, this has been proven to work reliably. (and the -e ensures they fail properly)

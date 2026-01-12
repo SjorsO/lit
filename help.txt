@@ -11,11 +11,11 @@
 │                                                                              │
 │ Other commands:                                                              │
 │                                                                              │
-│   flush-opcache        Flush PHP-FPM OPCache                                 │
-│   enable-caching       Enable git release caching                            │
-│   disable-caching      Disable git release caching                           │
-│   enable-telemetry     Enable anonymous telemetry                            │
-│   disable-telemetry    Disable telemetry                                     │
+│   flush-opcache                  Flush PHP-FPM OPCache                       │
+│   enable-git-release-caching     For faster deployments of the same commit   │
+│   disable-git-release-caching    Disable git release caching                 │
+│   enable-telemetry               Send anonymous telemetry after a deployment │
+│   disable-telemetry              Disable telemetry                           │
 │                                                                              │
 │ For more info, visit: https://github.com/SjorsO/lit                          │
 ╰──────────────────────────────────────────────────────────────────────────────╯

@@ -15,13 +15,13 @@ if [ "$source_type" != "git" ]; then
     exit 1
 fi
 
-if [ -f "$project_base_path/lit/caching-enabled" ]; then
+if [ -f "$project_base_path/lit/git-release-caching-enabled" ]; then
     printf 'Release caching for git is already enabled\n'
 
     exit 1
 fi
 
-touch "$project_base_path/lit/caching-enabled"
+touch "$project_base_path/lit/git-release-caching-enabled"
 
 printf 'Release caching for git enabled\n'
 printf '\n'

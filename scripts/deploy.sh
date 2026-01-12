@@ -156,7 +156,7 @@ if [ "$source_type" = "git" ]; then
         fi
     fi
 
-    caching_enabled=$([ -f "$project_base_path/lit/caching-enabled" ] && echo true || echo false)
+    caching_enabled=$([ -f "$project_base_path/lit/git-release-caching-enabled" ] && echo true || echo false)
     used_cache=false
 
     if [ "$caching_enabled" = true ]; then
@@ -283,7 +283,7 @@ elif [ "$source_type" = "bundle" ]; then
 
     # This file is only for git deployments, it should never exist unless the project was incorrectly
     # converted from git to a bundle. Delete this file to prevent any confusion in the status command or in telemetry.
-    rm -f "$project_base_path/lit/caching-enabled"
+    rm -f "$project_base_path/lit/git-release-caching-enabled"
 
     bundle_hash_url="${bundle_url}.hash"
     remote_bundle_hash_from_hash_file=""
@@ -410,7 +410,7 @@ elif [ "$source_type" = "bundle" ]; then
     printf 'Extracting bundle... '
 
     # The "--warning" flag prevents warnings when the bundle was made on MacOS but extracted on Linux.
-    tar --extract --warning=no-unknown-keyword --file "$new_release_directory/lit-bundle.tar"
+    tar --extract $(is_macos || echo "--warning=no-unknown-keyword") --file "$new_release_directory/lit-bundle.tar"
 
     rm -f "$new_release_directory/lit-bundle.tar"
 

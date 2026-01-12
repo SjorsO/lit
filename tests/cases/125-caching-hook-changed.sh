@@ -11,7 +11,7 @@ echo "APP_KEY=test" > "$project_path/.env"
 cd "$project_path"
 
 # Enable caching with initial hook that creates a unique marker
-lit enable-caching > /dev/null
+lit enable-git-release-caching > /dev/null
 echo 'touch "$1/hook-version-1" && uuidgen > "$1/cache-marker"' > "$project_path/hooks/before-caching.sh"
 
 # First deploy - builds cache

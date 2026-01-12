@@ -139,7 +139,7 @@ mkdir "$lock_directory_path"
 has_created_lock_directory=true
 
 # A git pre-commit hook automatically increments this version number.
-echo "36" > "$lit_base_path/data/lit-version"
+echo "37" > "$lit_base_path/data/lit-version"
 
 if [ -f "$lit_base_path/data/telemetry-enabled" ] && [ ! -s "$lit_base_path/data/telemetry-salt" ]; then
     uuidgen | tr '[:upper:]' '[:lower:]' > "$lit_base_path/data/telemetry-salt"
@@ -153,10 +153,10 @@ elif [ "$command" = "checkout" ]; then
     bash "$lit_base_path/scripts/checkout.sh" "$lit_base_path" "$project_base_path" "$2" "$3"
 elif [ "$command" = "status" ]; then
     bash "$lit_base_path/scripts/status.sh" "$lit_base_path" "$project_base_path"
-elif [ "$command" = "enable-caching" ]; then
-    bash "$lit_base_path/scripts/enable-caching.sh" "$lit_base_path" "$project_base_path"
-elif [ "$command" = "disable-caching" ]; then
-    bash "$lit_base_path/scripts/disable-caching.sh" "$lit_base_path" "$project_base_path"
+elif [ "$command" = "enable-git-release-caching" ]; then
+    bash "$lit_base_path/scripts/enable-git-release-caching.sh" "$lit_base_path" "$project_base_path"
+elif [ "$command" = "disable-git-release-caching" ]; then
+    bash "$lit_base_path/scripts/disable-git-release-caching.sh" "$lit_base_path" "$project_base_path"
 elif [ "$command" = "enable-telemetry" ]; then
     bash "$lit_base_path/scripts/enable-telemetry.sh" "$lit_base_path" "$project_base_path"
 elif [ "$command" = "disable-telemetry" ]; then

@@ -15,7 +15,7 @@ if [ "$source_type" = "git" ]; then
     git_repository_url="$(get_file_value "$project_base_path/lit/git-repository-url")"
     current_branch="$(get_file_value "$project_base_path/lit/current-branch")"
     current_commit="$(get_file_value "$project_base_path/lit/current-commit")"
-    caching_status=$([ -f "$project_base_path/lit/caching-enabled" ] && echo "enabled" || echo "disabled")
+    caching_status=$([ -f "$project_base_path/lit/git-release-caching-enabled" ] && echo "enabled" || echo "disabled")
 
     while IFS= read -r line; do
         lines+=("$line")

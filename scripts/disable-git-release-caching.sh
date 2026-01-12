@@ -7,13 +7,13 @@ project_base_path="$2"
 
 source "$lit_base_path/scripts/helpers.sh"
 
-if [ ! -f "$project_base_path/lit/caching-enabled" ]; then
+if [ ! -f "$project_base_path/lit/git-release-caching-enabled" ]; then
     printf 'Release caching for git is already disabled\n'
 
     exit 1
 fi
 
-rm "$project_base_path/lit/caching-enabled"
+rm "$project_base_path/lit/git-release-caching-enabled"
 
 printf 'Release caching for git disabled\n'
 printf '\n'

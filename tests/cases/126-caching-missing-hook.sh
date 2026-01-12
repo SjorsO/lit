@@ -11,7 +11,7 @@ echo "APP_KEY=test" > "$project_path/.env"
 cd "$project_path"
 
 # Enable caching but delete the hook
-lit enable-caching > /dev/null
+lit enable-git-release-caching > /dev/null
 rm "$project_path/hooks/before-caching.sh"
 
 # Deploy should warn about missing hook but still work

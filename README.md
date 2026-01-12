@@ -38,8 +38,8 @@ For bundle deployments:
 
 Other commands:
 - `lit flush-opcache` flush PHP-FPM OPCache by calling `opcache_reset()` via an HTTP request
-- `lit enable-caching` enables git release caching
-- `lit disable-caching` disables git release caching
+- `lit enable-git-release-caching` enables git release caching
+- `lit disable-git-release-caching` disables git release caching
 - `lit enable-telemetry` enables anonymous telemetry
 - `lit disable-telemetry` disables telemetry
 
@@ -154,7 +154,7 @@ Release caching is perfect for servers that host the same application multiple t
 
 Release caching is disabled by default because caching adds a few seconds of overhead.
 
-To enable release caching for an application, run `lit enable-caching`.
+To enable release caching for an application, run `lit enable-git-release-caching`.
 This will add a `before-caching.sh` hook to the project.
 This hook should contain the steps that can be cached and reused between projects, typically these are `composer install`, `npm install` and `npm run build`.
 After this hook is done running, Lit will cache the release so it can be reused the next time this commit is deployed.

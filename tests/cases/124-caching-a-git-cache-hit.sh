@@ -12,7 +12,7 @@ echo "APP_KEY=test" > "$project_path/.env"
 cd "$project_path"
 
 # Enable caching with a hook that creates a file with a random value
-lit enable-caching > /dev/null
+lit enable-git-release-caching > /dev/null
 echo 'uuidgen > "$1/cache-marker"' > "$project_path/hooks/before-caching.sh"
 
 # Deploy main - should build and cache

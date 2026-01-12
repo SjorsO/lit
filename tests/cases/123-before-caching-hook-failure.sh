@@ -11,7 +11,7 @@ echo "APP_KEY=test" > "$project_path/.env"
 cd "$project_path"
 
 # Enable caching
-lit enable-caching > /dev/null
+lit enable-git-release-caching > /dev/null
 
 # Make the before-caching hook fail
 echo 'exit 1' > "$project_path/hooks/before-caching.sh"

@@ -8,7 +8,7 @@ echo "APP_KEY=test" > "$project_path/.env"
 
 cd "$project_path"
 
-lit enable-caching > /dev/null
+lit enable-git-release-caching > /dev/null
 
 # Override hooks
 echo '# no-op' > "$project_path/hooks/before-release.sh"
