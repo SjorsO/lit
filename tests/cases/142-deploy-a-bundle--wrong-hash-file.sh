@@ -30,7 +30,7 @@ assert_lines_in_order "$output" \
 assert_directory_exists "$project_path/releases/1" || exit 1
 
 # The stored hash should be the ACTUAL bundle hash, not the wrong hash from the .hash file
-assert_file_content "$project_path/active-bundle-hash" "08f40c79ea2ee1f4d392e28b42672dacd3af923f" || exit 1
+assert_file_content "$project_path/bundle-hash" "08f40c79ea2ee1f4d392e28b42672dacd3af923f" || exit 1
 
 # Second deploy - should download (wrong hash means no cache hit) but not deploy (because actual hash matches)
 set +e

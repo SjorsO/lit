@@ -63,14 +63,14 @@ mkdir -p "$project_path"
 
 if [ "$source_type" = "git" ]; then
     echo "$source_url" > "$project_path/git-repository-url"
-    echo "$default_branch" > "$project_path/current-branch"
-    echo "not deployed yet" > "$project_path/current-commit"
+    echo "$default_branch" > "$project_path/git-branch"
+    echo "not deployed yet" > "$project_path/git-commit"
 
     printf 'Current branch set to "%s"\n' "$default_branch"
 elif [ "$source_type" = "bundle" ]; then
     echo "$source_url" > "$project_path/bundle-url"
 
-    echo "not deployed yet" > "$project_path/active-bundle-hash"
+    echo "not deployed yet" > "$project_path/bundle-hash"
 
     printf 'Bundle URL set to "%s"\n' "$source_url"
 fi

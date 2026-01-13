@@ -58,7 +58,7 @@ assert_same 0 "$status_code" || exit 1
 assert_string_contains "$output" 'Switching to branch "another-branch"' || exit 1
 assert_directory_exists "$project_path/releases/1" || exit 1
 assert_symlink "$project_path/current" || exit 1
-assert_file_content "$project_path/current-branch" "another-branch" || exit 1
+assert_file_content "$project_path/git-branch" "another-branch" || exit 1
 
 # Switch back to main - commit hash should be reused from checkout (not fetched again by deploy)
 set +e
@@ -71,7 +71,7 @@ assert_string_contains "$output" 'Switching to branch "main"' || exit 1
 # Deploy should NOT read from remote again - checkout already got the commit hash
 assert_string_not_contains "$output" 'Reading "https://github.com/SjorsO/lit.git"' || exit 1
 assert_directory_exists "$project_path/releases/2" || exit 1
-assert_file_content "$project_path/current-branch" "main" || exit 1
+assert_file_content "$project_path/git-branch" "main" || exit 1
 
 # Checkout on a bundle project should fail
 cd "$world_path/case"

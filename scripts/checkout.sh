@@ -27,7 +27,7 @@ if [ "$source_type" != "git" ]; then
 fi
 
 git_repository_url="$(get_file_value "$project_base_path/git-repository-url")"
-current_branch="$(get_file_value "$project_base_path/current-branch")"
+current_branch="$(get_file_value "$project_base_path/git-branch")"
 
 if [ "$current_branch" = "$new_branch" ]; then
     printf 'Current branch is already "%s"\n' "$new_branch"
@@ -53,6 +53,6 @@ fi
 
 current_remote_commit=$(echo "$remote_branch_info" | grep -v "ref: refs/heads/" | cut -f1)
 
-echo "$new_branch" > "$project_base_path/current-branch"
+echo "$new_branch" > "$project_base_path/git-branch"
 
 bash "$lit_base_path/scripts/deploy.sh" "$lit_base_path" "$project_base_path" "--use-commit-from-checkout" "$current_remote_commit"

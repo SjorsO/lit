@@ -13,8 +13,8 @@ lines=()
 
 if [ "$source_type" = "git" ]; then
     git_repository_url="$(get_file_value "$project_base_path/git-repository-url")"
-    current_branch="$(get_file_value "$project_base_path/current-branch")"
-    current_commit="$(get_file_value "$project_base_path/current-commit")"
+    current_branch="$(get_file_value "$project_base_path/git-branch")"
+    current_commit="$(get_file_value "$project_base_path/git-commit")"
     caching_status=$([ -f "$project_base_path/git-release-caching-enabled" ] && echo "enabled" || echo "disabled")
 
     while IFS= read -r line; do
@@ -28,7 +28,7 @@ if [ "$source_type" = "git" ]; then
 EOF
 elif [ "$source_type" = "bundle" ]; then
     bundle_url="$(get_file_value "$project_base_path/bundle-url")"
-    current_bundle_hash="$(get_file_value "$project_base_path/active-bundle-hash")"
+    current_bundle_hash="$(get_file_value "$project_base_path/bundle-hash")"
 
     while IFS= read -r line; do
         lines+=("$line")

@@ -130,8 +130,8 @@ new_release_directory="$releases_directory/$((current_release_id + 1))"
 
 if [ "$source_type" = "git" ]; then
     git_repository_url="$(get_file_value "$project_base_path/git-repository-url")"
-    current_branch="$(get_file_value "$project_base_path/current-branch")"
-    current_commit="$(get_file_value "$project_base_path/current-commit")"
+    current_branch="$(get_file_value "$project_base_path/git-branch")"
+    current_commit="$(get_file_value "$project_base_path/git-commit")"
 
     # If we are deploying after a "lit checkout", then we already have the commit.
     if [[ -z "$current_remote_commit" ]]; then
@@ -276,7 +276,7 @@ if [ "$source_type" = "git" ]; then
     fi
 elif [ "$source_type" = "bundle" ]; then
     bundle_url="$(get_file_value "$project_base_path/bundle-url")"
-    current_bundle_hash="$(get_file_value "$project_base_path/active-bundle-hash")"
+    current_bundle_hash="$(get_file_value "$project_base_path/bundle-hash")"
 
     caching_enabled=false
     used_cache=false
@@ -449,9 +449,9 @@ ln "$(is_macos && echo "-nsf" || echo "-nsfr")" "$new_release_directory" "$curre
 was_released=true
 
 if [ "$source_type" = "git" ]; then
-    echo "$current_commit" > "$project_base_path/current-commit"
+    echo "$current_commit" > "$project_base_path/git-commit"
 elif [ "$source_type" = "bundle" ]; then
-    echo "$new_bundle_hash" > "$project_base_path/active-bundle-hash"
+    echo "$new_bundle_hash" > "$project_base_path/bundle-hash"
 fi
 
 if [ -f "$project_base_path/hooks/after-release.sh" ]; then

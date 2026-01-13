@@ -11,7 +11,7 @@ echo "APP_KEY=test" > "$project_path/.env"
 cd "$project_path"
 
 # Manually set the branch to one that doesn't exist
-echo "deleted-branch-that-does-not-exist" > "$project_path/current-branch"
+echo "deleted-branch-that-does-not-exist" > "$project_path/git-branch"
 
 set +e
 output=$(lit deploy 2>&1)

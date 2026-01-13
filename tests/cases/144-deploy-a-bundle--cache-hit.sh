@@ -21,8 +21,8 @@ assert_string_contains "$output" "Downloading bundle" || exit 1
 assert_string_not_contains "$output" "Using cached bundle" || exit 1
 assert_directory_exists "$project_path/releases/1" || exit 1
 
-# Verify bundle was cached using the hash from active-bundle-hash
-bundle_hash=$(cat "$project_path/active-bundle-hash")
+# Verify bundle was cached using the hash from bundle-hash
+bundle_hash=$(cat "$project_path/bundle-hash")
 cached_file="$world_path/lit/cached-releases/$bundle_hash.tar"
 
 assert_file_exists "$cached_file" || exit 1
