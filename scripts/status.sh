@@ -28,7 +28,7 @@ if [ "$source_type" = "git" ]; then
 EOF
 elif [ "$source_type" = "bundle" ]; then
     bundle_url="$(get_file_value "$project_base_path/bundle-url")"
-    current_bundle_hash="$(get_file_value "$project_base_path/current-bundle-hash")"
+    current_bundle_hash="$(get_file_value "$project_base_path/active-bundle-hash")"
 
     while IFS= read -r line; do
         lines+=("$line")

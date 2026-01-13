@@ -70,7 +70,7 @@ if [ "$source_type" = "git" ]; then
 elif [ "$source_type" = "bundle" ]; then
     echo "$source_url" > "$project_path/bundle-url"
 
-    echo "not deployed yet" > "$project_path/current-bundle-hash"
+    echo "not deployed yet" > "$project_path/active-bundle-hash"
 
     printf 'Bundle URL set to "%s"\n' "$source_url"
 fi

@@ -276,7 +276,7 @@ if [ "$source_type" = "git" ]; then
     fi
 elif [ "$source_type" = "bundle" ]; then
     bundle_url="$(get_file_value "$project_base_path/bundle-url")"
-    current_bundle_hash="$(get_file_value "$project_base_path/current-bundle-hash")"
+    current_bundle_hash="$(get_file_value "$project_base_path/active-bundle-hash")"
 
     caching_enabled=false
     used_cache=false
@@ -451,7 +451,7 @@ was_released=true
 if [ "$source_type" = "git" ]; then
     echo "$current_commit" > "$project_base_path/current-commit"
 elif [ "$source_type" = "bundle" ]; then
-    echo "$new_bundle_hash" > "$project_base_path/current-bundle-hash"
+    echo "$new_bundle_hash" > "$project_base_path/active-bundle-hash"
 fi
 
 if [ -f "$project_base_path/hooks/after-release.sh" ]; then

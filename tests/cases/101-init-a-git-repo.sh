@@ -34,4 +34,4 @@ assert_file_missing "$project_path/hooks/before-caching.sh" || exit 1
 
 # Assert bundle files don't exist
 assert_file_missing "$project_path/bundle-url" || exit 1
-assert_file_missing "$project_path/current-bundle-hash" || exit 1
+assert_file_missing "$project_path/active-bundle-hash" || exit 1
