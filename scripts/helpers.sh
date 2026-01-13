@@ -61,7 +61,7 @@ replace_log_placeholder() {
     local pid="$1"
     local result="$2"
     local runtime_in_ms="$3"
-    local pretty_runtime="$((runtime_in_ms / 1000)).$((runtime_in_ms % 1000 / 100))s"
+    local pretty_runtime="$(printf '%d.%02ds' "$((runtime_in_ms / 1000))" "$((runtime_in_ms % 1000 / 10))")"
     local log_file="$project_base_path/logs/lit.log"
 
     acquire_lit_log_lock

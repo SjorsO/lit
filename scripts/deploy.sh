@@ -105,7 +105,7 @@ on_exit() {
 
     runtime_in_ms=$(( $(current_time_in_ms) - started_at ))
 
-    printf 'Finished %s (in %d.%ds)\n' "$([ "$script_status_code" -ne 0 ] && echo "with errors" || echo "successfully")" "$((runtime_in_ms / 1000))" "$((runtime_in_ms % 1000 / 100))"
+    printf 'Finished %s (in %d.%02ds)\n' "$([ "$script_status_code" -ne 0 ] && echo "with errors" || echo "successfully")" "$((runtime_in_ms / 1000))" "$((runtime_in_ms % 1000 / 10))"
 
     exit "$script_status_code"
 }
