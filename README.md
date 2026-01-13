@@ -45,32 +45,19 @@ Other commands:
 
 ## Getting started
 To deploy a Laravel project with Lit, run `lit init <url>`, and follow the on-screen instructions.
-You'll be asked to fill in your .env file, and to review and update the `hooks/before-release.sh` and `hooks/after-release.sh` hooks.
-When you're done, run `lit deploy` to deploy your project.
+You'll be asked to fill in your `.env` file, and to review and update the `hooks/before-release.sh` and `hooks/after-release.sh` hooks.
+When you're done, run `lit deploy` to deploy the project.
 
 ## Migrating an existing project
-Follow these steps to migrate an existing project to Lit:
-```
-# Put your application maintenance mode
-cd old-project && php artisan down && cd ..
+Migrating a project that isn't zero-downtime structure (e.g.: deployed with `git pull`):
+- Put your application in maintenance mode
+- Create a new Lit project with `lit init <url> [name]`
+- Copy your existing `.env` file and `storage` directory to the Lit directory
+- Run a deployment with `lit deploy`
+- Update your cron and queue workers to point at `{lit_directory}/current/artisan`
 
-# Create a new Lit project
-lit init <url> "lit-project"
-
-# Copy over your .env file
-cd lit-project
-rm .env
-cp old-project/.env .env
-
-# Copy your storage directory
-rm -rf storage
-cp -r old-project/storage storage
-
-# Run your first Lit deployment
-lit deploy
-
-# Edit your cron and queue workers to point to "/lit-project/current/artisan"
-```
+Migrating a project that already has zero-downtime structure (e.g.: deployed with Laravel Envoyer or Deployer):
+- TODO
 
 ## Deploying a bundle
 Lit can download and deploy pre-built bundles.
