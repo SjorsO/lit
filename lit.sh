@@ -118,8 +118,6 @@ on_exit() {
 
     replace_log_placeholder "$$" "$log_result" "$(($(current_time_in_ms) - start_time))"
 
-    echo "[$(get_human_timestamp)] Finished" >> "$project_base_path/logs/lit-output.log"
-
     if [[ "$has_created_lock_directory" == true ]]; then
         rmdir "$lock_directory_path"
     fi
@@ -144,7 +142,7 @@ mkdir "$lock_directory_path"
 has_created_lock_directory=true
 
 # A git pre-commit hook automatically increments this version number.
-echo "43" > "$lit_base_path/data/lit-version"
+echo "44" > "$lit_base_path/data/lit-version"
 
 if [ -f "$lit_base_path/data/telemetry-enabled" ] && [ ! -s "$lit_base_path/data/telemetry-salt" ]; then
     uuidgen | tr '[:upper:]' '[:lower:]' > "$lit_base_path/data/telemetry-salt"
