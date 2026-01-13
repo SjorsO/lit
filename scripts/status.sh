@@ -12,10 +12,10 @@ source_type="$(get_source_type "$project_base_path")"
 lines=()
 
 if [ "$source_type" = "git" ]; then
-    git_repository_url="$(get_file_value "$project_base_path/lit/git-repository-url")"
-    current_branch="$(get_file_value "$project_base_path/lit/current-branch")"
-    current_commit="$(get_file_value "$project_base_path/lit/current-commit")"
-    caching_status=$([ -f "$project_base_path/lit/git-release-caching-enabled" ] && echo "enabled" || echo "disabled")
+    git_repository_url="$(get_file_value "$project_base_path/git-repository-url")"
+    current_branch="$(get_file_value "$project_base_path/current-branch")"
+    current_commit="$(get_file_value "$project_base_path/current-commit")"
+    caching_status=$([ -f "$project_base_path/git-release-caching-enabled" ] && echo "enabled" || echo "disabled")
 
     while IFS= read -r line; do
         lines+=("$line")
@@ -27,8 +27,8 @@ if [ "$source_type" = "git" ]; then
        Release caching: $caching_status
 EOF
 elif [ "$source_type" = "bundle" ]; then
-    bundle_url="$(get_file_value "$project_base_path/lit/bundle-url")"
-    current_bundle_hash="$(get_file_value "$project_base_path/lit/current-bundle-hash")"
+    bundle_url="$(get_file_value "$project_base_path/bundle-url")"
+    current_bundle_hash="$(get_file_value "$project_base_path/current-bundle-hash")"
 
     while IFS= read -r line; do
         lines+=("$line")

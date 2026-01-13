@@ -60,18 +60,17 @@ if [ "$source_type" = "git" ]; then
 fi
 
 mkdir -p "$project_path"
-mkdir -p "$project_path/lit"
 
 if [ "$source_type" = "git" ]; then
-    echo "$source_url" > "$project_path/lit/git-repository-url"
-    echo "$default_branch" > "$project_path/lit/current-branch"
-    echo "not deployed yet" > "$project_path/lit/current-commit"
+    echo "$source_url" > "$project_path/git-repository-url"
+    echo "$default_branch" > "$project_path/current-branch"
+    echo "not deployed yet" > "$project_path/current-commit"
 
     printf 'Current branch set to "%s"\n' "$default_branch"
 elif [ "$source_type" = "bundle" ]; then
-    echo "$source_url" > "$project_path/lit/bundle-url"
+    echo "$source_url" > "$project_path/bundle-url"
 
-    echo "not deployed yet" > "$project_path/lit/current-bundle-hash"
+    echo "not deployed yet" > "$project_path/current-bundle-hash"
 
     printf 'Bundle URL set to "%s"\n' "$source_url"
 fi
@@ -79,6 +78,7 @@ fi
 printf '\n'
 
 mkdir -p "$project_path/hooks"
+mkdir -p "$project_path/storage/"{app/public,app/private,framework/{cache/data,sessions,testing,views},logs}
 cp "$lit_base_path/stubs/hooks-for-$source_type/before-release.sh.stub" "$project_path/hooks/before-release.sh"
 cp "$lit_base_path/stubs/hooks-for-$source_type/after-release.sh.stub" "$project_path/hooks/after-release.sh"
 cp "$lit_base_path/stubs/on-failure.sh.stub" "$project_path/hooks/on-failure.sh"

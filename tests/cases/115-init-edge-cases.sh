@@ -31,7 +31,7 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_file_content "$world_path/case/empty-project/lit/bundle-url" "https://example.com/releases/empty-project.tar.gz" || exit 1
+assert_file_content "$world_path/case/empty-project/bundle-url" "https://example.com/releases/empty-project.tar.gz" || exit 1
 
 # Test .tar.zst extension is recognized as bundle and stripped properly
 cd "$world_path/case"
@@ -42,4 +42,4 @@ set -e
 
 assert_same 0 "$status_code" || exit 1
 assert_directory_exists "$world_path/case/another-app" || exit 1
-assert_file_content "$world_path/case/another-app/lit/bundle-url" "https://example.com/releases/another-app.tar.zst" || exit 1
+assert_file_content "$world_path/case/another-app/bundle-url" "https://example.com/releases/another-app.tar.zst" || exit 1

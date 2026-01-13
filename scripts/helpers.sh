@@ -3,9 +3,9 @@
 get_source_type() {
     local project_path="$1"
 
-    if [ -f "$project_path/lit/git-repository-url" ]; then
+    if [ -f "$project_path/git-repository-url" ]; then
         echo "git"
-    elif [ -f "$project_path/lit/bundle-url" ]; then
+    elif [ -f "$project_path/bundle-url" ]; then
         echo "bundle"
     else
         echo ""
@@ -40,7 +40,7 @@ is_macos() {
 acquire_lit_log_lock() {
     local attempts=0
 
-    while ! mkdir "$project_base_path/lit/lit-log-lock" 2>/dev/null; do
+    while ! mkdir "$project_base_path/lit-log-lock" 2>/dev/null; do
         sleep 0.1
 
         attempts=$((attempts + 1))
@@ -52,8 +52,8 @@ acquire_lit_log_lock() {
 }
 
 release_lit_log_lock() {
-    if [ -d "$project_base_path/lit/lit-log-lock" ]; then
-        rmdir "$project_base_path/lit/lit-log-lock"
+    if [ -d "$project_base_path/lit-log-lock" ]; then
+        rmdir "$project_base_path/lit-log-lock"
     fi
 }
 

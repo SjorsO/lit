@@ -13,7 +13,7 @@ echo "APP_KEY=test" > "$project_path/.env"
 cd "$project_path"
 
 # Manually create the lock directory to simulate another command running
-mkdir "$project_path/lit/lit-is-currently-running"
+mkdir "$project_path/lit-is-currently-running"
 
 set +e
 output=$(lit deploy 2>&1)
@@ -34,10 +34,10 @@ log_content=$(cat "$project_path/logs/lit.log")
 assert_string_contains "$log_content" "lit deploy → aborted, another lit command is currently running" || exit 1
 
 # Lock directory should still exist (we created it, lit didn't)
-assert_directory_exists "$project_path/lit/lit-is-currently-running" || exit 1
+assert_directory_exists "$project_path/lit-is-currently-running" || exit 1
 
 # Clean up lock and verify lit works again
-rmdir "$project_path/lit/lit-is-currently-running"
+rmdir "$project_path/lit-is-currently-running"
 
 set +e
 output=$(lit deploy 2>&1)

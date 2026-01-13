@@ -9,7 +9,7 @@ new_branch="$3"
 if [ -z "$new_branch" ] || [ -n "$4" ]; then
     printf 'usage: lit checkout <branch>\n'
 
-    echo "failed (invalid usage)" > "$project_base_path/lit/log-result"
+    echo "failed (invalid usage)" > "$project_base_path/current-run-result"
 
     exit 1
 fi
@@ -21,18 +21,18 @@ source_type="$(get_source_type "$project_base_path")"
 if [ "$source_type" != "git" ]; then
     printf 'Cannot change branches because you are not deploying from git\n'
 
-    echo "failed (not a git project)" > "$project_base_path/lit/log-result"
+    echo "failed (not a git project)" > "$project_base_path/current-run-result"
 
     exit 1
 fi
 
-git_repository_url="$(get_file_value "$project_base_path/lit/git-repository-url")"
-current_branch="$(get_file_value "$project_base_path/lit/current-branch")"
+git_repository_url="$(get_file_value "$project_base_path/git-repository-url")"
+current_branch="$(get_file_value "$project_base_path/current-branch")"
 
 if [ "$current_branch" = "$new_branch" ]; then
     printf 'Current branch is already "%s"\n' "$new_branch"
 
-    echo "aborted, already on this branch" > "$project_base_path/lit/log-result"
+    echo "aborted, already on this branch" > "$project_base_path/current-run-result"
 
     exit 1
 fi
@@ -46,13 +46,13 @@ printf '\n'
 if [ -z "$remote_branch_info" ]; then
     printf 'Branch "%s" does not exist on remote\n' "$new_branch"
 
-    echo "failed (branch does not exist)" > "$project_base_path/lit/log-result"
+    echo "failed (branch does not exist)" > "$project_base_path/current-run-result"
 
     exit 1
 fi
 
 current_remote_commit=$(echo "$remote_branch_info" | grep -v "ref: refs/heads/" | cut -f1)
 
-echo "$new_branch" > "$project_base_path/lit/current-branch"
+echo "$new_branch" > "$project_base_path/current-branch"
 
 bash "$lit_base_path/scripts/deploy.sh" "$lit_base_path" "$project_base_path" "--use-commit-from-checkout" "$current_remote_commit"

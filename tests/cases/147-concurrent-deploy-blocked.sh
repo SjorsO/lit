@@ -42,7 +42,7 @@ assert_same 0 "$first_status_code" || exit 1
 assert_directory_exists "$project_path/releases/1" || exit 1
 
 # Lock directory should be cleaned up
-assert_file_missing "$project_path/lit/lit-is-currently-running" || exit 1
+assert_file_missing "$project_path/lit-is-currently-running" || exit 1
 
 # Log should contain both deploys in order: first deploy succeeded, then second was aborted
 deployed_line=$(grep -n "lit deploy → deployed branch" "$project_path/logs/lit.log" | head -1 | cut -d: -f1)

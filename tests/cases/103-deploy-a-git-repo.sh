@@ -3,10 +3,10 @@ lit init "https://github.com/SjorsO/lit.git" > /dev/null
 project_path="$world_path/case/lit"
 
 # Replace hooks to verify $1 and $2 are correct directories
-# $1 (project_base_directory) should contain lit/ and logs/
+# $1 (project_base_directory) should contain storage/ and logs/
 # $2 (new_release_directory) should contain the cloned repo (lit.sh)
-echo '[ -d "$1/lit" ] && [ -d "$1/logs" ] && [ -f "$2/lit.sh" ] && touch "$1/before-release-ran" && touch "$2/before-release-release"' > "$project_path/hooks/before-release.sh"
-echo '[ -d "$1/lit" ] && [ -d "$1/logs" ] && [ -f "$2/lit.sh" ] && touch "$1/after-release-ran" && touch "$2/after-release-release"' > "$project_path/hooks/after-release.sh"
+echo '[ -d "$1/storage" ] && [ -d "$1/logs" ] && [ -f "$2/lit.sh" ] && touch "$1/before-release-ran" && touch "$2/before-release-release"' > "$project_path/hooks/before-release.sh"
+echo '[ -d "$1/storage" ] && [ -d "$1/logs" ] && [ -f "$2/lit.sh" ] && touch "$1/after-release-ran" && touch "$2/after-release-release"' > "$project_path/hooks/after-release.sh"
 
 cd "$project_path"
 

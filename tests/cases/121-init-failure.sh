@@ -10,7 +10,7 @@ set -e
 assert_same 128 "$status_code" || exit 1
 
 # Directory should not be created
-assert_file_missing "$world_path/case/this-repo-does-not-exist-12345/lit" || exit 1
+assert_file_missing "$world_path/case/this-repo-does-not-exist-12345/storage" || exit 1
 
 # Bundle init with non-existent URL should succeed (validation happens at deploy time)
 set +e
@@ -19,8 +19,8 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_file_exists "$world_path/case/this-does-not-exist/lit/bundle-url" || exit 1
-assert_file_content "$world_path/case/this-does-not-exist/lit/bundle-url" "https://example.com/this-does-not-exist.tar.gz" || exit 1
+assert_file_exists "$world_path/case/this-does-not-exist/bundle-url" || exit 1
+assert_file_content "$world_path/case/this-does-not-exist/bundle-url" "https://example.com/this-does-not-exist.tar.gz" || exit 1
 
 # Invalid custom project names should be rejected
 set +e
@@ -55,7 +55,7 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_file_exists "$world_path/case/my-valid_project.name123/lit/bundle-url" || exit 1
+assert_file_exists "$world_path/case/my-valid_project.name123/bundle-url" || exit 1
 
 # Too many arguments should fail
 set +e

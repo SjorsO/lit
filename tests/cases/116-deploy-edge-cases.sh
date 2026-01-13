@@ -28,20 +28,6 @@ set -e
 assert_same 1 "$status_code" || exit 1
 assert_string_contains "$output" "usage: lit deploy [--force]" || exit 1
 
-# Missing URL files should fail with invalid source type
-rm "$project_path/lit/git-repository-url"
-
-set +e
-output=$(lit deploy 2>&1)
-status_code=$?
-set -e
-
-assert_same 1 "$status_code" || exit 1
-assert_string_contains "$output" 'Invalid source type: ""' || exit 1
-
-# Restore git URL file
-echo "https://github.com/SjorsO/lit.git" > "$project_path/lit/git-repository-url"
-
 # Non-numeric release directory should fail
 mkdir "$project_path/releases/not-a-number"
 

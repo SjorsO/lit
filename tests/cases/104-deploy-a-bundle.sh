@@ -3,10 +3,10 @@ lit init "https://watchtower-static.fsn1.your-objectstorage.com/bundle-for-lit-t
 project_path="$world_path/case/bundle-for-lit-tests"
 
 # Replace hooks to verify $1 and $2 are correct directories
-# $1 (project_base_directory) should contain lit/ and logs/
+# $1 (project_base_directory) should contain storage/ and logs/
 # $2 (new_release_directory) should be a directory with the extracted bundle
-echo '[ -d "$1/lit" ] && [ -d "$1/logs" ] && [ -d "$2" ] && touch "$1/before-release-ran" && touch "$2/before-release-release"' > "$project_path/hooks/before-release.sh"
-echo '[ -d "$1/lit" ] && [ -d "$1/logs" ] && [ -d "$2" ] && touch "$1/after-release-ran" && touch "$2/after-release-release"' > "$project_path/hooks/after-release.sh"
+echo '[ -d "$1/storage" ] && [ -d "$1/logs" ] && [ -d "$2" ] && touch "$1/before-release-ran" && touch "$2/before-release-release"' > "$project_path/hooks/before-release.sh"
+echo '[ -d "$1/storage" ] && [ -d "$1/logs" ] && [ -d "$2" ] && touch "$1/after-release-ran" && touch "$2/after-release-release"' > "$project_path/hooks/after-release.sh"
 
 cd "$project_path"
 
@@ -24,7 +24,7 @@ assert_file_missing "$project_path/current" || exit 1
 echo "APP_KEY=test" > "$project_path/.env"
 
 # Create git-release-caching-enabled file (should be deleted during bundle deploy)
-touch "$project_path/lit/git-release-caching-enabled"
+touch "$project_path/git-release-caching-enabled"
 
 # Clear bundle cache to ensure we test the download path
 rm -f "$world_path/lit/cached-releases/"*.tar
@@ -43,7 +43,7 @@ assert_string_matches "$output" 'Checking bundle version.*\.hash"\.\.\. \(in [0-
 assert_string_matches "$output" 'Downloading bundle.*\.tar\.zst"\.\.\. \(6[0-9]K in [0-9]+\.[0-9]+ seconds\)' || exit 1
 
 # Caching-enabled file should be deleted during bundle deploy
-assert_file_missing "$project_path/lit/git-release-caching-enabled" || exit 1
+assert_file_missing "$project_path/git-release-caching-enabled" || exit 1
 
 # Assert hooks ran with $1 (project_base_directory)
 assert_file_exists "$project_path/before-release-ran" || exit 1

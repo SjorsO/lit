@@ -11,16 +11,16 @@ echo "APP_KEY=test" > "$project_path/.env"
 cd "$project_path"
 
 # Lock should not exist before deploy
-assert_file_missing "$project_path/lit/lit-is-currently-running" || exit 1
+assert_file_missing "$project_path/lit-is-currently-running" || exit 1
 
 # Deploy should succeed
 lit deploy > /dev/null
 
 # Lock should be cleaned up after deploy
-assert_file_missing "$project_path/lit/lit-is-currently-running" || exit 1
+assert_file_missing "$project_path/lit-is-currently-running" || exit 1
 
 # Run another command to verify lock works correctly
 lit status > /dev/null
 
 # Lock should still not exist
-assert_file_missing "$project_path/lit/lit-is-currently-running" || exit 1
+assert_file_missing "$project_path/lit-is-currently-running" || exit 1

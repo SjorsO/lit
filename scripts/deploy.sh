@@ -10,7 +10,7 @@ if [ "$3" = "--use-commit-from-checkout" ]; then
 elif [ -n "$4" ] || ([ -n "$3" ] && [ "$3" != "--force" ]); then
     printf 'usage: lit deploy [--force]\n'
 
-    echo "failed (invalid usage)" > "$project_base_path/lit/log-result"
+    echo "failed (invalid usage)" > "$project_base_path/current-run-result"
 
     exit 1
 fi
@@ -25,7 +25,7 @@ source_type="$(get_source_type "$project_base_path")"
 if [ "$source_type" != "git" ] && [ "$source_type" != "bundle" ]; then
     printf 'Invalid source type: "%s"\n' "$source_type"
 
-    echo "failed (invalid source type)" > "$project_base_path/lit/log-result"
+    echo "failed (invalid source type)" > "$project_base_path/current-run-result"
 
     exit 1
 fi
@@ -43,7 +43,7 @@ if [[ ! -s "$real_env_file_path" ]]; then
 
     printf 'Your ".env" file is empty, try again when you have filled it in\n'
 
-    echo 'aborted, the ".env" file is empty' > "$project_base_path/lit/log-result"
+    echo 'aborted, the ".env" file is empty' > "$project_base_path/current-run-result"
 
     exit 1
 fi
@@ -71,19 +71,19 @@ on_exit() {
         rm -rf "$staging_directory_path"
     fi
 
-    if [ ! -f "$project_base_path/lit/log-result" ]; then
+    if [ ! -f "$project_base_path/current-run-result" ]; then
         if [[ "$was_released" == true ]] && [[ "$script_status_code" -ne 0 ]] && [ "$source_type" = "git" ]; then
-            echo "had errors, still deployed branch \"$current_branch\" (commit: ${current_commit:0:11})" > "$project_base_path/lit/log-result"
+            echo "had errors, still deployed branch \"$current_branch\" (commit: ${current_commit:0:11})" > "$project_base_path/current-run-result"
         elif [[ "$was_released" == true ]] && [[ "$script_status_code" -ne 0 ]] && [ "$source_type" = "bundle" ]; then
-            echo "had errors, still deployed bundle (hash: $new_bundle_hash)" > "$project_base_path/lit/log-result"
+            echo "had errors, still deployed bundle (hash: $new_bundle_hash)" > "$project_base_path/current-run-result"
         elif [[ "$was_released" == true ]] && [ "$source_type" = "git" ]; then
-            echo "deployed branch \"$current_branch\" (commit: ${current_commit:0:11})" > "$project_base_path/lit/log-result"
+            echo "deployed branch \"$current_branch\" (commit: ${current_commit:0:11})" > "$project_base_path/current-run-result"
         elif [[ "$was_released" == true ]] && [ "$source_type" = "bundle" ]; then
-            echo "deployed bundle (hash: $new_bundle_hash)" > "$project_base_path/lit/log-result"
+            echo "deployed bundle (hash: $new_bundle_hash)" > "$project_base_path/current-run-result"
         elif [[ "$release_directory_created" == true ]]; then
-            echo "failed, deployment was not released" > "$project_base_path/lit/log-result"
+            echo "failed, deployment was not released" > "$project_base_path/current-run-result"
         elif [[ "$script_status_code" -ne 0 ]] && [[ "$was_released" == false ]]; then
-            echo "failed" > "$project_base_path/lit/log-result"
+            echo "failed" > "$project_base_path/current-run-result"
         fi
     fi
 
@@ -115,7 +115,7 @@ for release_directory_path in "$releases_directory/"*/ ; do
     if [[ -e "$release_directory_path" ]] && ! [[ $release_directory_path =~ /[0-9]+/$ ]] ; then
        printf 'The name of existing release directory "%s" is not fully numeric, this should never happen\n' "$release_directory_path"
 
-       echo "failed, a release directory has an invalid name" > "$project_base_path/lit/log-result"
+       echo "failed, a release directory has an invalid name" > "$project_base_path/current-run-result"
 
        exit 1
     fi
@@ -129,9 +129,9 @@ current_release_id=$(ls "$releases_directory" | sort --numeric-sort | tail -n1) 
 new_release_directory="$releases_directory/$((current_release_id + 1))"
 
 if [ "$source_type" = "git" ]; then
-    git_repository_url="$(get_file_value "$project_base_path/lit/git-repository-url")"
-    current_branch="$(get_file_value "$project_base_path/lit/current-branch")"
-    current_commit="$(get_file_value "$project_base_path/lit/current-commit")"
+    git_repository_url="$(get_file_value "$project_base_path/git-repository-url")"
+    current_branch="$(get_file_value "$project_base_path/current-branch")"
+    current_commit="$(get_file_value "$project_base_path/current-commit")"
 
     # If we are deploying after a "lit checkout", then we already have the commit.
     if [[ -z "$current_remote_commit" ]]; then
@@ -150,13 +150,13 @@ if [ "$source_type" = "git" ]; then
         else
             printf 'Run "lit deploy --force" to redeploy\n'
 
-            echo "aborted, this commit is already deployed" > "$project_base_path/lit/log-result"
+            echo "aborted, this commit is already deployed" > "$project_base_path/current-run-result"
 
             exit 0
         fi
     fi
 
-    caching_enabled=$([ -f "$project_base_path/lit/git-release-caching-enabled" ] && echo true || echo false)
+    caching_enabled=$([ -f "$project_base_path/git-release-caching-enabled" ] && echo true || echo false)
     used_cache=false
 
     if [ "$caching_enabled" = true ]; then
@@ -275,15 +275,15 @@ if [ "$source_type" = "git" ]; then
         current_commit="$(git rev-parse HEAD)"
     fi
 elif [ "$source_type" = "bundle" ]; then
-    bundle_url="$(get_file_value "$project_base_path/lit/bundle-url")"
-    current_bundle_hash="$(get_file_value "$project_base_path/lit/current-bundle-hash")"
+    bundle_url="$(get_file_value "$project_base_path/bundle-url")"
+    current_bundle_hash="$(get_file_value "$project_base_path/current-bundle-hash")"
 
     caching_enabled=false
     used_cache=false
 
     # This file is only for git deployments, it should never exist unless the project was incorrectly
     # converted from git to a bundle. Delete this file to prevent any confusion in the status command or in telemetry.
-    rm -f "$project_base_path/lit/git-release-caching-enabled"
+    rm -f "$project_base_path/git-release-caching-enabled"
 
     bundle_hash_url="${bundle_url}.hash"
     remote_bundle_hash_from_hash_file=""
@@ -313,7 +313,7 @@ elif [ "$source_type" = "bundle" ]; then
             printf 'Bundle is already deployed (hash: %s)\n' "$remote_bundle_hash_from_hash_file"
             printf 'Run "lit deploy --force" to redeploy\n'
 
-            echo "aborted, same bundle is already deployed" > "$project_base_path/lit/log-result"
+            echo "aborted, same bundle is already deployed" > "$project_base_path/current-run-result"
 
             exit 0
         fi
@@ -321,7 +321,7 @@ elif [ "$source_type" = "bundle" ]; then
         printf 'Warning: %s\n' "$curl_output"
     fi
 
-    temp_bundle_path="$project_base_path/lit/bundle-for-current-deployment.tar"
+    temp_bundle_path="$project_base_path/bundle-for-current-deployment.tar"
 
     # Try to find bundle in cache by .hash file hash
     cached_bundle_path=""
@@ -354,7 +354,7 @@ elif [ "$source_type" = "bundle" ]; then
             printf 'Failed to download bundle from "%s"\n' "$bundle_url"
             printf '%s\n' "$(echo "$curl_result" | grep -v '^__CURL_TIME__:')"
 
-            echo "failed to download bundle" > "$project_base_path/lit/log-result"
+            echo "failed to download bundle" > "$project_base_path/current-run-result"
 
             rm -f "$temp_bundle_path"
 
@@ -391,7 +391,7 @@ elif [ "$source_type" = "bundle" ]; then
 
             printf 'Run "lit deploy --force" to redeploy\n'
 
-            echo "aborted, same bundle is already deployed" > "$project_base_path/lit/log-result"
+            echo "aborted, same bundle is already deployed" > "$project_base_path/current-run-result"
 
             exit 0
         fi
@@ -418,10 +418,6 @@ elif [ "$source_type" = "bundle" ]; then
 fi
 
 printf 'Creating a symlink to the storage directory\n'
-
-if [[ ! -d "$real_storage_directory_path" ]]; then
-    mkdir -p "$real_storage_directory_path/"{app/public,app/private,framework/{cache/data,sessions,testing,views},logs}
-fi
 
 rm -rf "$new_release_directory/storage"
 
@@ -453,9 +449,9 @@ ln "$(is_macos && echo "-nsf" || echo "-nsfr")" "$new_release_directory" "$curre
 was_released=true
 
 if [ "$source_type" = "git" ]; then
-    echo "$current_commit" > "$project_base_path/lit/current-commit"
+    echo "$current_commit" > "$project_base_path/current-commit"
 elif [ "$source_type" = "bundle" ]; then
-    echo "$new_bundle_hash" > "$project_base_path/lit/current-bundle-hash"
+    echo "$new_bundle_hash" > "$project_base_path/current-bundle-hash"
 fi
 
 if [ -f "$project_base_path/hooks/after-release.sh" ]; then

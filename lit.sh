@@ -52,9 +52,14 @@ elif [ "$command" = "help" ]; then
     exit 0
 fi
 
-# Lit's installation directory is also called "lit", but that isn't actually a lit directory.
-if [ ! -d "$project_base_path/lit" ] || [ -f "$project_base_path/lit/lit.sh" ]; then
+if [ ! -f "$project_base_path/git-repository-url" ] && [ ! -f "$project_base_path/bundle-url" ]; then
     printf 'This is not a Lit directory\n'
+
+    exit 1
+fi
+
+if [ ! -d "$project_base_path/storage" ]; then
+    printf 'This looks like a Lit directory, but the storage directory does not exist\n'
 
     exit 1
 fi
@@ -78,7 +83,7 @@ if [ "$command" = "log" ]; then
     exit 0
 fi
 
-lock_directory_path="$project_base_path/lit/lit-is-currently-running"
+lock_directory_path="$project_base_path/lit-is-currently-running"
 
 # Allow running "lit flush-opcache" from inside a "lit deploy" without it logging to "lit.log"
 if [ "$command" = "flush-opcache" ] && [ "$__lit_allow_flush_opcache_without_lock" = "true" ]; then
@@ -103,21 +108,21 @@ has_created_lock_directory=false
 on_exit() {
     script_status_code=$?
 
-    if [[ "$has_created_lock_directory" == true ]]; then
-        rmdir "$lock_directory_path"
-    fi
-
     log_result=""
 
-    if [ -f "$project_base_path/lit/log-result" ]; then
-        log_result=$(cat "$project_base_path/lit/log-result")
+    if [ -f "$project_base_path/current-run-result" ]; then
+        log_result=$(cat "$project_base_path/current-run-result")
 
-        rm -f "$project_base_path/lit/log-result"
+        rm -f "$project_base_path/current-run-result"
     fi
 
     replace_log_placeholder "$$" "$log_result" "$(($(date +%s) - start_time))"
 
     echo "[$(get_human_timestamp)] Finished" >> "$project_base_path/logs/lit-output.log"
+
+    if [[ "$has_created_lock_directory" == true ]]; then
+        rmdir "$lock_directory_path"
+    fi
 
     exit "$script_status_code"
 }
@@ -139,7 +144,7 @@ mkdir "$lock_directory_path"
 has_created_lock_directory=true
 
 # A git pre-commit hook automatically increments this version number.
-echo "37" > "$lit_base_path/data/lit-version"
+echo "38" > "$lit_base_path/data/lit-version"
 
 if [ -f "$lit_base_path/data/telemetry-enabled" ] && [ ! -s "$lit_base_path/data/telemetry-salt" ]; then
     uuidgen | tr '[:upper:]' '[:lower:]' > "$lit_base_path/data/telemetry-salt"
@@ -164,7 +169,7 @@ elif [ "$command" = "disable-telemetry" ]; then
 elif [ "$command" = "flush-opcache" ]; then
     bash "$lit_base_path/scripts/flush-opcache.sh" "$project_base_path"
 else
-    echo "failed (unknown command)" > "$project_base_path/lit/log-result"
+    echo "failed (unknown command)" > "$project_base_path/current-run-result"
 
     cat "$lit_base_path/help.txt"
 
