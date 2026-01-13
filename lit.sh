@@ -58,7 +58,7 @@ if [ ! -f "$project_base_path/git-repository-url" ] && [ ! -f "$project_base_pat
     exit 1
 fi
 
-if [ ! -d "$project_base_path/storage" ]; then
+if [ ! -d "$project_base_path/storage" ] && [ ! -d "$project_base_path/shared/storage" ]; then
     printf 'This looks like a Lit directory, but the storage directory does not exist\n'
 
     exit 1
@@ -129,7 +129,7 @@ mkdir "$lock_directory_path"
 has_created_lock_directory=true
 
 # A git pre-commit hook automatically increments this version number.
-echo "45" > "$lit_base_path/data/lit-version"
+echo "46" > "$lit_base_path/data/lit-version"
 
 if [ -f "$lit_base_path/data/telemetry-enabled" ] && [ ! -s "$lit_base_path/data/telemetry-salt" ]; then
     uuidgen | tr '[:upper:]' '[:lower:]' > "$lit_base_path/data/telemetry-salt"

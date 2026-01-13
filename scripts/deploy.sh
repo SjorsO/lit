@@ -35,8 +35,14 @@ started_at=$(current_time_in_ms)
 releases_directory="$project_base_path/releases"
 current_directory_path="$project_base_path/current"
 
-real_storage_directory_path="$project_base_path/storage"
-real_env_file_path="$project_base_path/.env"
+# Projects previously deployed with Deployer have a "shared" directory.
+if [[ -d "$project_base_path/shared/storage" ]] && [[ -f "$project_base_path/shared/.env" ]]; then
+    real_storage_directory_path="$project_base_path/shared/storage"
+    real_env_file_path="$project_base_path/shared/.env"
+else
+    real_storage_directory_path="$project_base_path/storage"
+    real_env_file_path="$project_base_path/.env"
+fi
 
 if [[ ! -s "$real_env_file_path" ]]; then
     touch "$real_env_file_path"
