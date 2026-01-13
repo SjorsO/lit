@@ -16,7 +16,6 @@ assert_string_contains "$output" "usage: lit <command>" || exit 1
 assert_string_contains "$output" "init <url>" || exit 1
 assert_string_contains "$output" "deploy" || exit 1
 assert_string_contains "$output" "checkout <branch>" || exit 1
-assert_string_contains "$output" "status" || exit 1
 assert_string_contains "$output" "enable-git-release-caching" || exit 1
 assert_string_contains "$output" "disable-git-release-caching" || exit 1
 assert_string_contains "$output" "enable-telemetry" || exit 1

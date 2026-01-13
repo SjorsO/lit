@@ -70,19 +70,6 @@ if [ ! -d "$project_base_path/logs" ]; then
     mkdir -p "$project_base_path/logs"
 fi
 
-# Don't log "lit log", silently pass it through to git
-if [ "$command" = "log" ]; then
-    if [ ! -d "$project_base_path/current/.git" ]; then
-        printf 'No git repository found in the current release\n'
-
-        exit 1
-    fi
-
-    git --git-dir "$project_base_path/current/.git" log "${@:2}"
-
-    exit 0
-fi
-
 lock_directory_path="$project_base_path/lit-is-currently-running"
 
 # Allow running "lit flush-opcache" from inside a "lit deploy" without it logging to "lit.log"
@@ -142,7 +129,7 @@ mkdir "$lock_directory_path"
 has_created_lock_directory=true
 
 # A git pre-commit hook automatically increments this version number.
-echo "44" > "$lit_base_path/data/lit-version"
+echo "45" > "$lit_base_path/data/lit-version"
 
 if [ -f "$lit_base_path/data/telemetry-enabled" ] && [ ! -s "$lit_base_path/data/telemetry-salt" ]; then
     uuidgen | tr '[:upper:]' '[:lower:]' > "$lit_base_path/data/telemetry-salt"
@@ -154,8 +141,6 @@ if [ "$command" = "deploy" ]; then
 elif [ "$command" = "checkout" ]; then
     export __lit_allow_flush_opcache_without_lock="true"
     bash "$lit_base_path/scripts/checkout.sh" "$lit_base_path" "$project_base_path" "$2" "$3"
-elif [ "$command" = "status" ]; then
-    bash "$lit_base_path/scripts/status.sh" "$lit_base_path" "$project_base_path"
 elif [ "$command" = "enable-git-release-caching" ]; then
     bash "$lit_base_path/scripts/enable-git-release-caching.sh" "$lit_base_path" "$project_base_path"
 elif [ "$command" = "disable-git-release-caching" ]; then

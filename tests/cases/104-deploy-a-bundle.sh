@@ -120,15 +120,3 @@ assert_directory_exists "$project_path/releases/10" || exit 1
 assert_file_missing "$project_path/releases/9" || exit 1
 current_target=$(readlink "$project_path/current")
 assert_string_contains "$current_target" "releases/11" || exit 1
-
-# Test lit status command
-set +e
-output=$(lit status 2>&1)
-status_code=$?
-set -e
-
-assert_same 0 "$status_code" || exit 1
-assert_string_contains "$output" "Deploying from: bundle" || exit 1
-assert_string_contains "$output" "Bundle URL: https://watchtower-static.fsn1.your-objectstorage.com/bundle-for-lit-tests.tar.zst" || exit 1
-assert_string_contains "$output" "Bundle hash URL: https://watchtower-static.fsn1.your-objectstorage.com/bundle-for-lit-tests.tar.zst.hash" || exit 1
-assert_string_contains "$output" "Current bundle hash:" || exit 1

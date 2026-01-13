@@ -6,8 +6,6 @@
 │   init <url> [name]    Initialize a new Lit directory from git or a bundle   │
 │   deploy               Run a new deployment                                  │
 │   checkout <branch>    Git checkout the given branch and deploy it           │
-│   log                  Forwards to "git log" for the current release         │
-│   status               Show information about the current Lit directory      │
 │                                                                              │
 │ Other commands:                                                              │
 │                                                                              │

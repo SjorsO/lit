@@ -30,7 +30,6 @@ For git deployments:
 - `lit init <git repository url> [name]` initializes a new Lit directory
 - `lit deploy` runs `git pull` and deploys the current branch
 - `lit checkout <branch>` switches to a different branch and deploys it
-- `lit log` forwards to `git log` for the current release
 
 For bundle deployments:
 - `lit init <bundle download url> [name]` initializes a new Lit directory

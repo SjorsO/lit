@@ -126,15 +126,3 @@ assert_directory_exists "$project_path/releases/10" || exit 1
 assert_file_missing "$project_path/releases/9" || exit 1
 current_target=$(readlink "$project_path/current")
 assert_string_contains "$current_target" "releases/11" || exit 1
-
-# Test lit status command
-set +e
-output=$(lit status 2>&1)
-status_code=$?
-set -e
-
-assert_same 0 "$status_code" || exit 1
-assert_string_contains "$output" "Deploying from: git" || exit 1
-assert_string_contains "$output" "Git repository url: https://github.com/SjorsO/lit.git" || exit 1
-assert_string_contains "$output" "Current branch: main" || exit 1
-assert_string_contains "$output" "Release caching: disabled" || exit 1
