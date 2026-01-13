@@ -133,7 +133,7 @@ if [ -d "$lock_directory_path" ]; then
     printf 'If this is wrong, manually run:\n'
     printf '    rmdir "%s"\n' "$lock_directory_path"
 
-    replace_log_placeholder "$$" "aborted, another lit command is currently running" "$(($(date +%s) - start_time))"
+    replace_log_placeholder "$$" "aborted, another lit command is currently running" "$(($(current_time_in_ms) - start_time))"
 
     exit 1
 fi
@@ -144,7 +144,7 @@ mkdir "$lock_directory_path"
 has_created_lock_directory=true
 
 # A git pre-commit hook automatically increments this version number.
-echo "39" > "$lit_base_path/data/lit-version"
+echo "40" > "$lit_base_path/data/lit-version"
 
 if [ -f "$lit_base_path/data/telemetry-enabled" ] && [ ! -s "$lit_base_path/data/telemetry-salt" ]; then
     uuidgen | tr '[:upper:]' '[:lower:]' > "$lit_base_path/data/telemetry-salt"
