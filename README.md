@@ -38,9 +38,9 @@ For bundle deployments:
 
 Other commands:
 - `lit flush-opcache` flush PHP-FPM OPCache by calling `opcache_reset()` via an HTTP request
-- `lit enable-git-release-caching` enables git release caching
+- `lit enable-git-release-caching` for faster deployments of the same commit
 - `lit disable-git-release-caching` disables git release caching
-- `lit enable-telemetry` enables anonymous telemetry
+- `lit enable-telemetry` enables sending anonymous telemetry after a deployment
 - `lit disable-telemetry` disables telemetry
 
 ## Getting started
@@ -115,7 +115,6 @@ project
 ├── .env
 ├── current -> releases/2/
 ├── hooks/
-├── lit/
 ├── logs/
 ├── releases/
 │   ├── 1/
