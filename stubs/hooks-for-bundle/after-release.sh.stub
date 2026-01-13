@@ -2,8 +2,6 @@ project_base_directory="$1"
 new_release_directory="$2"
 lit_base_path="$3"
 
-(cd "$project_base_directory" && bash "$lit_base_path/lit.sh" flush-opcache)
-
 available_commands=$(php artisan list)
 
 # Available since Laravel 10
@@ -20,3 +18,5 @@ fi
 if [[ "$available_commands" =~ "pulse:restart" ]]; then
     php artisan pulse:restart
 fi
+
+(cd "$project_base_directory" && bash "$lit_base_path/lit.sh" flush-opcache)
