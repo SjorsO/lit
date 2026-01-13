@@ -60,16 +60,19 @@ release_lit_log_lock() {
 replace_log_placeholder() {
     local pid="$1"
     local result="$2"
-    local duration="$3"
+    local runtime_in_ms="$3"
+    local pretty_runtime="$((runtime_in_ms / 1000)).$((runtime_in_ms % 1000 / 100))s"
     local log_file="$project_base_path/logs/lit.log"
 
     acquire_lit_log_lock
 
     if [ -n "$result" ]; then
-        sed "s/ (pending:$pid)\$/ → $result (in ${duration}s)/" "$log_file" > "$log_file.tmp" && mv "$log_file.tmp" "$log_file"
+        sed "s/ (pending:$pid)\$/ → $result (in ${pretty_runtime})/" "$log_file" > "$log_file.tmp"
     else
-        sed "s/ (pending:$pid)\$//" "$log_file" > "$log_file.tmp" && mv "$log_file.tmp" "$log_file"
+        sed "s/ (pending:$pid)\$//" "$log_file" > "$log_file.tmp"
     fi
+
+    mv "$log_file.tmp" "$log_file"
 
     release_lit_log_lock
 }

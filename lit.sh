@@ -92,7 +92,7 @@ if [ "$command" = "flush-opcache" ] && [ "$__lit_allow_flush_opcache_without_loc
     exit $?
 fi
 
-start_time=$(date +%s)
+start_time=$(current_time_in_ms)
 
 acquire_lit_log_lock
 echo "[$(get_human_timestamp)] lit $* (pending:$$)" >> "$project_base_path/logs/lit.log"
@@ -116,7 +116,7 @@ on_exit() {
         rm -f "$project_base_path/current-run-result"
     fi
 
-    replace_log_placeholder "$$" "$log_result" "$(($(date +%s) - start_time))"
+    replace_log_placeholder "$$" "$log_result" "$(($(current_time_in_ms) - start_time))"
 
     echo "[$(get_human_timestamp)] Finished" >> "$project_base_path/logs/lit-output.log"
 
@@ -144,7 +144,7 @@ mkdir "$lock_directory_path"
 has_created_lock_directory=true
 
 # A git pre-commit hook automatically increments this version number.
-echo "38" > "$lit_base_path/data/lit-version"
+echo "39" > "$lit_base_path/data/lit-version"
 
 if [ -f "$lit_base_path/data/telemetry-enabled" ] && [ ! -s "$lit_base_path/data/telemetry-salt" ]; then
     uuidgen | tr '[:upper:]' '[:lower:]' > "$lit_base_path/data/telemetry-salt"
