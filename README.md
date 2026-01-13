@@ -148,6 +148,15 @@ After this hook is done running, Lit will cache the release so it can be reused 
 A cached release is only reused if the `before-caching.sh` hook is identical to the hook that created the cache entry.
 To keep the hook identical, consider using a symlink for your `before-caching.sh` to share it across projects.
 
+## Compatability with other tools
+Lit is compatible with zero-downtime deployments made by:
+- Laravel Envoyer
+- Laravel Forge
+- Deployer
+- [Deploy Laravel](https://github.com/SjorsO/deploy-laravel)
+
+TODO
+
 ## Downsides of deploying with Lit (or Git)
 Using Lit (or Git) to deploy your Laravel applications is perfectly fine in almost all cases.
 There are a few minor downsides you should be aware of:
