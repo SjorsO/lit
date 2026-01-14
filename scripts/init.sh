@@ -44,8 +44,8 @@ fi
 
 if [ "$init_in_current_directory" = false ]; then
     if [ -n "$custom_project_name" ]; then
-        if ! [[ "$custom_project_name" =~ ^[a-zA-Z0-9._-]+$ ]]; then
-            printf 'Project name "%s" contains invalid characters. Only a-z, 0-9, _, - and . are allowed.\n' "$custom_project_name"
+        if ! [[ "$custom_project_name" != . && "$custom_project_name" != .. && "$custom_project_name" != */* && "$custom_project_name" != *[$'\001'-$'\037'$'\177']* ]]; then
+            printf 'Invalid project name "%s"\n' "$custom_project_name"
 
             exit 1
         fi
@@ -68,7 +68,9 @@ if [ "$(ls -A "$project_path" 2>/dev/null)" ]; then
         else
             printf 'Directory "%s" contains a Laravel project without zero-downtime structure\n' "$project_name"
         fi
-        printf 'Lit can only be initialized in projects deployed with Envoyer, Forge, Deployer, etc.\n'
+        printf 'Lit can only be initialized in projects that already have zero-downtime structure.\n'
+        printf '\n'
+        printf 'For migration instructions, see: https://github.com/SjorsO/lit?tab=readme-ov-file#migrating-an-existing-project\n'
 
         exit 1
     fi
@@ -113,7 +115,7 @@ if [ "$source_type" = "git" ]; then
     printf 'Current branch set to "%s"\n' "$default_branch"
 elif [ "$source_type" = "bundle" ]; then
     if [ -s "$project_path/git-repository-url" ]; then
-        old_branch=$(cat "$project_path/git-branch" 2>/dev/null)
+        old_branch=$(cat "$project_path/git-branch" 2>/dev/null || true)
 
         printf 'Changing from git URL: %s (branch: %s)\n' "$(cat "$project_path/git-repository-url")" "${old_branch:-no branch}"
 

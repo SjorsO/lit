@@ -24,31 +24,22 @@ assert_file_content "$world_path/case/this-does-not-exist/bundle-url" "https://e
 
 # Invalid custom project names should be rejected
 set +e
-output=$(lit init "https://example.com/app.tar.gz" "invalid name" 2>&1)
-status_code=$?
-set -e
-
-assert_same 1 "$status_code" || exit 1
-assert_string_contains "$output" "contains invalid characters" || exit 1
-assert_file_missing "$world_path/case/invalid name" || exit 1
-
-set +e
 output=$(lit init "https://example.com/app.tar.gz" "path/traversal" 2>&1)
 status_code=$?
 set -e
 
 assert_same 1 "$status_code" || exit 1
-assert_string_contains "$output" "contains invalid characters" || exit 1
+assert_string_contains "$output" "Invalid project name" || exit 1
 
 set +e
-output=$(lit init "https://example.com/app.tar.gz" "special@chars!" 2>&1)
+output=$(lit init "https://example.com/app.tar.gz" ".." 2>&1)
 status_code=$?
 set -e
 
 assert_same 1 "$status_code" || exit 1
-assert_string_contains "$output" "contains invalid characters" || exit 1
+assert_string_contains "$output" "Invalid project name" || exit 1
 
-# Valid custom project name should work
+# Valid custom project names (spaces and special chars are now allowed)
 set +e
 output=$(lit init "https://example.com/app.tar.gz" "my-valid_project.name123" 2>&1)
 status_code=$?
@@ -56,6 +47,22 @@ set -e
 
 assert_same 0 "$status_code" || exit 1
 assert_file_exists "$world_path/case/my-valid_project.name123/bundle-url" || exit 1
+
+set +e
+output=$(lit init "https://example.com/app.tar.gz" "name with spaces" 2>&1)
+status_code=$?
+set -e
+
+assert_same 0 "$status_code" || exit 1
+assert_file_exists "$world_path/case/name with spaces/bundle-url" || exit 1
+
+set +e
+output=$(lit init "https://example.com/app.tar.gz" "special@chars!" 2>&1)
+status_code=$?
+set -e
+
+assert_same 0 "$status_code" || exit 1
+assert_file_exists "$world_path/case/special@chars!/bundle-url" || exit 1
 
 # Too many arguments should fail
 set +e
