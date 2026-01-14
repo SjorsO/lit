@@ -35,6 +35,8 @@ For bundle deployments:
 - `lit init <bundle download url> [name]` initializes a new Lit directory
 - `lit deploy` downloads the bundle and deploys it
 
+To switch between git and bundle deployments, run `lit init <url> .` in your existing Lit project.
+
 Other commands:
 - `lit flush-opcache` flush PHP-FPM OPCache by calling `opcache_reset()` via an HTTP request
 - `lit enable-git-release-caching` for faster deployments of the same commit
