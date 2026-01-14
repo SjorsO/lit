@@ -148,7 +148,7 @@ sqlite database
 database migrations can fail
 (all the other stuff from my deploy guide)
 
-## Release caching
+## Git release caching
 Lit can cache releases and reuse them for future deployments.
 Using a cached release is significantly faster when deploying the same commit multiple times.
 Release caching is perfect for servers that host the same application multiple times for multiple tenants.
