@@ -39,7 +39,7 @@ Other commands:
 - `lit flush-opcache` flush PHP-FPM OPCache by calling `opcache_reset()` via an HTTP request
 - `lit enable-git-release-caching` for faster deployments of the same commit
 - `lit disable-git-release-caching` disables git release caching
-- `lit enable-telemetry` enables sending anonymous telemetry after a deployment
+- `lit enable-telemetry` enables sending anonymous telemetry after a deployment (disabled by default)
 - `lit disable-telemetry` disables telemetry
 
 ## Getting started
@@ -48,15 +48,29 @@ You'll be asked to fill in your `.env` file, and to review and update the `hooks
 When you're done, run `lit deploy` to deploy the project.
 
 ## Migrating an existing project
-Migrating a project that isn't zero-downtime structure (e.g.: deployed with `git pull`):
-- Put your application in maintenance mode
+Migrate from Deployer, Laravel Envoyer, or Laravel Forge to Lit:
+- Run `lit init <url> .` inside your existing project
+- Review the hook files (as mentioned in the on-screen instructions)
+- Run `lit deploy` to deploy
+
+After migrating, you can continue using Deployer, Envoyer, or Forge alongside Lit.
+Lit uses the same directory structure and doesn't move or modify your existing files.
+
+Migrate from `git pull` or FTP deployments to Lit:
+- Run `lit init <url> .` inside your existing project
+- Review the hook files (as mentioned in the on-screen instructions)
+- Run `lit deploy` to deploy
+- Update your cron and queue workers to point at `/current/artisan` instead of `/artisan`
+- Update your nginx to point at `/current/public/index.php` instead of `/public/index.php`
+
+Migrate an existing project to a new directory:
+- Run `php artisan down` to put your existing project in maintenance mode
 - Create a new Lit project with `lit init <url> [name]`
 - Copy your existing `.env` file and `storage` directory to the Lit directory
-- Run a deployment with `lit deploy`
+- Run `lit deploy` to deploy
 - Update your cron and queue workers to point at `{lit_directory}/current/artisan`
-
-Migrating a project that already has zero-downtime structure (e.g.: deployed with Laravel Envoyer or Deployer):
-- TODO
+- Update your nginx to point at `{lit_directory}/current/public/index.php`
+- Run `php artisan up` to take you Lit project out of maintenance mode 
 
 ## Deploying a bundle
 Lit can download and deploy pre-built bundles.
@@ -146,15 +160,6 @@ After this hook is done running, Lit will cache the release so it can be reused 
 
 A cached release is only reused if the `before-caching.sh` hook is identical to the hook that created the cache entry.
 To keep the hook identical, consider using a symlink for your `before-caching.sh` to share it across projects.
-
-## Compatability with other tools
-Lit is compatible with zero-downtime deployments made by:
-- Laravel Envoyer
-- Laravel Forge
-- Deployer
-- [Deploy Laravel](https://github.com/SjorsO/deploy-laravel)
-
-TODO
 
 ## Downsides of deploying with Lit (or Git)
 Using Lit (or Git) to deploy your Laravel applications is perfectly fine in almost all cases.
