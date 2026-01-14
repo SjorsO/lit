@@ -105,7 +105,7 @@ Below is a GitHub Actions snippet that makes a bundle and uploads it to a public
     aws --endpoint-url "https://fsn1.your-objectstorage.com" s3 cp "/tmp/bundle.tar.hash" "s3://bucket-name/your-bundle.tar.hash"
 ```
 
-Once your bundle is available in the bucket, set up a lit project like this:
+Once your bundle is available in the bucket, set up a Lit project like this:
 ```
 lit init https://bucket-name.fsn1.your-objectstorage.com/your-bundle.tar
 ```
