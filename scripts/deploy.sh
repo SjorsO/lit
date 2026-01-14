@@ -36,11 +36,15 @@ releases_directory="$project_base_path/releases"
 current_directory_path="$project_base_path/current"
 
 # Projects previously deployed with Deployer have a "shared" directory.
-if [[ -d "$project_base_path/shared/storage" ]] && [[ -f "$project_base_path/shared/.env" ]]; then
+if [[ -d "$project_base_path/shared/storage" ]]; then
     real_storage_directory_path="$project_base_path/shared/storage"
-    real_env_file_path="$project_base_path/shared/.env"
 else
     real_storage_directory_path="$project_base_path/storage"
+fi
+
+if [[ -f "$project_base_path/shared/.env" ]]; then
+    real_env_file_path="$project_base_path/shared/.env"
+else
     real_env_file_path="$project_base_path/.env"
 fi
 
