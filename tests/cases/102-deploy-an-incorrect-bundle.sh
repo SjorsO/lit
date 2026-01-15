@@ -26,15 +26,15 @@ Adding bundle to cache ('"$world_path"'/lit/cached-releases/bb22dfeac05ac841f274
 Creating "'"$project_path"'/releases/1" for the new release...
 Extracting bundle...
 
-Incorrect bundle structure.
-Lit extracts bundles with "--strip-components=1", this strips the first path part from
-every entry in the bundle.
+Error: Incorrect bundle structure.
+All entries in the bundle must be in a top-level directory.
 
-You can verify your bundle by running "tar -tf {bundle}", each entry should look
-either like "some-dir/config/filesystems.php" or like this "./config/filesystems.php".
-If your entries look like "config/filesystem.php", then the bundle does not extract correctly.
+Run "tar -tf {bundle}" to check. Entries should look like:
+  ./config/filesystems.php       (good)
+  my-app/config/filesystems.php  (good)
+  config/filesystems.php         (bad - missing top-level directory)
 
-For help with making bundles, see: https://github.com/SjorsO/lit?tab=readme-ov-file#deploying-a-bundle
+See: https://github.com/SjorsO/lit?tab=readme-ov-file#deploying-a-bundle
 
 Deleting new but unreleased release directory "'"$project_path"'/releases/1"
 Finished with errors (in X seconds)'
