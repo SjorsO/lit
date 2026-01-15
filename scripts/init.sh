@@ -1,4 +1,19 @@
 #!/bin/bash
+#
+# When you run `lit init <url> [project name]`:
+# - If a [project name] is passed in, that directory is used.
+# - If [project name] is empty or ".", the current directory is used if it is a Laravel project.
+# - If the current directory is not a Laravel project, and no [project name] is specified, Lit will
+#   use the project name from the <url>.
+# - If the directory that Lit will use is not empty, and not a Laravel project, then Lit aborts.
+#
+# Lit can init in:
+# - An empty directory
+# - A directory containing a Lit project (to update the git/bundle url)
+# - A directory containing a zero downtime structure Laravel project (containing a ".env" file and
+#   "storage" directory, and "releases" directory).
+# - A directory containing a non-zero downtime structure Laravel project (containing the "artisan"
+#   and "composer.json" files, but missing the "releases" directory).
 
 set -e
 
@@ -29,17 +44,26 @@ fi
 is_existing_zero_downtime_project() {
     local path="$1"
 
-    [ -d "$path/releases" ] || { [ -d "$path/storage" ] && [ -f "$path/.env" ]; } || { [ -d "$path/shared/storage" ] && [ -f "$path/shared/.env" ]; }
+    [ -d "$path/releases" ] && { { [ -d "$path/storage" ] || [ -d "$path/shared/storage" ]; } && { [ -f "$path/.env" ] || [ -f "$path/shared/.env" ]; }; }
+}
+
+is_laravel_project() {
+    local path="$1"
+
+    is_existing_zero_downtime_project "$path" || [ -f "$path/artisan" ] || [ -f "$path/composer.json" ]
 }
 
 init_in_current_directory=false
+init_in_non_zero_downtime_project=false
 
 # When running "lit init <url>" without specifying a project name, check if the current directory
-# is a zero downtime Laravel project, if yes, init in the current directory.
-if [ "$custom_project_name" = "." ] || { [ -z "$custom_project_name" ] && is_existing_zero_downtime_project "$base_path"; }; then
+# is an existing Laravel project, if yes, init in the current directory.
+if [ "$custom_project_name" = "." ] || { [ -z "$custom_project_name" ] && is_laravel_project "$base_path"; }; then
     project_path="$base_path"
     project_name="$(basename "$base_path")"
     init_in_current_directory=true
+
+    is_existing_zero_downtime_project "$base_path" || init_in_non_zero_downtime_project=true
 fi
 
 if [ "$init_in_current_directory" = false ]; then
@@ -62,20 +86,9 @@ fi
 
 # Check if the directory already exists and is not empty
 if [ "$(ls -A "$project_path" 2>/dev/null)" ]; then
-    if [ -f "$project_path/artisan" ] || [ -f "$project_path/composer.json" ]; then
-        if [ "$init_in_current_directory" = true ]; then
-            printf 'Current directory contains a Laravel project without zero-downtime structure\n'
-        else
-            printf 'Directory "%s" contains a Laravel project without zero-downtime structure\n' "$project_name"
-        fi
-        printf 'Lit can only be initialized in projects that already have zero-downtime structure.\n'
-        printf '\n'
-        printf 'For migration instructions, see: https://github.com/SjorsO/lit?tab=readme-ov-file#migrating-an-existing-project\n'
-
-        exit 1
-    fi
-
-    if ! is_existing_zero_downtime_project "$project_path"; then
+    if is_laravel_project "$project_path"; then
+        is_existing_zero_downtime_project "$project_path" || init_in_non_zero_downtime_project=true
+    else
         printf 'Directory "%s" already exists and is not a Laravel project\n' "$project_name"
 
         exit 1
@@ -172,7 +185,7 @@ mkdir -p "$project_path/releases"
 
 printf 'Finished initializing "%s"\n' "$project_name"
 
-has_next_steps=$([ "$init_in_current_directory" = false ] || [ ! -s "$env_file_path" ] || [ ${#created_hooks[@]} -gt 0 ] || [ "$switched_lit_source_type" = true ] && echo true || echo false)
+has_next_steps=$([ "$init_in_current_directory" = false ] || [ ! -s "$env_file_path" ] || [ ${#created_hooks[@]} -gt 0 ] || [ "$switched_lit_source_type" = true ] || [ "$init_in_non_zero_downtime_project" = true ] && echo true || echo false)
 
 if [ "$has_next_steps" = true ]; then
     printf '\n'
@@ -198,15 +211,31 @@ if [ "$has_next_steps" = true ]; then
         done
     fi
 
-    printf '\n'
-
     if [ "$source_type" = "git" ]; then
+        printf '\n'
         printf 'After that, either:\n'
         printf -- '- Run "lit deploy" to deploy the current branch (%s)\n' "$default_branch"
         printf -- '- Run "lit checkout <branch>" to deploy a different branch\n'
     elif [ "$source_type" = "bundle" ]; then
+        printf '\n'
         printf 'After that, run "lit deploy" to download and deploy the bundle\n'
     fi
+
+     if [ "$init_in_non_zero_downtime_project" = true ]; then
+         printf '\n'
+         printf -- 'After you have deployed with Lit:\n'
+         printf -- '- Update your cron and queue workers to point at "/current/artisan" instead of "/artisan"\n'
+         printf -- '- Update your nginx to point at "/current/public/index.php" instead of "/public/index.php"\n'
+         printf '\n'
+         printf -- '(Optional) Delete the original Laravel project files, keeping only:\n'
+         if [ "$source_type" = "git" ]; then
+             printf -- '- Directories: current/, hooks/, logs/, releases/, storage/\n'
+             printf -- '- Files: .env, git-repository-url, git-branch, git-commit\n'
+         else
+             printf -- '- Directories: current/, hooks/, releases/, storage/\n'
+             printf -- '- Files: .env, bundle-url, bundle-hash\n'
+         fi
+     fi
 else
     printf '\n'
 
