@@ -450,6 +450,9 @@ elif [ "$source_type" = "bundle" ]; then
     fi
 fi
 
+# Laravel needs this directory, make sure it exists even if it was excluded from the bundle.
+mkdir -p "$new_release_directory/bootstrap/cache"
+
 printf 'Creating a symlink to the storage directory\n'
 
 rm -rf "$new_release_directory/storage"
