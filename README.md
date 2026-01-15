@@ -76,40 +76,42 @@ Migrate an existing project to a new directory:
 
 ## Deploying a bundle
 Lit can download and deploy pre-built bundles.
+The bundle can include your composer dependencies and javascript bundle so you don't have to install or build anything on the server.
 
-You can automate bundle creation in CI/CD.
-Below is a GitHub Actions snippet that makes a bundle and uploads it to a public Hetzner Object Storage bucket.
+To deploy from a bundle, first create a bundle and make it available to download, then run:
 ```
-- name: Install dependencies
-  run: |
-    composer install --no-interaction --no-progress --optimize-autoloader --no-dev
-    npm ci
-    npm run build    
-
-- name: Make bundle
-  run: |
-    tar --create --use-compress-program "zstd -T0 -3" \
-      --exclude="bootstrap/cache/*" \
-      --exclude="node_modules" \
-      --exclude="public/storage" \
-      --exclude="storage" \
-      --exclude="tests" \
-      --file "/tmp/bundle.tar" *
-
-- name: Upload bundle
-  env:
-    AWS_ACCESS_KEY_ID: ${{ secrets.HETZNER_S3_ACCESS_KEY }}
-    AWS_SECRET_ACCESS_KEY: ${{ secrets.HETZNER_S3_SECRET_KEY }}
-    AWS_DEFAULT_REGION: "fsn1"
-  run: |
-    sha1sum "/tmp/bundle.tar" | awk '{print $1}' > "/tmp/bundle.tar.hash"
-    aws --endpoint-url "https://fsn1.your-objectstorage.com" s3 cp "/tmp/bundle.tar" "s3://bucket-name/your-bundle.tar"
-    aws --endpoint-url "https://fsn1.your-objectstorage.com" s3 cp "/tmp/bundle.tar.hash" "s3://bucket-name/your-bundle.tar.hash"
+lit init <bundle download url>
 ```
 
-Once your bundle is available in the bucket, set up a Lit project like this:
-```
-lit init https://bucket-name.fsn1.your-objectstorage.com/your-bundle.tar
+You can upload a `.hash` file alongside your bundle that contains the SHA1 hash of your bundle.
+This allows Lit to check the version of the bundle without having to download the full bundle. 
+If the bundle hash is the same as the currently deployed bundle, the deployment is sk
+If your bundle is available at: `https://example.com/bundle.tar`, then your hash file should be at `https://example.com/bundle.tar.hash`.
+
+The script below is the recommended way to create a bundle and hash file:
+```bash
+project="$(basename "$(pwd)")"
+
+cd ..
+
+sed 's/\/$//' > "exclude-from-tar" <<EOF
+$project/.git/
+$project/bootstrap/cache/
+$project/node_modules/
+$project/public/storage
+$project/storage/
+$project/tests/
+.env
+EOF
+
+tar --create --use-compress-program "zstd -T0 -3" \
+    --exclude-from="exclude-from-tar" \
+    --file "/tmp/artifacts.tar" "$project"
+
+sha1sum "/tmp/artifacts.tar" | awk '{print $1}' > "/tmp/artifacts.tar.hash"
+
+echo "Bundle contents:"
+tar --list --file /tmp/artifacts.tar | awk -v p="$project" '$0 ~ "^" p "/vendor/" {c++; next} {print} END{if(c) print p "/vendor/{" c " entries}"}'
 ```
 
 ## Zero downtime deployments
