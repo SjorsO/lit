@@ -116,6 +116,8 @@ if [ "$source_type" = "git" ]; then
         printf 'Changing from bundle URL: %s\n' "$(cat "$project_path/bundle-url")"
 
         switched_lit_source_type=true
+    elif [ -s "$project_path/git-repository-url" ]; then
+        printf 'Changing from git repository URL: %s\n' "$(cat "$project_path/git-repository-url")"
     fi
 
     rm -f "$project_path/bundle-url"
@@ -133,6 +135,8 @@ elif [ "$source_type" = "bundle" ]; then
         printf 'Changing from git URL: %s (branch: %s)\n' "$(cat "$project_path/git-repository-url")" "${old_branch:-no branch}"
 
         switched_lit_source_type=true
+    elif [ -s "$project_path/bundle-url" ]; then
+        printf 'Changing from bundle URL: %s\n' "$(cat "$project_path/bundle-url")"
     fi
 
     rm -f "$project_path/git-repository-url"

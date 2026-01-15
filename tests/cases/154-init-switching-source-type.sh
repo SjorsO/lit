@@ -36,7 +36,8 @@ set -e
 
 assert_same 0 "$status_code" || exit 1
 
-expected_output='Bundle URL set to "https://example.com/releases/my-app-v2.tar.gz"
+expected_output='Changing from bundle URL: https://example.com/releases/my-app.tar.gz
+Bundle URL set to "https://example.com/releases/my-app-v2.tar.gz"
 
 Finished initializing "my-app"
 
@@ -83,6 +84,7 @@ assert_same 0 "$status_code" || exit 1
 
 expected_output='Reading "https://github.com/SjorsO/lit.git"... Done!
 
+Changing from git repository URL: https://github.com/SjorsO/lit.git
 Current branch set to "main"
 
 Finished initializing "my-app"
@@ -131,7 +133,8 @@ set -e
 assert_same 0 "$status_code" || exit 1
 assert_file_exists "$project_path/hooks/before-release.sh" || exit 1
 
-expected_output='Bundle URL set to "https://example.com/another-bundle.tar"
+expected_output='Changing from bundle URL: https://example.com/final-bundle.tar
+Bundle URL set to "https://example.com/another-bundle.tar"
 
 Finished initializing "my-app"
 
