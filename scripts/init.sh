@@ -239,6 +239,14 @@ if [ "$has_next_steps" = true ]; then
              printf -- '- Directories: current/, hooks/, releases/, storage/\n'
              printf -- '- Files: .env, bundle-url, bundle-hash\n'
          fi
+
+         if ls "$project_path/database"/*.sqlite 1> /dev/null 2>&1; then
+             printf '\n'
+             printf -- 'Warning:\n'
+             printf -- 'The SQLite files in your "database/" directory must be moved.\n'
+             printf -- 'Move them to the root of your project and set this in your ".env":\n'
+             printf -- 'DB_DATABASE="%s/database.sqlite"\n' "$project_path"
+         fi
      fi
 else
     printf '\n'
