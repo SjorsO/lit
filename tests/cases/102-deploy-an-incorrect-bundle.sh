@@ -25,6 +25,7 @@ Downloading bundle from "https://watchtower-static.fsn1.your-objectstorage.com/l
 Adding bundle to cache ('"$world_path"'/lit/cached-releases/bb22dfeac05ac841f274afce3955dae95017ab5b.tar)
 Creating "'"$project_path"'/releases/1" for the new release...
 Extracting bundle...
+
 Incorrect bundle structure.
 Lit extracts bundles with "--strip-components=1", this strips the first path part from
 every entry in the bundle.
@@ -32,7 +33,9 @@ every entry in the bundle.
 You can verify your bundle by running "tar -tf {bundle}", each entry should look
 either like "some-dir/config/filesystems.php" or like this "./config/filesystems.php".
 If your entries look like "config/filesystem.php", then the bundle does not extract correctly.
+
 For help with making bundles, see: https://github.com/SjorsO/lit?tab=readme-ov-file#deploying-a-bundle
+
 Deleting new but unreleased release directory "'"$project_path"'/releases/1"
 Finished with errors (in X seconds)'
 assert_exact_output "$expected_output" "$output" || exit 1

@@ -435,15 +435,17 @@ elif [ "$source_type" = "bundle" ]; then
     # Assuming "config/filesystems.php" is always present. if this file is in the root, then the bundle
     # wasn't made with "--strip-components" in mind.
     if [ -f "$new_release_directory/filesystems.php" ]; then
+        printf '\n'
         printf 'Incorrect bundle structure.\n'
         printf 'Lit extracts bundles with "--strip-components=1", this strips the first path part from\n'
         printf 'every entry in the bundle.\n'
         printf '\n'
         printf 'You can verify your bundle by running "tar -tf {bundle}", each entry should look\n'
         printf 'either like "some-dir/config/filesystems.php" or like this "./config/filesystems.php".\n'
-        printf 'If your entries look like "config/filesystem.php", then the bundle does not extract correctly.'
+        printf 'If your entries look like "config/filesystem.php", then the bundle does not extract correctly.\n'
         printf '\n'
         printf 'For help with making bundles, see: https://github.com/SjorsO/lit?tab=readme-ov-file#deploying-a-bundle\n'
+        printf '\n'
         exit 1
     fi
 fi
