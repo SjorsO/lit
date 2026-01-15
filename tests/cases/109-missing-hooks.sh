@@ -21,13 +21,20 @@ set -e
 # Deploy should succeed
 assert_same 0 "$status_code" || exit 1
 
-# Output should mention missing hooks
-assert_string_contains "$output" 'Wanted to run' || exit 1
-assert_string_contains "$output" 'hooks/before-release.sh" but it does not exist' || exit 1
-assert_string_contains "$output" 'hooks/after-release.sh" but it does not exist' || exit 1
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
 
-# on-failure should NOT be mentioned (only runs on failure)
-assert_string_not_contains "$output" 'hooks/on-failure.sh' || exit 1
+expected_output='Reading branch "main" of "https://github.com/SjorsO/lit.git"...
+Creating "'"$project_path"'/releases/1" for the new release...
+Cloning repository...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Wanted to run "'"$project_path"'/hooks/before-release.sh" but it does not exist
+Releasing the new deployment "'"$project_path"'/releases/1"
+Wanted to run "'"$project_path"'/hooks/after-release.sh" but it does not exist
+Finished successfully (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
 
 # Release should still be created and released
 assert_directory_exists "$project_path/releases/1" || exit 1

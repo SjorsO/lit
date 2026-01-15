@@ -22,9 +22,21 @@ status_code=$?
 set -e
 
 assert_same 1 "$status_code" || exit 1
+
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='Reading branch "main" of "https://github.com/SjorsO/lit.git"...
+Creating "'"$project_path"'/releases/1" for the new release...
+Cloning repository...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Deleting new but unreleased release directory "'"$project_path"'/releases/1"
+Finished with errors (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
 assert_file_missing "$project_path/releases/1" || exit 1
 assert_file_missing "$project_path/current" || exit 1
-assert_string_contains "$output" "Deleting new but unreleased release" || exit 1
 
 # on-failure hook should have been called with was_released=false
 assert_file_exists "$project_path/on-failure-called" || exit 1
@@ -40,6 +52,19 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
+
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='Reading branch "main" of "https://github.com/SjorsO/lit.git"...
+Creating "'"$project_path"'/releases/1" for the new release...
+Cloning repository...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Releasing the new deployment "'"$project_path"'/releases/1"
+Finished successfully (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
 assert_directory_exists "$project_path/releases/1" || exit 1
 assert_symlink "$project_path/current" || exit 1
 current_target=$(readlink "$project_path/current")
@@ -58,6 +83,22 @@ set -e
 
 assert_same 1 "$status_code" || exit 1
 
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/([a-f0-9]\{11\})/(COMMIT)/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='Reading branch "main" of "https://github.com/SjorsO/lit.git"...
+Latest commit of "main" is already deployed (COMMIT)
+Using "--force", redeploying...
+Creating "'"$project_path"'/releases/2" for the new release...
+Cloning repository...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Deleting new but unreleased release directory "'"$project_path"'/releases/2"
+Finished with errors (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
+
 # Failed release should be cleaned up
 assert_file_missing "$project_path/releases/2" || exit 1
 
@@ -68,9 +109,6 @@ assert_directory_exists "$project_path/releases/1" || exit 1
 assert_symlink "$project_path/current" || exit 1
 current_target=$(readlink "$project_path/current")
 assert_string_contains "$current_target" "releases/1" || exit 1
-
-# Output should mention the failed release was deleted
-assert_string_contains "$output" "Deleting new but unreleased release" || exit 1
 
 # on-failure hook should have been called with was_released=false
 assert_file_exists "$project_path/on-failure-called" || exit 1

@@ -19,7 +19,7 @@ status_code=$?
 set -e
 
 assert_same 1 "$status_code" || exit 1
-assert_string_contains "$output" "usage: lit checkout <branch>" || exit 1
+assert_exact_output 'usage: lit checkout <branch>' "$output" || exit 1
 
 # Checkout with extra arguments should fail
 set +e
@@ -28,7 +28,7 @@ status_code=$?
 set -e
 
 assert_same 1 "$status_code" || exit 1
-assert_string_contains "$output" "usage: lit checkout <branch>" || exit 1
+assert_exact_output 'usage: lit checkout <branch>' "$output" || exit 1
 
 # Checkout current branch should fail
 set +e
@@ -37,7 +37,7 @@ status_code=$?
 set -e
 
 assert_same 1 "$status_code" || exit 1
-assert_string_contains "$output" 'Current branch is already "main"' || exit 1
+assert_exact_output 'Current branch is already "main"' "$output" || exit 1
 
 # Checkout non-existent branch should fail
 set +e
@@ -46,7 +46,10 @@ status_code=$?
 set -e
 
 assert_same 1 "$status_code" || exit 1
-assert_string_contains "$output" 'does not exist on remote' || exit 1
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+expected_output='Switching to branch "this-branch-does-not-exist"...
+Branch "this-branch-does-not-exist" does not exist on remote'
+assert_exact_output "$expected_output" "$output" || exit 1
 
 # Checkout "another-branch" should succeed and deploy
 set +e
@@ -55,7 +58,19 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_string_contains "$output" 'Switching to branch "another-branch"' || exit 1
+
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='Switching to branch "another-branch"...
+Creating "'"$project_path"'/releases/1" for the new release...
+Cloning repository...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Releasing the new deployment "'"$project_path"'/releases/1"
+Finished successfully (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
 assert_directory_exists "$project_path/releases/1" || exit 1
 assert_symlink "$project_path/current" || exit 1
 assert_file_content "$project_path/git-branch" "another-branch" || exit 1
@@ -67,9 +82,19 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_string_contains "$output" 'Switching to branch "main"' || exit 1
-# Deploy should NOT read from remote again - checkout already got the commit hash
-assert_string_not_contains "$output" 'Reading "https://github.com/SjorsO/lit.git"' || exit 1
+
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='Switching to branch "main"...
+Creating "'"$project_path"'/releases/2" for the new release...
+Cloning repository...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Releasing the new deployment "'"$project_path"'/releases/2"
+Finished successfully (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
 assert_directory_exists "$project_path/releases/2" || exit 1
 assert_file_content "$project_path/git-branch" "main" || exit 1
 
@@ -84,4 +109,4 @@ status_code=$?
 set -e
 
 assert_same 1 "$status_code" || exit 1
-assert_string_contains "$output" 'Cannot change branches because you are not deploying from git' || exit 1
+assert_exact_output 'Cannot change branches because you are not deploying from git' "$output" || exit 1

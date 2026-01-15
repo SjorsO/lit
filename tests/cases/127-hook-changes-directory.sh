@@ -20,6 +20,19 @@ set -e
 
 # Deploy should succeed despite hooks changing directory
 assert_same 0 "$status_code" || exit 1
+
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='Reading branch "main" of "https://github.com/SjorsO/lit.git"...
+Creating "'"$project_path"'/releases/1" for the new release...
+Cloning repository...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Releasing the new deployment "'"$project_path"'/releases/1"
+Finished successfully (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
 assert_directory_exists "$project_path/releases/1" || exit 1
 assert_symlink "$project_path/current" || exit 1
 

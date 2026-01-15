@@ -17,14 +17,16 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_string_contains "$output" 'Release caching for git enabled' || exit 1
-assert_string_contains "$output" 'Created new hook "lit/hooks/before-caching.sh"' || exit 1
-assert_lines_in_order "$output" \
-    'Review and update these hooks:' \
-    '- "hooks/before-caching.sh"' \
-    '- "hooks/before-release.sh"' \
-    '- "hooks/after-release.sh"' \
-    || exit 1
+
+expected_output='Release caching for git enabled
+
+Created new hook "lit/hooks/before-caching.sh"
+
+Review and update these hooks:
+- "hooks/before-caching.sh"
+- "hooks/before-release.sh"
+- "hooks/after-release.sh"'
+assert_exact_output "$expected_output" "$output" || exit 1
 assert_file_exists "$project_path/git-release-caching-enabled" || exit 1
 assert_file_exists "$project_path/hooks/before-caching.sh" || exit 1
 
@@ -44,13 +46,15 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_string_contains "$output" 'Release caching for git disabled' || exit 1
-assert_lines_in_order "$output" \
-    'Review and update these hooks:' \
-    '- "hooks/before-release.sh"' \
-    '- "hooks/after-release.sh"' \
-    || exit 1
-assert_string_contains "$output" 'This hook will not be used anymore: "lit/hooks/before-caching.sh"' || exit 1
+
+expected_output='Release caching for git disabled
+
+Review and update these hooks:
+- "hooks/before-release.sh"
+- "hooks/after-release.sh"
+
+This hook will not be used anymore: "lit/hooks/before-caching.sh"'
+assert_exact_output "$expected_output" "$output" || exit 1
 assert_file_missing "$project_path/git-release-caching-enabled" || exit 1
 assert_file_exists "$project_path/hooks/before-caching.sh" || exit 1
 
@@ -70,14 +74,14 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_string_contains "$output" 'Release caching for git enabled' || exit 1
-assert_string_not_contains "$output" 'Created new hook' || exit 1
-assert_lines_in_order "$output" \
-    'Review and update these hooks:' \
-    '- "hooks/before-caching.sh"' \
-    '- "hooks/before-release.sh"' \
-    '- "hooks/after-release.sh"' \
-    || exit 1
+
+expected_output='Release caching for git enabled
+
+Review and update these hooks:
+- "hooks/before-caching.sh"
+- "hooks/before-release.sh"
+- "hooks/after-release.sh"'
+assert_exact_output "$expected_output" "$output" || exit 1
 assert_file_exists "$project_path/git-release-caching-enabled" || exit 1
 
 # 6. Delete hook manually and disable caching - should succeed
@@ -89,12 +93,12 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_string_contains "$output" 'Release caching for git disabled' || exit 1
-assert_lines_in_order "$output" \
-    'Review and update these hooks:' \
-    '- "hooks/before-release.sh"' \
-    '- "hooks/after-release.sh"' \
-    || exit 1
-assert_string_not_contains "$output" 'This hook will not be used anymore' || exit 1
+
+expected_output='Release caching for git disabled
+
+Review and update these hooks:
+- "hooks/before-release.sh"
+- "hooks/after-release.sh"'
+assert_exact_output "$expected_output" "$output" || exit 1
 assert_file_missing "$project_path/git-release-caching-enabled" || exit 1
 assert_file_missing "$project_path/hooks/before-caching.sh" || exit 1

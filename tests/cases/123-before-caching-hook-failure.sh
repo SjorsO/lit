@@ -24,6 +24,16 @@ set -e
 # Should fail because hook failed
 assert_same 1 "$status_code" || exit 1
 
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='Reading branch "main" of "https://github.com/SjorsO/lit.git"...
+Cloning repository...
+Running "lit/hooks/before-caching.sh"...
+Finished with errors (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
+
 # No release should be created
 assert_file_missing "$project_path/releases/1" || exit 1
 

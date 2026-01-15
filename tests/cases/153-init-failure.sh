@@ -29,7 +29,7 @@ status_code=$?
 set -e
 
 assert_same 1 "$status_code" || exit 1
-assert_string_contains "$output" "Invalid project name" || exit 1
+assert_exact_output 'Invalid project name "path/traversal"' "$output" || exit 1
 
 set +e
 output=$(lit init "https://example.com/app.tar.gz" ".." 2>&1)
@@ -37,7 +37,7 @@ status_code=$?
 set -e
 
 assert_same 1 "$status_code" || exit 1
-assert_string_contains "$output" "Invalid project name" || exit 1
+assert_exact_output 'Invalid project name ".."' "$output" || exit 1
 
 # Valid custom project names (spaces and special chars are now allowed)
 set +e
@@ -71,4 +71,11 @@ status_code=$?
 set -e
 
 assert_same 1 "$status_code" || exit 1
-assert_string_contains "$output" "usage: lit init" || exit 1
+
+expected_output='usage: lit init <url> [project-name]
+
+Examples:
+  lit init https://github.com/user/repo.git
+  lit init https://github.com/user/repo.git my-project
+  lit init https://example.com/releases/app.tar.gz'
+assert_exact_output "$expected_output" "$output" || exit 1

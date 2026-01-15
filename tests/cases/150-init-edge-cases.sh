@@ -7,8 +7,14 @@ status_code=$?
 set -e
 
 assert_same 1 "$status_code" || exit 1
-assert_string_contains "$output" "usage: lit init <url>" || exit 1
-assert_string_contains "$output" "Examples:" || exit 1
+
+expected_output='usage: lit init <url> [project-name]
+
+Examples:
+  lit init https://github.com/user/repo.git
+  lit init https://github.com/user/repo.git my-project
+  lit init https://example.com/releases/app.tar.gz'
+assert_exact_output "$expected_output" "$output" || exit 1
 
 # Too many arguments should show usage
 set +e
@@ -17,7 +23,14 @@ status_code=$?
 set -e
 
 assert_same 1 "$status_code" || exit 1
-assert_string_contains "$output" "usage: lit init <url>" || exit 1
+
+expected_output='usage: lit init <url> [project-name]
+
+Examples:
+  lit init https://github.com/user/repo.git
+  lit init https://github.com/user/repo.git my-project
+  lit init https://example.com/releases/app.tar.gz'
+assert_exact_output "$expected_output" "$output" || exit 1
 
 # Invalid project name ".." should be rejected
 set +e
@@ -26,7 +39,7 @@ status_code=$?
 set -e
 
 assert_same 1 "$status_code" || exit 1
-assert_string_contains "$output" 'Invalid project name' || exit 1
+assert_exact_output 'Invalid project name ".."' "$output" || exit 1
 
 # Invalid project name with slash should be rejected
 set +e
@@ -35,7 +48,7 @@ status_code=$?
 set -e
 
 assert_same 1 "$status_code" || exit 1
-assert_string_contains "$output" 'Invalid project name' || exit 1
+assert_exact_output 'Invalid project name "foo/bar"' "$output" || exit 1
 
 # Project name with space is valid
 set +e
@@ -65,7 +78,7 @@ status_code=$?
 set -e
 
 assert_same 1 "$status_code" || exit 1
-assert_string_contains "$output" 'already exists and is not a Laravel project' || exit 1
+assert_exact_output 'Directory "existing-project" already exists and is not a Laravel project' "$output" || exit 1
 
 # Directory already exists but is empty should succeed
 mkdir -p "$world_path/case/empty-project"
@@ -110,4 +123,4 @@ status_code=$?
 set -e
 
 assert_same 1 "$status_code" || exit 1
-assert_string_contains "$output" 'already exists and is not a Laravel project' || exit 1
+assert_exact_output 'Directory "not-zero-downtime" already exists and is not a Laravel project' "$output" || exit 1

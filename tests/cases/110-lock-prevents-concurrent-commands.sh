@@ -23,11 +23,10 @@ set -e
 # Command should fail
 assert_same 1 "$status_code" || exit 1
 
-# Output should mention another command is running
-assert_string_contains "$output" "Another Lit command is currently running" || exit 1
-
-# Output should show how to fix it
-assert_string_contains "$output" "rmdir" || exit 1
+expected_output='Another Lit command is currently running for this project, aborting...
+If this is wrong, manually run:
+    rmdir "'"$project_path"'/lit-is-currently-running"'
+assert_exact_output "$expected_output" "$output" || exit 1
 
 # Log should contain the error message in single-line format
 log_content=$(cat "$project_path/logs/lit.log")
@@ -46,4 +45,17 @@ set -e
 
 # Now it should succeed
 assert_same 0 "$status_code" || exit 1
+
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='Reading branch "main" of "https://github.com/SjorsO/lit.git"...
+Creating "'"$project_path"'/releases/1" for the new release...
+Cloning repository...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Releasing the new deployment "'"$project_path"'/releases/1"
+Finished successfully (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
 assert_directory_exists "$project_path/releases/1" || exit 1

@@ -18,14 +18,20 @@ set -e
 
 # Deploy should fail
 assert_same 1 "$status_code" || exit 1
-assert_lines_in_order "$output" \
-    'Checking bundle version from "https://example.com/nonexistent-bundle.tar.gz.hash"' \
-    'Warning: curl:' \
-    'Downloading bundle from "https://example.com/nonexistent-bundle.tar.gz"' \
-    'Failed to download bundle from "https://example.com/nonexistent-bundle.tar.gz"' \
-    'curl:' \
-    'Finished with errors (in ' \
-    || exit 1
+
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]* seconds)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/curl: ([0-9]*) .*/curl: (CURL_ERROR)/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='Checking bundle version from "https://example.com/nonexistent-bundle.tar.gz.hash"... (in X seconds)
+Warning: curl: (CURL_ERROR)
+Downloading bundle from "https://example.com/nonexistent-bundle.tar.gz"...
+Failed to download bundle from "https://example.com/nonexistent-bundle.tar.gz"
+curl: (CURL_ERROR)
+Finished with errors (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
 
 # No release should be created
 assert_file_missing "$project_path/releases/1" || exit 1

@@ -23,15 +23,28 @@ set -e
 # Deploy should fail (due to after-release hook)
 assert_same 1 "$status_code" || exit 1
 
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='Reading branch "main" of "https://github.com/SjorsO/lit.git"...
+Creating "'"$project_path"'/releases/1" for the new release...
+Cloning repository...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Releasing the new deployment "'"$project_path"'/releases/1"
+>
+> Warning: The new deployment was still released!
+>
+Finished with errors (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
+
 # But release should still exist and be released
 assert_directory_exists "$project_path/releases/1" || exit 1
 assert_symlink "$project_path/current" || exit 1
 
 current_target=$(readlink "$project_path/current")
 assert_string_contains "$current_target" "releases/1" || exit 1
-
-# Output should warn that release was released despite errors
-assert_string_contains "$output" "Warning: The new deployment was still released" || exit 1
 
 # on-failure hook should have been called with was_released=true
 assert_file_exists "$project_path/on-failure-called" || exit 1

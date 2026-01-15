@@ -17,7 +17,7 @@ status_code=$?
 set -e
 
 assert_same 1 "$status_code" || exit 1
-assert_string_contains "$output" "usage: lit deploy [--force]" || exit 1
+assert_exact_output 'usage: lit deploy [--force]' "$output" || exit 1
 
 # Deploy with too many arguments should fail
 set +e
@@ -26,7 +26,7 @@ status_code=$?
 set -e
 
 assert_same 1 "$status_code" || exit 1
-assert_string_contains "$output" "usage: lit deploy [--force]" || exit 1
+assert_exact_output 'usage: lit deploy [--force]' "$output" || exit 1
 
 # Non-numeric release directory should fail
 mkdir "$project_path/releases/not-a-number"
@@ -37,7 +37,14 @@ status_code=$?
 set -e
 
 assert_same 1 "$status_code" || exit 1
-assert_string_contains "$output" "not fully numeric" || exit 1
+
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='The name of existing release directory "'"$project_path"'/releases/not-a-number/" is not fully numeric, this should never happen
+Finished with errors (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
 
 # Clean up invalid release directory
 rmdir "$project_path/releases/not-a-number"
@@ -51,4 +58,17 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_string_contains "$output" 'Hook "hooks/before-caching.sh" exists but will not be used because release caching is disabled' || exit 1
+
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='Reading branch "main" of "https://github.com/SjorsO/lit.git"...
+Creating "'"$project_path"'/releases/1" for the new release...
+Cloning repository...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Hook "hooks/before-caching.sh" exists but will not be used because release caching is disabled
+Releasing the new deployment "'"$project_path"'/releases/1"
+Finished successfully (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1

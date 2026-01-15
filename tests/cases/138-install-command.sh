@@ -17,7 +17,7 @@ status_code=$?
 set -e
 
 assert_same 1 "$status_code" || exit 1
-assert_string_contains "$output" 'run "source lit.sh" instead' || exit 1
+assert_exact_output 'You are running Lit for the first time, run "source lit.sh" instead' "$output" || exit 1
 
 # Test 1: Install with "no" to both prompts (alias and telemetry)
 # The yes_no_menu reads one char at a time with read -rsn1, so no newlines needed

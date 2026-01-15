@@ -55,7 +55,20 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_string_contains "$output" "Reusing deployment from cache" || exit 1
+
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='Reading branch "main" of "https://github.com/SjorsO/lit.git"...
+Reusing deployment from cache
+Creating "'"$project2_path"'/releases/1" for the new release...
+Extracting release...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Releasing the new deployment "'"$project2_path"'/releases/1"
+Finished successfully (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
 assert_file_exists "$project2_path/releases/1/shared-hook-ran" || exit 1
 
 # Changing the shared hook should invalidate cache
@@ -69,7 +82,17 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_string_contains "$output" "is already deployed" || exit 1
+
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/([a-f0-9]\{11\})/(COMMIT)/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='Reading branch "main" of "https://github.com/SjorsO/lit.git"...
+Latest commit of "main" is already deployed (COMMIT)
+Run "lit deploy --force" to redeploy
+Finished successfully (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
 assert_file_missing "$project1_path/releases/2" || exit 1
 
 # Project1 should detect hook changed and rebuild
@@ -79,7 +102,26 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_string_contains "$output" "Cached release found but hook changed, rebuilding" || exit 1
+
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/([a-f0-9]\{11\})/(COMMIT)/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='Reading branch "main" of "https://github.com/SjorsO/lit.git"...
+Latest commit of "main" is already deployed (COMMIT)
+Using "--force", redeploying...
+Cached release found but hook changed, rebuilding...
+Cloning repository...
+Running "project1/hooks/before-caching.sh"...
+Caching release...
+Creating "'"$project1_path"'/releases/2" for the new release...
+Extracting release...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Releasing the new deployment "'"$project1_path"'/releases/2"
+Finished successfully (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
 assert_file_exists "$project1_path/releases/2/shared-hook-v2" || exit 1
 
 # Project2 reuses the cache that project1 just rebuilt
@@ -90,5 +132,21 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_string_contains "$output" "Reusing deployment from cache" || exit 1
+
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/([a-f0-9]\{11\})/(COMMIT)/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='Reading branch "main" of "https://github.com/SjorsO/lit.git"...
+Latest commit of "main" is already deployed (COMMIT)
+Using "--force", redeploying...
+Reusing deployment from cache
+Creating "'"$project2_path"'/releases/2" for the new release...
+Extracting release...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Releasing the new deployment "'"$project2_path"'/releases/2"
+Finished successfully (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
 assert_file_exists "$project2_path/releases/2/shared-hook-v2" || exit 1

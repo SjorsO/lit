@@ -36,11 +36,40 @@ set -e
 
 assert_same 0 "$status_code" || exit 1
 
-# This bundle URL has a .hash file, so it should use it for pre-checking
-assert_string_contains "$output" "Checking bundle version" || exit 1
-assert_string_not_contains "$output" "hash file does not exist" || exit 1
-assert_string_matches "$output" 'Checking bundle version.*\.hash"\.\.\. \(in [0-9]+\.[0-9]+ seconds\)' || exit 1
-assert_string_matches "$output" 'Downloading bundle.*\.tar\.zst"\.\.\. \(6[0-9]K in [0-9]+\.[0-9]+ seconds\)' || exit 1
+# Assert timing formats are correct
+# Hash check: "(in X.XX seconds)" format
+if [[ ! "$output" =~ \(in\ [0-9]+\.[0-9]{2}\ seconds\) ]]; then
+    printf 'Expected hash check timing format "(in X.XX seconds)", got: %s\n' "$output"
+    exit 1
+fi
+# Download: "(XXK in X.XX seconds)" format
+if [[ ! "$output" =~ \([0-9]+K\ in\ [0-9]+\.[0-9]{2}\ seconds\) ]]; then
+    printf 'Expected download timing format "(XXK in X.XX seconds)", got: %s\n' "$output"
+    exit 1
+fi
+# Final runtime: "(in X.XXs)" format
+if [[ ! "$output" =~ \(in\ [0-9]+\.[0-9]{2}s\) ]]; then
+    printf 'Expected runtime format "(in X.XXs)", got: %s\n' "$output"
+    exit 1
+fi
+
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]* seconds)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/([0-9]*K in [0-9]*\.[0-9]* seconds)/(XK in X seconds)/g')
+output=$(echo "$output" | sed 's/[a-f0-9]\{40\}/HASH/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='Checking bundle version from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst.hash"... (in X seconds)
+Downloading bundle from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst"... (XK in X seconds)
+Adding bundle to cache ('"$world_path"'/lit/cached-releases/HASH.tar)
+Creating "'"$project_path"'/releases/1" for the new release...
+Extracting bundle...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Releasing the new deployment "'"$project_path"'/releases/1"
+Finished successfully (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
 
 # Caching-enabled file should be deleted during bundle deploy
 assert_file_missing "$project_path/git-release-caching-enabled" || exit 1
@@ -74,8 +103,18 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_string_contains "$output" "is already deployed" || exit 1
-assert_string_contains "$output" "Run \"lit deploy --force\" to redeploy" || exit 1
+
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]* seconds)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/[a-f0-9]\{40\}/HASH/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='Checking bundle version from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst.hash"... (in X seconds)
+Bundle is already deployed (hash: HASH)
+Run "lit deploy --force" to redeploy
+Finished successfully (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
 assert_file_missing "$project_path/releases/2" || exit 1
 
 # Pull with --force should redeploy
@@ -86,10 +125,28 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
+
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]* seconds)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/([0-9]*K in [0-9]*\.[0-9]* seconds)/(XK in X seconds)/g')
+output=$(echo "$output" | sed 's/[a-f0-9]\{40\}/HASH/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='Checking bundle version from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst.hash"... (in X seconds)
+Downloading bundle from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst"... (XK in X seconds)
+Adding bundle to cache ('"$world_path"'/lit/cached-releases/HASH.tar)
+Bundle is already deployed (hash: HASH)
+Using "--force", redeploying...
+Creating "'"$project_path"'/releases/2" for the new release...
+Extracting bundle...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Releasing the new deployment "'"$project_path"'/releases/2"
+Finished successfully (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
 assert_directory_exists "$project_path/releases/2" || exit 1
 assert_symlink "$project_path/current" || exit 1
-
-# Verify current points to release 2
 current_target=$(readlink "$project_path/current")
 assert_string_contains "$current_target" "releases/2" || exit 1
 
@@ -104,6 +161,27 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
+
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]* seconds)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/([0-9]*K in [0-9]*\.[0-9]* seconds)/(XK in X seconds)/g')
+output=$(echo "$output" | sed 's/[a-f0-9]\{40\}/HASH/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='Checking bundle version from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst.hash"... (in X seconds)
+Downloading bundle from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst"... (XK in X seconds)
+Adding bundle to cache ('"$world_path"'/lit/cached-releases/HASH.tar)
+Bundle is already deployed (hash: HASH)
+Using "--force", redeploying...
+Creating "'"$project_path"'/releases/10" for the new release...
+Extracting bundle...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Releasing the new deployment "'"$project_path"'/releases/10"
+Deleting old release directory "'"$project_path"'/releases/1"...
+Finished successfully (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
 assert_directory_exists "$project_path/releases/10" || exit 1
 assert_directory_exists "$project_path/releases/9" || exit 1
 # first release was deleted because we only keep 2 releases.
@@ -119,6 +197,27 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
+
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]* seconds)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/([0-9]*K in [0-9]*\.[0-9]* seconds)/(XK in X seconds)/g')
+output=$(echo "$output" | sed 's/[a-f0-9]\{40\}/HASH/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='Checking bundle version from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst.hash"... (in X seconds)
+Downloading bundle from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst"... (XK in X seconds)
+Adding bundle to cache ('"$world_path"'/lit/cached-releases/HASH.tar)
+Bundle is already deployed (hash: HASH)
+Using "--force", redeploying...
+Creating "'"$project_path"'/releases/11" for the new release...
+Extracting bundle...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Releasing the new deployment "'"$project_path"'/releases/11"
+Deleting old release directory "'"$project_path"'/releases/9"...
+Finished successfully (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
 assert_directory_exists "$project_path/releases/11" || exit 1
 assert_directory_exists "$project_path/releases/10" || exit 1
 assert_file_missing "$project_path/releases/9" || exit 1

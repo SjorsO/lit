@@ -23,11 +23,19 @@ set -e
 # Deploy should fail (due to before-release hook)
 assert_same 1 "$status_code" || exit 1
 
-# Output should mention the on-failure hook failed
-assert_string_contains "$output" "The on-failure hook failed" || exit 1
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
 
-# Output should still show "Finished with errors"
-assert_string_contains "$output" "Finished with errors" || exit 1
+expected_output='Reading branch "main" of "https://github.com/SjorsO/lit.git"...
+Creating "'"$project_path"'/releases/1" for the new release...
+Cloning repository...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Deleting new but unreleased release directory "'"$project_path"'/releases/1"
+The on-failure hook failed
+Finished with errors (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
 
 # Log should contain the failure (on-failure hook failure is shown in stdout, not lit.log)
 log_content=$(cat "$project_path/logs/lit.log")

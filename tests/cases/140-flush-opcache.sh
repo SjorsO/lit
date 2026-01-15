@@ -35,7 +35,20 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_string_contains "$output" "Not flushing opcache because this appears to be the first deployment" || exit 1
+
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='Reading branch "main" of "https://github.com/SjorsO/lit.git"...
+Creating "'"$project_path"'/releases/1" for the new release...
+Cloning repository...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Releasing the new deployment "'"$project_path"'/releases/1"
+Not flushing opcache because this appears to be the first deployment
+Finished successfully (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
 
 # Create public directory for release 1 (in case hook ran before we could)
 mkdir -p "$project_path/releases/1/public"
@@ -47,8 +60,24 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_string_contains "$output" 'Pinging "https://example.com" to flush OPCache.' || exit 1
-assert_string_contains "$output" "OPCache flushed successfully (simulated)." || exit 1
+
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/([a-f0-9]\{11\})/(COMMIT)/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='Reading branch "main" of "https://github.com/SjorsO/lit.git"...
+Latest commit of "main" is already deployed (COMMIT)
+Using "--force", redeploying...
+Creating "'"$project_path"'/releases/2" for the new release...
+Cloning repository...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Releasing the new deployment "'"$project_path"'/releases/2"
+Pinging "https://example.com" to flush OPCache.
+OPCache flushed successfully (simulated).
+Finished successfully (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
 
 # Verify the temporary PHP files were cleaned up
 php_files_in_current=$(find "$project_path/current/public" -name "lit-flush-opcache-*.php" 2>/dev/null | wc -l | tr -d ' ')
@@ -66,7 +95,10 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_string_contains "$output" 'Pinging "https://single-quoted.com" to flush OPCache.' || exit 1
+
+expected_output='Pinging "https://single-quoted.com" to flush OPCache.
+OPCache flushed successfully (simulated).'
+assert_exact_output "$expected_output" "$output" || exit 1
 
 # Test APP_URL with double quotes
 echo 'APP_URL="https://double-quoted.com"' > "$project_path/.env"
@@ -77,7 +109,10 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_string_contains "$output" 'Pinging "https://double-quoted.com" to flush OPCache.' || exit 1
+
+expected_output='Pinging "https://double-quoted.com" to flush OPCache.
+OPCache flushed successfully (simulated).'
+assert_exact_output "$expected_output" "$output" || exit 1
 
 # Test error cases
 
@@ -90,7 +125,7 @@ status_code=$?
 set -e
 
 assert_same 1 "$status_code" || exit 1
-assert_string_contains "$output" "Unable to flush opcache, APP_URL not found in .env file" || exit 1
+assert_exact_output 'Unable to flush opcache, APP_URL not found in .env file' "$output" || exit 1
 
 # Missing .env file
 rm "$project_path/.env"
@@ -101,4 +136,4 @@ status_code=$?
 set -e
 
 assert_same 1 "$status_code" || exit 1
-assert_string_contains "$output" "Unable to flush opcache, no .env file found" || exit 1
+assert_exact_output 'Unable to flush opcache, no .env file found' "$output" || exit 1

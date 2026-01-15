@@ -29,7 +29,10 @@ set -e
 assert_same 1 "$second_status_code" || exit 1
 
 # Second deploy should mention another command is running
-assert_string_contains "$second_output" "Another Lit command is currently running" || exit 1
+expected_output='Another Lit command is currently running for this project, aborting...
+If this is wrong, manually run:
+    rmdir "'"$project_path"'/lit-is-currently-running"'
+assert_exact_output "$expected_output" "$second_output" || exit 1
 
 # Wait for first deploy to finish
 wait $first_deploy_pid

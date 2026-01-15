@@ -22,19 +22,22 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_lines_in_order "$output" \
-    'Reading branch "main" of "https://github.com/SjorsO/lit.git"' \
-    'Cloning repository' \
-    'Running "lit/hooks/before-caching.sh"' \
-    'Caching release' \
-    "Creating \"$project_path/releases/1\" for the new release" \
-    'Extracting release' \
-    'Creating a symlink to the storage directory' \
-    'Creating a symlink to the .env file' \
-    "Releasing the new deployment \"$project_path/releases/1\"" \
-    'Finished successfully' \
-    || exit 1
-assert_string_not_contains "$output" "Reusing deployment from cache" || exit 1
+
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='Reading branch "main" of "https://github.com/SjorsO/lit.git"...
+Cloning repository...
+Running "lit/hooks/before-caching.sh"...
+Caching release...
+Creating "'"$project_path"'/releases/1" for the new release...
+Extracting release...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Releasing the new deployment "'"$project_path"'/releases/1"
+Finished successfully (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
 assert_directory_exists "$project_path/releases/1" || exit 1
 assert_file_exists "$project_path/releases/1/cache-marker" || exit 1
 
@@ -49,19 +52,22 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_lines_in_order "$output" \
-    'Switching to branch "another-branch"' \
-    'Cloning repository' \
-    'Running "lit/hooks/before-caching.sh"' \
-    'Caching release' \
-    "Creating \"$project_path/releases/2\" for the new release" \
-    'Extracting release' \
-    'Creating a symlink to the storage directory' \
-    'Creating a symlink to the .env file' \
-    "Releasing the new deployment \"$project_path/releases/2\"" \
-    'Finished successfully' \
-    || exit 1
-assert_string_not_contains "$output" "Reusing deployment from cache" || exit 1
+
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='Switching to branch "another-branch"...
+Cloning repository...
+Running "lit/hooks/before-caching.sh"...
+Caching release...
+Creating "'"$project_path"'/releases/2" for the new release...
+Extracting release...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Releasing the new deployment "'"$project_path"'/releases/2"
+Finished successfully (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
 assert_directory_exists "$project_path/releases/2" || exit 1
 assert_file_exists "$project_path/releases/2/cache-marker" || exit 1
 
@@ -89,18 +95,21 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_lines_in_order "$output" \
-    'Switching to branch "main"' \
-    'Reusing deployment from cache' \
-    "Creating \"$project_path/releases/3\" for the new release" \
-    'Extracting release' \
-    'Creating a symlink to the storage directory' \
-    'Creating a symlink to the .env file' \
-    "Releasing the new deployment \"$project_path/releases/3\"" \
-    "Deleting old release directory \"$project_path/releases/1\"" \
-    'Finished successfully' \
-    || exit 1
-assert_string_not_contains "$output" "Caching release" || exit 1
+
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='Switching to branch "main"...
+Reusing deployment from cache
+Creating "'"$project_path"'/releases/3" for the new release...
+Extracting release...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Releasing the new deployment "'"$project_path"'/releases/3"
+Deleting old release directory "'"$project_path"'/releases/1"...
+Finished successfully (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
 assert_directory_exists "$project_path/releases/3" || exit 1
 assert_file_content "$project_path/releases/3/cache-marker" "$main_cache_marker" || exit 1
 
@@ -120,18 +129,21 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_lines_in_order "$output" \
-    'Switching to branch "another-branch"' \
-    'Reusing deployment from cache' \
-    "Creating \"$project_path/releases/4\" for the new release" \
-    'Extracting release' \
-    'Creating a symlink to the storage directory' \
-    'Creating a symlink to the .env file' \
-    "Releasing the new deployment \"$project_path/releases/4\"" \
-    "Deleting old release directory \"$project_path/releases/2\"" \
-    'Finished successfully' \
-    || exit 1
-assert_string_not_contains "$output" "Caching release" || exit 1
+
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='Switching to branch "another-branch"...
+Reusing deployment from cache
+Creating "'"$project_path"'/releases/4" for the new release...
+Extracting release...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Releasing the new deployment "'"$project_path"'/releases/4"
+Deleting old release directory "'"$project_path"'/releases/2"...
+Finished successfully (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
 assert_directory_exists "$project_path/releases/4" || exit 1
 assert_file_content "$project_path/releases/4/cache-marker" "$another_branch_cache_marker" || exit 1
 # Verify before/after release hooks still run with cached releases
@@ -145,20 +157,24 @@ status_code=$?
 set -e
 
 assert_same 0 "$status_code" || exit 1
-assert_lines_in_order "$output" \
-    'Reading branch "another-branch" of "https://github.com/SjorsO/lit.git"' \
-    'Latest commit of "another-branch" is already deployed' \
-    'Using "--force", redeploying...' \
-    'Reusing deployment from cache' \
-    "Creating \"$project_path/releases/5\" for the new release" \
-    'Extracting release' \
-    'Creating a symlink to the storage directory' \
-    'Creating a symlink to the .env file' \
-    "Releasing the new deployment \"$project_path/releases/5\"" \
-    "Deleting old release directory \"$project_path/releases/3\"" \
-    'Finished successfully' \
-    || exit 1
-assert_string_not_contains "$output" "Caching release" || exit 1
+
+# Replace dynamic parts
+output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
+output=$(echo "$output" | sed 's/([a-f0-9]\{11\})/(COMMIT)/g')
+output=$(echo "$output" | sed 's/[[:space:]]*$//')
+
+expected_output='Reading branch "another-branch" of "https://github.com/SjorsO/lit.git"...
+Latest commit of "another-branch" is already deployed (COMMIT)
+Using "--force", redeploying...
+Reusing deployment from cache
+Creating "'"$project_path"'/releases/5" for the new release...
+Extracting release...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Releasing the new deployment "'"$project_path"'/releases/5"
+Deleting old release directory "'"$project_path"'/releases/3"...
+Finished successfully (in X seconds)'
+assert_exact_output "$expected_output" "$output" || exit 1
 assert_file_content "$project_path/current/cache-marker" "$another_branch_cache_marker" || exit 1
 # Verify before/after release hooks still run with cached releases
 assert_file_exists "$project_path/current/before-release-ran" || exit 1
