@@ -1,4 +1,4 @@
-lit init "https://watchtower-static.fsn1.your-objectstorage.com/bundle-for-lit-tests.tar.zst" > /dev/null
+lit init "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst" > /dev/null
 
 project_path="$world_path/case/bundle-for-lit-tests"
 
@@ -62,6 +62,10 @@ assert_string_contains "$current_target" "releases/1" || exit 1
 # Assert .env and storage in release are symlinks
 assert_symlink "$project_path/releases/1/.env" || exit 1
 assert_symlink "$project_path/releases/1/storage" || exit 1
+
+# Assert bundle was extracted with --strip-components=1 (database.php should be in config/, not root)
+assert_file_missing "$project_path/releases/1/database.php" || exit 1
+assert_file_exists "$project_path/releases/1/config/database.php" || exit 1
 
 # Pull again - should skip because same bundle hash
 set +e

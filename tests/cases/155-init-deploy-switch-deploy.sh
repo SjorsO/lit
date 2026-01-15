@@ -34,7 +34,7 @@ assert_string_contains "$current_target" "releases/1" || exit 1
 
 # Switch to bundle
 set +e
-output=$(lit init "https://watchtower-static.fsn1.your-objectstorage.com/bundle-for-lit-tests.tar.zst" "." 2>&1)
+output=$(lit init "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst" "." 2>&1)
 status_code=$?
 set -e
 

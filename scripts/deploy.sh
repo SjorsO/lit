@@ -419,12 +419,33 @@ elif [ "$source_type" = "bundle" ]; then
 
     printf 'Extracting bundle... '
 
+    # We use "--strip-components=1" so we can use "--exclude-from={file}" when making the bundle, this
+    # is the only reliable way to exclude files when making a tar. We don't want to make bundles using
+    # "--exclude="node_modules" flags, because those apply to every file/directory with that name, which
+    # for example makes it impossible to exclude node_modules in the root of your project, but include
+    # the node_modules from your frontend/ directory.
+    #
     # The "--warning" flag prevents warnings when the bundle was made on MacOS but extracted on Linux.
-    tar --extract $(is_macos || echo "--warning=no-unknown-keyword") --file "$new_release_directory/lit-bundle.tar"
+    tar --strip-components=1 --extract $(is_macos || echo "--warning=no-unknown-keyword") --file "$new_release_directory/lit-bundle.tar"
 
     rm -f "$new_release_directory/lit-bundle.tar"
 
     printf '\n'
+
+    # Assuming "config/filesystems.php" is always present. if this file is in the root, then the bundle
+    # wasn't made with "--strip-components" in mind.
+    if [ -f "$new_release_directory/filesystems.php" ]; then
+        printf 'Incorrect bundle structure.\n'
+        printf 'Lit extracts bundles with "--strip-components=1", this strips the first path part from\n'
+        printf 'every entry in the bundle.\n'
+        printf '\n'
+        printf 'You can verify your bundle by running "tar -tf {bundle}", each entry should look\n'
+        printf 'either like "some-dir/config/filesystems.php" or like this "./config/filesystems.php".\n'
+        printf 'If your entries look like "config/filesystem.php", then the bundle does not extract correctly.'
+        printf '\n'
+        printf 'For help with making bundles, see: https://github.com/SjorsO/lit?tab=readme-ov-file#deploying-a-bundle\n'
+        exit 1
+    fi
 fi
 
 printf 'Creating a symlink to the storage directory\n'

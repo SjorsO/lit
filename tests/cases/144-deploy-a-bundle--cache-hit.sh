@@ -1,6 +1,6 @@
 # Test bundle deployment reuses cached bundle
 
-lit init "https://watchtower-static.fsn1.your-objectstorage.com/bundle-for-lit-tests.tar.zst" > /dev/null
+lit init "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst" > /dev/null
 
 project_path="$world_path/case/bundle-for-lit-tests"
 
@@ -43,7 +43,7 @@ touch "$world_path/timestamp-reference"
 
 # Create a second project with the same bundle URL
 cd "$world_path/case"
-lit init "https://watchtower-static.fsn1.your-objectstorage.com/bundle-for-lit-tests.tar.zst" "second-project" > /dev/null
+lit init "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst" "second-project" > /dev/null
 
 second_project_path="$world_path/case/second-project"
 

@@ -1,6 +1,6 @@
 # Test bundle deployment when .hash file does not exist
 
-lit init "https://watchtower-static.fsn1.your-objectstorage.com/bundle-for-lit-tests-without-hash.tar.gz" > /dev/null
+lit init "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests-without-hash.tar.gz" > /dev/null
 
 project_path="$world_path/case/bundle-for-lit-tests-without-hash"
 
