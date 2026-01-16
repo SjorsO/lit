@@ -5,11 +5,12 @@
 # Lit
 Lit is a CLI for deploying Laravel.
 
-Key features:
-- Fully automated zero-downtime deployments by running `lit deploy`
-- Deploy by pulling a git repository or by downloading a prepared bundle
-- Hooks for custom deployment logic
-- Logs with detailed deployment history
+Highlights:
+- Run `lit deploy` for a fully automated zero downtime deployment
+- Deploy from a git repository or from a pre-built bundle
+- Hooks for custom build and deploy logic
+- Detailed logs with a complete deployment history
+- Works on Linux and macOS
 
 ## Install
 Install Lit with git:
@@ -35,8 +36,6 @@ For bundle deployments:
 - `lit init <bundle download url> [name]` initializes a new Lit directory
 - `lit deploy` downloads the bundle and deploys it
 
-To switch between git and bundle deployments, run `lit init <url>` in your existing Lit project.
-
 Other commands:
 - `lit flush-opcache` flush PHP-FPM OPCache
 - `lit enable-git-release-caching` for faster deployments of the same commit
@@ -44,9 +43,11 @@ Other commands:
 - `lit enable-telemetry` enables sending anonymous telemetry after a deployment (disabled by default)
 - `lit disable-telemetry` disables telemetry
 
+To switch between git and bundle deployments, run `lit init <url>` in your existing Lit project.
+
 ## Getting started
-To deploy a Laravel project with Lit, run `lit init <url>`.
-You'll be asked to fill in your `.env` file, and to review the `hooks/before-release.sh` and `hooks/after-release.sh` hooks.
+To deploy a Laravel project with Lit, run `lit init <git repository url>`.
+Lit will tell you to fill in your `.env` file and review the `before-release.sh` and `after-release.sh` hooks.
 When you're done, run `lit deploy` to deploy the project.
 
 ## Setting up Lit in an existing project
@@ -86,7 +87,7 @@ If you want to leave your existing project untouched, you can set up Lit in a ne
 
 ## Deploying a bundle
 Lit can deploy pre-built bundles.
-Bundles can include your Composer dependencies and front-end assets, avoiding any installing or building on your server.
+A bundle can include your Composer dependencies and front-end assets, avoiding any installing or building on your server.
 To initialize a Lit project with bundle deployments, run `lit init <bundle download url>`.
 
 Alongside the bundle file that Lit downloads, you can also upload a `.hash` file at `{bundle download url}.hash` containing the SHA1 hash of the bundle.

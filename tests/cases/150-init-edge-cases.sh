@@ -112,10 +112,10 @@ assert_same 0 "$status_code" || exit 1
 assert_directory_exists "$world_path/case/gus.tarballs" || exit 1
 assert_file_content "$world_path/case/gus.tarballs/bundle-url" "https://example.com/gus.tarballs.tar" || exit 1
 
-# Test that "." as project name fails if directory is not empty and not a zero-downtime project
-mkdir -p "$world_path/case/not-zero-downtime"
-echo "some content" > "$world_path/case/not-zero-downtime/file.txt"
-cd "$world_path/case/not-zero-downtime"
+# Test that "." as project name fails if directory is not empty and not a zero downtime project
+mkdir -p "$world_path/case/not-zero downtime"
+echo "some content" > "$world_path/case/not-zero downtime/file.txt"
+cd "$world_path/case/not-zero downtime"
 
 set +e
 output=$(lit init "https://example.com/bundle.tar.gz" "." 2>&1)
@@ -123,4 +123,4 @@ status_code=$?
 set -e
 
 assert_same 1 "$status_code" || exit 1
-assert_exact_output 'Directory "not-zero-downtime" already exists and is not a Laravel project' "$output" || exit 1
+assert_exact_output 'Directory "not-zero downtime" already exists and is not a Laravel project' "$output" || exit 1

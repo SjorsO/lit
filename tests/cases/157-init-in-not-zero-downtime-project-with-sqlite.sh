@@ -1,4 +1,4 @@
-# Test init in a non-zero-downtime Laravel project with SQLite files
+# Test init in a non-zero downtime Laravel project with SQLite files
 project_path="$world_path/case/my-app"
 mkdir -p "$project_path/database"
 touch "$project_path/artisan"

@@ -1,4 +1,4 @@
-# Test init in a non-zero-downtime Laravel project (git)
+# Test init in a non-zero downtime Laravel project (git)
 project_path="$world_path/case/my-app"
 mkdir -p "$project_path"
 touch "$project_path/artisan"
@@ -41,7 +41,7 @@ assert_exact_output "$expected_output" "$output" || exit 1
 # Fill in .env so it doesn't show in next steps
 echo "APP_KEY=test" > "$project_path/.env"
 
-# Init again - should now detect it's a zero-downtime project
+# Init again - should now detect it's a zero downtime project
 set +e
 output=$(lit init "https://github.com/SjorsO/lit.git" "." 2>&1)
 status_code=$?
@@ -60,7 +60,7 @@ Run "lit deploy" to deploy the current branch (main)
 Run "lit checkout <branch>" to deploy a different branch'
 assert_exact_output "$expected_output" "$output" || exit 1
 
-# Test init in a non-zero-downtime Laravel project (bundle)
+# Test init in a non-zero downtime Laravel project (bundle)
 project_path2="$world_path/case/my-bundle-app"
 mkdir -p "$project_path2"
 touch "$project_path2/composer.json"
@@ -97,7 +97,7 @@ After you have deployed with Lit:
 - Files: .env, bundle-url, bundle-hash'
 assert_exact_output "$expected_output" "$output" || exit 1
 
-# Init again - should now detect it's a zero-downtime project
+# Init again - should now detect it's a zero downtime project
 cd "$world_path/case/my-bundle-app"
 set +e
 output=$(lit init "https://example.com/releases/app.tar.gz" "." 2>&1)

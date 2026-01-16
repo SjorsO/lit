@@ -19,6 +19,7 @@ The parallel test runner creates `tests/worlds/` with a separate world per test 
 After running, all log files are collected into `worlds/_lit-logs/` and `worlds/_lit-output-logs/` for inspection.
 
 ## Notes
+- It's "zero downtime", not "zero-downtime"
 - Always verify that path variables are where we expect them to be (by checking if files/directories that we expect there actually exist, for example). Never take the risk of doing something in the wrong directory.
 - The lit repository (https://github.com/SjorsO/lit.git) has a branch called "another-branch" that can be used for testing `lit checkout`
 - In usage strings: required args use `<arg>`, optional args use `[arg]`, optional flags use `[--flag]`
