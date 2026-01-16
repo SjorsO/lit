@@ -123,37 +123,35 @@ tar --list --file /tmp/bundle-for-lit.tar | awk -v p="$project" '$0 ~ "^" p "/ve
 ```
 
 ## Git release caching
-Lit can cache git releases and reuse them for future deployments.
-Using a cached release is significantly faster when deploying the same commit multiple times.
-Release caching is perfect for servers that host the same application multiple times for multiple tenants.
+Lit can cache a git release and reuse it for future deployments of the same commit.
+This is significantly faster when deploying the same commit multiple times. 
 
-Release caching is disabled by default because caching adds a few seconds of overhead.
+Git release caching is disabled by default because most projects do not need it and because caching adds small amount of overhead.
 
 To enable release caching for an application, run `lit enable-git-release-caching`.
-This will add a `before-caching.sh` hook to the project.
-This hook should contain the steps that can be cached and reused between projects, typically these are `composer install`, `npm install` and `npm run build`.
-After this hook is done running, Lit will cache the release so it can be reused the next time this commit is deployed.
+This creates a `before-caching.sh` hook.
+Put the steps that can be safely reused between deployments in this hook, typically `composer install`, `npm install`, and `npm run build`.
+After the hook finishes, Lit caches the resulting release and reuses it the next time the same commit is deployed.
 
 A cached release is only reused if the `before-caching.sh` hook is identical to the hook that created the cache entry.
-To keep the hook identical, consider using a symlink for your `before-caching.sh` to share it across projects.
 
 ## Directory structure
 Lit uses the same zero downtime approach as Laravel Envoyer, Laravel Forge, and Deployer.
 Below is the directory structure of a project deployed with Lit:
 ```
 project
-├── .env                       # A symlink shares the ".env" file between each release
-├── current -> releases/2/     # The "current" directory is a symlink to the currently active release
+├── .env                      # Reused between release using a symlink
+├── current -> releases/2/    # This directory is a symlink to the current release
 ├── hooks/
-│   ├── before-release.sh      # Contains commands like "composer install" and "php artisan config:cache"
-│   └── after-release.sh       # Contains commands like "php artisan queue:restart" and "lit flush-opcache"
+│   ├── before-release.sh     # For `composer install`, `php artisan config:cache`, etc
+│   └── after-release.sh      # For `php artisan queue:restart`, `lit flush-opcache`, etc
 ├── logs/
-│   ├── lit.log                # Single line log entries for each Lit deployment
-│   └── lit-output.log         # Full output of each Lit deployment
+│   ├── lit.log               # One-line entry per Lit deployment
+│   └── lit-output.log        # Full output of each Lit deployment
 ├── releases/
-│   ├── 1/                     # The previous release, will get deleted when release #3 is deployed
-│   └── 2/                     # The currently active release, symlinked to the "current" directory
-└── storage/                   # A symlink shares the "storage" directory between each release
+│   ├── 1/                    # The previous release, will be deleted after the next deployment
+│   └── 2/                    # The current release, symlinked to the "current" directory
+└── storage/                  # Reused between release using a symlink
 ```
 
 ## License
