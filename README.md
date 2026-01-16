@@ -49,26 +49,33 @@ To deploy a Laravel project with Lit, run `lit init <url>`.
 You'll be asked to fill in your `.env` file, and to review the `hooks/before-release.sh` and `hooks/after-release.sh` hooks.
 When you're done, run `lit deploy` to deploy the project.
 
-## Migrating an existing project
-If your application is already deployed, you can migrate to Lit using `lit init`.
+## Setting up Lit in an existing project
+If your application is already deployed, you can add Lit using `lit init`.
 Lit never moves or modifies your existing files.
 
-### Migrating from Deployer, Laravel Envoyer, or Laravel Forge
+### Using Lit alongside Deployer, Envoyer, or Forge
+You can use Lit alongside Deployer, Laravel Envoyer, or Laravel Forge.
+They can run side by side because Lit uses the same directory structure and doesn't move or modify your existing files. 
+You can add Lit to your existing zero downtime project like this:
+
 - Run `lit init <url>` inside your existing project
 - Review the generated hook files
 - Run `lit deploy`
 
-After migrating, you can continue using Deployer, Envoyer, or Forge alongside Lit.
-Lit uses the same directory structure and doesn't move or modify your existing files.
+With Lit set up, you can deploy either by manually running `lit deploy`, or by triggering Deployer, Envoyer or Forge.
 
-### Migrating from `git pull` or FTP
+### Using Lit to replace `git pull` or FTP
+If you're currently deployed with `git pull` or FTP, you can migrate to automated zero downtime deployments with Lit like this:
+
 - Run `lit init <url>` inside your existing project
 - Review the generated hook files
 - Run `lit deploy`
 - Update the cron and queue workers to use `/current/artisan` instead of `/artisan`
 - Update nginx to use `/current/public/index.php` instead of `/public/index.php`
 
-### Migrating from any setup to a fresh directory
+### Moving any application to a fresh directory
+If you want to leave your existing project untouched, you can set up Lit in a new directory:
+
 - Run `php artisan down` to put your existing project in maintenance mode
 - Run `lit init <url> [name]` to create a new Lit project
 - Copy your existing `.env` file and `storage` directory to the Lit project
@@ -80,12 +87,9 @@ Lit uses the same directory structure and doesn't move or modify your existing f
 ## Deploying a bundle
 Lit can deploy pre-built bundles.
 Bundles can include your Composer dependencies and front-end assets, avoiding any installing or building on your server.
+To initialize a Lit project with bundle deployments, run `lit init <bundle download url>`.
 
-```
-lit init <bundle download url>
-```
-
-You can also upload a `.hash` file at `{bundle download url}.hash` containing the SHA1 hash of the bundle.
+Alongside the bundle file that Lit downloads, you can also upload a `.hash` file at `{bundle download url}.hash` containing the SHA1 hash of the bundle.
 Lit checks this hash first to prevent downloading the same bundle twice.
 
 The script below is the recommended way to create a bundle and hash file:
@@ -94,6 +98,7 @@ project="$(basename "$(pwd)")"
 
 cd ..
 
+# Use `sed` to strip trailing slashes (tar ignores these lines otherwise)
 sed 's/\/$//' > "exclude-from-tar" <<EOF
 $project/.git/
 $project/bootstrap/cache/
@@ -104,14 +109,17 @@ $project/tests/
 .env
 EOF
 
+# Compress the bundle with "zstd" for speed
 tar --create --use-compress-program "zstd -T0 -3" \
     --exclude-from="exclude-from-tar" \
-    --file "/tmp/artifacts.tar" "$project"
+    --file "/tmp/bundle-for-lit.tar" "$project"
 
-sha1sum "/tmp/artifacts.tar" | awk '{print $1}' > "/tmp/artifacts.tar.hash"
+# Create the hash file to upload alongside the bundle
+sha1sum "/tmp/bundle-for-lit.tar" | awk '{print $1}' > "/tmp/bundle-for-lit.tar.hash"
 
+# List the contents of the bundle (files in the "vendor" directory are summarized)
 echo "Bundle contents:"
-tar --list --file /tmp/artifacts.tar | awk -v p="$project" '$0 ~ "^" p "/vendor/" {c++; next} {print} END{if(c) print p "/vendor/{" c " entries}"}'
+tar --list --file /tmp/bundle-for-lit.tar | awk -v p="$project" '$0 ~ "^" p "/vendor/" {c++; next} {print} END{if(c) print p "/vendor/{" c " entries}"}'
 ```
 
 ## Git release caching
