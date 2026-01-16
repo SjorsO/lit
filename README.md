@@ -145,18 +145,18 @@ Lit uses the same zero downtime approach as Laravel Envoyer, Laravel Forge, and 
 Below is the directory structure of a project deployed with Lit:
 ```
 project
-├── .env                      # Reused between releases using a symlink
-├── current -> releases/2/    # This directory is a symlink to the current release
+├── .env                    # Reused between releases using a symlink
+├── current -> releases/2/  # This directory is a symlink to the current release
 ├── hooks/
-│   ├── before-release.sh     # For `composer install`, `php artisan config:cache`, etc
-│   └── after-release.sh      # For `php artisan queue:restart`, `lit flush-opcache`, etc
+│   ├── before-release.sh   # For `composer install`, `php artisan config:cache`, etc
+│   └── after-release.sh    # For `php artisan queue:restart`, `lit flush-opcache`, etc
 ├── logs/
-│   ├── lit.log               # One-line entry per Lit deployment
-│   └── lit-output.log        # Full output of each Lit deployment
+│   ├── lit.log             # One-line entry per Lit deployment
+│   └── lit-output.log      # Full output of each Lit deployment
 ├── releases/
-│   ├── 1/                    # The previous release, will be deleted after the next deployment
-│   └── 2/                    # The current release, symlinked to the "current" directory
-└── storage/                  # Reused between releases using a symlink
+│   ├── 1/                  # The previous release, will be deleted after the next deployment
+│   └── 2/                  # The current release, symlinked to the "current" directory
+└── storage/                # Reused between releases using a symlink
 ```
 
 ## License
