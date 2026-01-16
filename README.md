@@ -50,29 +50,32 @@ You'll be asked to fill in your `.env` file, and to review the `hooks/before-rel
 When you're done, run `lit deploy` to deploy the project.
 
 ## Migrating an existing project
-Migrate from Deployer, Laravel Envoyer, or Laravel Forge to Lit:
+If your application is already deployed, you can migrate to Lit using `lit init`.
+Lit never moves or modifies your existing files.
+
+### Migrating from Deployer, Laravel Envoyer, or Laravel Forge
 - Run `lit init <url>` inside your existing project
-- Review the hook files (as mentioned in the on-screen instructions)
-- Run `lit deploy` to deploy
+- Review the generated hook files
+- Run `lit deploy`
 
 After migrating, you can continue using Deployer, Envoyer, or Forge alongside Lit.
 Lit uses the same directory structure and doesn't move or modify your existing files.
 
-Migrate from `git pull` or FTP deployments to Lit:
+### Migrating from `git pull` or FTP
 - Run `lit init <url>` inside your existing project
-- Review the hook files (as mentioned in the on-screen instructions)
-- Run `lit deploy` to deploy
-- Update your cron and queue workers to point at `/current/artisan` instead of `/artisan`
-- Update your nginx to point at `/current/public/index.php` instead of `/public/index.php`
+- Review the generated hook files
+- Run `lit deploy`
+- Update the cron and queue workers to use `/current/artisan` instead of `/artisan`
+- Update nginx to use `/current/public/index.php` instead of `/public/index.php`
 
-Migrate an existing project to a fresh directory:
+### Migrating from any setup to a fresh directory
 - Run `php artisan down` to put your existing project in maintenance mode
-- Create a new Lit project with `lit init <url> [name]`
-- Copy your existing `.env` file and `storage` directory to the Lit directory
-- Run `lit deploy` to deploy
-- Update your cron and queue workers to point at `{lit_directory}/current/artisan`
-- Update your nginx to point at `{lit_directory}/current/public/index.php`
-- Run `php artisan up` to take you Lit project out of maintenance mode 
+- Run `lit init <url> [name]` to create a new Lit project
+- Copy your existing `.env` file and `storage` directory to the Lit project
+- Run `lit deploy`
+- Update the cron and queue workers to point at `{lit_directory}/current/artisan`
+- Update nginx to point at `{lit_directory}/current/public/index.php`
+- Run `php artisan up` to take your Lit project out of maintenance mode
 
 ## Deploying a bundle
 Lit can deploy pre-built bundles.
