@@ -145,11 +145,5 @@ project
 └── storage/                   # A symlink shares the "storage" directory between each release
 ```
 
-## Further reading
-- Zero downtime deployments for Laravel demystified (coming soon)
-- Pitfalls of zero downtime Laravel deployments (coming soon)
-- Log rotation for your Lit and Laravel application logs (coming soon)
-- Auto-deploy your Laravel app with Lit and a cron job (coming soon)
-
 ## License
 Lit is open-sourced software licensed under the MIT license.
