@@ -37,7 +37,7 @@ For bundle deployments:
 - `lit deploy` downloads the bundle and deploys it
 
 Other commands:
-- `lit flush-opcache` flush PHP-FPM OPCache
+- `lit flush-opcache` flushes PHP-FPM OPCache
 - `lit enable-git-release-caching` for faster deployments of the same commit
 - `lit disable-git-release-caching` disables git release caching
 - `lit enable-telemetry` enables sending anonymous telemetry after a deployment (disabled by default)
@@ -56,14 +56,14 @@ Lit never moves or modifies your existing files.
 
 ### Using Lit alongside Deployer, Envoyer, or Forge
 You can use Lit alongside Deployer, Laravel Envoyer, or Laravel Forge.
-They can run side by side because Lit uses the same directory structure and doesn't move or modify your existing files. 
+They can run side by side because Lit uses the same directory structure and doesn't move or modify your existing files.
 You can add Lit to your existing zero downtime project like this:
 
 - Run `lit init <url>` inside your existing project
 - Review the generated hook files
 - Run `lit deploy`
 
-With Lit set up, you can deploy either by manually running `lit deploy`, or by triggering Deployer, Envoyer or Forge.
+With Lit set up, you can deploy either by manually running `lit deploy`, or by triggering Deployer, Envoyer, or Forge.
 
 ### Using Lit to replace `git pull` or FTP
 If you're currently deployed with `git pull` or FTP, you can migrate to automated zero downtime deployments with Lit like this:
@@ -90,8 +90,8 @@ Lit can deploy pre-built bundles.
 A bundle can include your Composer dependencies and front-end assets, avoiding any installing or building on your server.
 To initialize a Lit project with bundle deployments, run `lit init <bundle download url>`.
 
-Alongside the bundle file that Lit downloads, you can also upload a `.hash` file at `{bundle download url}.hash` containing the SHA1 hash of the bundle.
-Lit checks this hash first to prevent downloading the same bundle twice.
+You can provide a file containing the SHA1 hash of your bundle at `{bundle url}.hash`.
+Lit checks that first to prevent downloading the same bundle twice.
 
 The script below is the recommended way to create a bundle and hash file:
 ```bash
@@ -121,13 +121,17 @@ sha1sum "/tmp/bundle-for-lit.tar" | awk '{print $1}' > "/tmp/bundle-for-lit.tar.
 # List the contents of the bundle (files in the "vendor" directory are summarized)
 echo "Bundle contents:"
 tar --list --file /tmp/bundle-for-lit.tar | awk -v p="$project" '$0 ~ "^" p "/vendor/" {c++; next} {print} END{if(c) print p "/vendor/{" c " entries}"}'
+
+# Upload these somewhere:
+# - /tmp/bundle-for-lit.tar
+# - /tmp/bundle-for-lit.tar.hash
 ```
 
 ## Git release caching
 Lit can cache a git release and reuse it for future deployments of the same commit.
-This is significantly faster when deploying the same commit multiple times. 
+This is significantly faster when deploying the same commit multiple times.
 
-Git release caching is disabled by default because most projects do not need it and because caching adds small amount of overhead.
+Git release caching is disabled by default because most projects do not need it and because caching adds a small amount of overhead.
 
 To enable release caching for an application, run `lit enable-git-release-caching`.
 This creates a `before-caching.sh` hook.
@@ -141,7 +145,7 @@ Lit uses the same zero downtime approach as Laravel Envoyer, Laravel Forge, and 
 Below is the directory structure of a project deployed with Lit:
 ```
 project
-├── .env                      # Reused between release using a symlink
+├── .env                      # Reused between releases using a symlink
 ├── current -> releases/2/    # This directory is a symlink to the current release
 ├── hooks/
 │   ├── before-release.sh     # For `composer install`, `php artisan config:cache`, etc
@@ -152,7 +156,7 @@ project
 ├── releases/
 │   ├── 1/                    # The previous release, will be deleted after the next deployment
 │   └── 2/                    # The current release, symlinked to the "current" directory
-└── storage/                  # Reused between release using a symlink
+└── storage/                  # Reused between releases using a symlink
 ```
 
 ## License
