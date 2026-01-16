@@ -133,7 +133,7 @@ else
     echo ""
 fi
 
-echo "  You can help improve Lit by enabling telemetry."
+echo "  You can help Lit by enabling telemetry."
 echo "  Telemetry is fully anonymous with no performance impact."
 echo ""
 echo "  Enable anonymous telemetry?"
