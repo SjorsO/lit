@@ -13,15 +13,15 @@ fi
 case_filter="$1"
 started_at=$(date +%s)
 
-reset_environment() {
-    local tests_base_path="$1"
-    local world_path="$tests_base_path/world"
+setup_world() {
+    local world_path="$1"
     # shellcheck disable=SC2155
     local lit_source_path="$(dirname "$tests_base_path")"
 
     rm -rf "$world_path"
 
     mkdir -p "$world_path/lit/data"
+    mkdir -p "$world_path/case"
 
     cp -r "$lit_source_path/scripts" "$world_path/lit/scripts"
     cp -r "$lit_source_path/stubs" "$world_path/lit/stubs"
@@ -62,19 +62,23 @@ case_files=("${shuffled_files[@]}")
 failed_tests=()
 failed_outputs=()
 
-for case_file in "${case_files[@]}"; do
-    reset_environment "$tests_base_path"
+worlds_path="$tests_base_path/worlds"
 
+mkdir -p "$worlds_path"
+
+for case_file in "${case_files[@]}"; do
     case_name=$(basename "$case_file")
+    case_number="${case_name%%-*}"
+    world_path="$worlds_path/world-$case_number"
+
+    setup_world "$world_path"
 
     printf '%-*s    ' "$max_name_length" "$case_name"
 
-    mkdir -p "$tests_base_path/world/case"
-
     original_directory=$(pwd)
     set +e
-    cd "$tests_base_path/world/case" || exit 1
-    output=$(bash "$tests_base_path/start-case.sh" "$tests_base_path/world" "$case_file" 2>&1)
+    cd "$world_path/case" || exit 1
+    output=$(bash "$tests_base_path/start-case.sh" "$world_path" "$case_file" 2>&1)
     status_code=$?
     set -e
     cd "$original_directory" || exit 1
