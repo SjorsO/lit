@@ -116,7 +116,7 @@ tar --create --use-compress-program "zstd -T0 -3" \
     --file "/tmp/bundle-for-lit.tar" "$project"
 
 # Create the hash file to upload alongside the bundle
-sha1sum "/tmp/bundle-for-lit.tar" | awk '{print $1}' > "/tmp/bundle-for-lit.tar.hash"
+shasum "/tmp/bundle-for-lit.tar" | awk '{print $1}' > "/tmp/bundle-for-lit.tar.hash"
 
 # List the contents of the bundle (files in the "vendor" directory are summarized)
 echo "Bundle contents:"

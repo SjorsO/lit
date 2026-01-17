@@ -12,8 +12,8 @@ bash tests/run-tests.sh 103          # Run a specific test case
 bash tests/run-tests-in-parallel.sh  # Run all tests in parallel
 ```
 
-The sequential test runner automatically resets the `tests/world` directory before each test - no manual cleanup needed.
-After you run a specific test, created files you can do assertions on are in `tests/world`.
+The sequential test runner automatically resets the `tests/worlds/world-NNN` directory before each test - no manual cleanup needed.
+After you run a specific test, created files you can do assertions on are in `tests/worlds/world-NNN`.
 
 The parallel test runner creates `tests/worlds/` with a separate world per test (`worlds/world-104/`, etc.).
 After running, all log files are collected into `worlds/_lit-logs/` and `worlds/_lit-output-logs/` for inspection.
@@ -35,4 +35,5 @@ After running, all log files are collected into `worlds/_lit-logs/` and `worlds/
 - Print only the first 11 chars of git commits, but print all 40 chars of sha1 hashes
 - All test cases need a unique 3 digit prefix
 - In `deploy.sh`, hooks have to be called using `cat "$path_to_script" | bash -se -- "$var1" "$var2"`, this has been proven to work reliably. (and the -e ensures they fail properly)
-- "scripts/init.sh" contains a hardcoded link to a heading in the readme. If we update the readme, you have to check that link.
+- "scripts/deploy.sh" contains a hardcoded link to a heading in the readme. If we update the readme, you have to check that link.
+- Use `shasum` instead of `sha1sum` for hashing - always use a sha1 hash.

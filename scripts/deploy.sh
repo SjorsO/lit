@@ -172,10 +172,10 @@ if [ "$source_type" = "git" ]; then
     if [ "$caching_enabled" = true ]; then
         if [ -L "$project_base_path/hooks/before-caching.sh" ]; then
             before_caching_hook_path="$(readlink -f "$project_base_path/hooks/before-caching.sh")"
-            before_caching_hook_hash="$(sha1sum "$before_caching_hook_path" | cut -d' ' -f1)"
+            before_caching_hook_hash="$(shasum "$before_caching_hook_path" | cut -d' ' -f1)"
         elif [ -f "$project_base_path/hooks/before-caching.sh" ]; then
             before_caching_hook_path="$project_base_path/hooks/before-caching.sh"
-            before_caching_hook_hash="$(sha1sum "$before_caching_hook_path" | cut -d' ' -f1)"
+            before_caching_hook_hash="$(shasum "$before_caching_hook_path" | cut -d' ' -f1)"
         else
             before_caching_hook_path=""
             before_caching_hook_hash="no-hook"
