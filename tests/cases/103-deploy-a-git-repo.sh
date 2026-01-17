@@ -67,6 +67,13 @@ assert_string_contains "$current_target" "releases/1" || exit 1
 assert_symlink "$project_path/releases/1/.env" || exit 1
 assert_symlink "$project_path/releases/1/storage" || exit 1
 
+# Assert lit.log has correct timestamp format (YYYY-MM-DD HH:MM:SS)
+lit_log_content=$(cat "$project_path/logs/lit.log")
+if [[ ! "$lit_log_content" =~ \[[0-9]{4}-[0-9]{2}-[0-9]{2}\ [0-9]{2}:[0-9]{2}:[0-9]{2}\] ]]; then
+    printf 'Expected lit.log to contain timestamp in format [YYYY-MM-DD HH:MM:SS], got:\n%s\n' "$lit_log_content"
+    exit 1
+fi
+
 # Pull again - should skip because already deployed
 set +e
 output=$(lit deploy 2>&1)

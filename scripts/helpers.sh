@@ -30,7 +30,7 @@ current_time_in_ms() {
 }
 
 get_human_timestamp() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S')"
+    date '+%Y-%m-%d %H:%M:%S'
 }
 
 is_macos() {
