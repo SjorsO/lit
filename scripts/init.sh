@@ -225,29 +225,29 @@ if [ "$has_next_steps" = true ]; then
         printf 'After that, run "lit deploy" to download and deploy the bundle\n'
     fi
 
-     if [ "$init_in_non_zero_downtime_project" = true ]; then
-         printf '\n'
-         printf -- 'After you have deployed with Lit:\n'
-         printf -- '- Update your cron and queue workers to point at "/current/artisan" instead of "/artisan"\n'
-         printf -- '- Update your nginx to point at "/current/public/index.php" instead of "/public/index.php"\n'
-         printf '\n'
-         printf -- '(Optional) Delete the original Laravel project files, keeping only:\n'
-         if [ "$source_type" = "git" ]; then
-             printf -- '- Directories: current/, hooks/, logs/, releases/, storage/\n'
-             printf -- '- Files: .env, git-repository-url, git-branch, git-commit\n'
-         else
-             printf -- '- Directories: current/, hooks/, releases/, storage/\n'
-             printf -- '- Files: .env, bundle-url, bundle-hash\n'
-         fi
+    if [ "$init_in_non_zero_downtime_project" = true ]; then
+        printf '\n'
+        printf -- 'After you have deployed with Lit:\n'
+        printf -- '- Update your cron and queue workers to point at "/current/artisan" instead of "/artisan"\n'
+        printf -- '- Update your nginx to point at "/current/public/index.php" instead of "/public/index.php"\n'
+        printf '\n'
+        printf -- '(Optional) Delete the original Laravel project files, keeping only:\n'
+        if [ "$source_type" = "git" ]; then
+            printf -- '- Directories: current/, hooks/, logs/, releases/, storage/\n'
+            printf -- '- Files: .env, git-repository-url, git-branch, git-commit\n'
+        else
+            printf -- '- Directories: current/, hooks/, releases/, storage/\n'
+            printf -- '- Files: .env, bundle-url, bundle-hash\n'
+        fi
 
-         if ls "$project_path/database"/*.sqlite 1> /dev/null 2>&1; then
-             printf '\n'
-             printf -- 'Warning:\n'
-             printf -- 'The SQLite files in your "database/" directory must be moved.\n'
-             printf -- 'Move them to the root of your project and set this in your ".env":\n'
-             printf -- 'DB_DATABASE="%s/database.sqlite"\n' "$project_path"
-         fi
-     fi
+        if ls "$project_path/database"/*.sqlite 1> /dev/null 2>&1; then
+            printf '\n'
+            printf -- 'Warning:\n'
+            printf -- 'The SQLite files in your "database/" directory must be moved.\n'
+            printf -- 'Move them to the root of your project and set this in your ".env":\n'
+            printf -- 'DB_DATABASE="%s/database.sqlite"\n' "$project_path"
+        fi
+    fi
 else
     printf '\n'
 
