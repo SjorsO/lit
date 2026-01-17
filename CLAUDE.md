@@ -35,5 +35,5 @@ After running, all log files are collected into `worlds/_lit-logs/` and `worlds/
 - Print only the first 11 chars of git commits, but print all 40 chars of sha1 hashes
 - All test cases need a unique 3 digit prefix
 - In `deploy.sh`, hooks have to be called using `cat "$path_to_script" | bash -se -- "$var1" "$var2"`, this has been proven to work reliably. (and the -e ensures they fail properly)
-- "scripts/deploy.sh" contains a hardcoded link to a heading in the readme. If we update the readme, you have to check that link.
+- "scripts/init.sh" contains a hardcoded link to a heading in the readme. If we update the readme, you have to check that link.
 - Use `shasum` instead of `sha1sum` for hashing - always use a sha1 hash.

@@ -1,11 +1,11 @@
 #!/bin/bash
 
 get_source_type() {
-    local project_path="$1"
+    local project_base_path="$1"
 
-    if [ -f "$project_path/git-repository-url" ]; then
+    if [ -f "$project_base_path/git-repository-url" ]; then
         echo "git"
-    elif [ -f "$project_path/bundle-url" ]; then
+    elif [ -f "$project_base_path/bundle-url" ]; then
         echo "bundle"
     else
         echo ""
