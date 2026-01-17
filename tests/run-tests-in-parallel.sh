@@ -17,9 +17,7 @@ if [ ! -f "$tests_base_path/run-tests-in-parallel.sh" ]; then
 fi
 
 started_at=$(date +%s)
-max_parallel=999
-
-printf 'Running tests in parallel, batches of %s...\n\n' "$max_parallel"
+max_number_of_concurrent_tests=999
 
 lit_source_path="$(dirname "$tests_base_path")"
 worlds_path="$tests_base_path/worlds"
@@ -73,6 +71,12 @@ for case_file in "$tests_base_path/cases/"*.sh; do
     fi
 done
 
+if [ ${#case_files[@]} -le $max_number_of_concurrent_tests ]; then
+    printf 'Running all %s tests in parallel...\n\n' "${#case_files[@]}"
+else
+    printf 'Running %s tests in parallel, batches of %s...\n\n' "${#case_files[@]}" "$max_number_of_concurrent_tests"
+fi
+
 running_jobs=()
 
 for i in "${!case_files[@]}"; do
@@ -80,7 +84,7 @@ for i in "${!case_files[@]}"; do
 
     running_jobs+=($!)
 
-    if [ ${#running_jobs[@]} -ge $max_parallel ]; then
+    if [ ${#running_jobs[@]} -ge $max_number_of_concurrent_tests ]; then
         wait "${running_jobs[@]}"
 
         running_jobs=()

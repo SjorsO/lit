@@ -134,7 +134,7 @@ done
 # shellcheck disable=SC2012
 # SC2012 = use find instead of ls to better handle non-alphanumeric filenames.
 # Using `ls` here is safe because we just ensured all directory names are numeric.
-current_release_id=$(ls "$releases_directory" | sort --numeric-sort | tail -n1) || 0;
+current_release_id=$(ls "$releases_directory" | sort --numeric-sort | tail -n1)
 
 new_release_directory="$releases_directory/$((current_release_id + 1))"
 
