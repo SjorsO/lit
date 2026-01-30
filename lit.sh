@@ -129,7 +129,7 @@ mkdir "$lock_directory_path"
 has_created_lock_directory=true
 
 # A git pre-commit hook automatically increments this version number.
-echo "61" > "$lit_base_path/data/lit-version"
+echo "64" > "$lit_base_path/data/lit-version"
 
 if [ -f "$lit_base_path/data/telemetry-enabled" ] && [ ! -s "$lit_base_path/data/telemetry-salt" ]; then
     uuidgen | tr '[:upper:]' '[:lower:]' > "$lit_base_path/data/telemetry-salt"
@@ -151,6 +151,8 @@ elif [ "$command" = "disable-telemetry" ]; then
     bash "$lit_base_path/scripts/disable-telemetry.sh" "$lit_base_path" "$project_base_path"
 elif [ "$command" = "flush-opcache" ]; then
     bash "$lit_base_path/scripts/flush-opcache.sh" "$project_base_path"
+elif [ "$command" = "opcache-status" ]; then
+    bash "$lit_base_path/scripts/opcache-status.sh" "$project_base_path" "$2"
 else
     echo "failed (unknown command)" > "$project_base_path/current-run-result"
 
