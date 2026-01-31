@@ -4,6 +4,12 @@ lit_base_path="$3"
 
 composer install --no-interaction --no-progress --optimize-autoloader --no-dev
 
+if [ -s "$HOME/.nvm/nvm.sh" ]; then
+    export NVM_DIR="$HOME/.nvm"
+    . "$NVM_DIR/nvm.sh"
+    nvm use
+fi
+
 npm ci
 npm run build
 rm -rf "node_modules"
