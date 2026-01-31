@@ -60,9 +60,7 @@ jobs:
 
       - name: Push to release branch
         run: |
-          git clone --branch release https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git ../release 2>/dev/null || \
-            git clone https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git ../release && git -C ../release checkout --orphan release && git -C ../release rm -rf .
-
+          git clone --branch release https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git ../release
           cd ../release
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
