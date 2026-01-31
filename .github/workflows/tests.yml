@@ -17,8 +17,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Run tests
-        run: |
-          true # bash tests/run-tests-in-parallel.sh
+        run: bash tests/run-tests-in-parallel.sh
 
   Create-Release-Bundle:
     needs: Tests
