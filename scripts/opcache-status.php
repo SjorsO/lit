@@ -88,6 +88,7 @@ JIT:
   Opt level:  %d
   Opt flags:  %d
   Buffer:     %s (free: %s)
+
 STRING,
     $formatBool($status['cache_full']),
     $formatBool($status['restart_pending']),
