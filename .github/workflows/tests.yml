@@ -19,7 +19,7 @@ jobs:
       - name: Run tests
         run: bash tests/run-tests-in-parallel.sh
 
-  Release:
+  Create-Release-Bundle:
     needs: Tests
     runs-on: ubuntu-latest
     permissions:
@@ -46,3 +46,41 @@ jobs:
             --prerelease
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  Push-Release-Branch:
+    if: github.ref == 'refs/heads/main'
+    needs: Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Push to release branch
+        env:
+          SSH_KEY: ${{ secrets.PRIVATE_SSH_KEY_FOR_RELEASE_BRANCH }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/deploy_key"
+
+          git clone --branch release git@github.com:${{ github.repository }}.git ../release
+          cd ../release
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          find . -maxdepth 1 ! -name .git ! -name . -exec rm -rf {} +
+          find "$GITHUB_WORKSPACE" -maxdepth 1 ! -name .git ! -name . ! -path "$GITHUB_WORKSPACE" -exec cp -r {} . \;
+          rm -rf tests .github CLAUDE.md LICENSE.md .gitignore
+          git add -A
+
+          if [ -z "$(git status --porcelain)" ]; then
+            printf 'No changes to release branch\n'
+            exit 0
+          fi
+
+          git commit -m "Release from main@${GITHUB_SHA::11}"
+          git push origin release

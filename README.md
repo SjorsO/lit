@@ -15,7 +15,7 @@ Highlights:
 ## Install
 Install Lit with git:
 ```
-git clone --quiet https://github.com/SjorsO/lit.git && source lit/lit.sh
+git clone --branch release --single-branch --quiet https://github.com/SjorsO/lit.git && source lit/lit.sh
 ```
 Or, install from a bundle:
 ```
