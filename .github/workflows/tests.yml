@@ -67,9 +67,9 @@ jobs:
 
           if git rev-parse --verify release >/dev/null 2>&1; then
             git checkout release
+            git merge --no-commit -s ours main
           else
-            git checkout --orphan release
-            git rm -rf . 2>/dev/null || true
+            git checkout -b release
           fi
 
           git checkout main -- .
@@ -77,6 +77,7 @@ jobs:
           git add -A
 
           if [ -z "$(git status --porcelain)" ]; then
+            git merge --abort 2>/dev/null || true
             printf 'No changes to release branch\n'
             exit 0
           fi
