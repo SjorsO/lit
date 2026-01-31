@@ -59,15 +59,23 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Push to release branch
+        env:
+          SSH_KEY: ${{ secrets.PRIVATE_SSH_KEY_FOR_RELEASE_BRANCH }}
         run: |
-          git clone --branch release https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git ../release
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/deploy_key"
+
+          git clone --branch release git@github.com:${{ github.repository }}.git ../release
           cd ../release
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           find . -maxdepth 1 ! -name .git ! -name . -exec rm -rf {} +
           find "$GITHUB_WORKSPACE" -maxdepth 1 ! -name .git ! -name . ! -path "$GITHUB_WORKSPACE" -exec cp -r {} . \;
-          rm -rf tests .github CLAUDE.md LICENSE.md
+          rm -rf tests .github CLAUDE.md LICENSE.md .gitignore
           git add -A
 
           if [ -z "$(git status --porcelain)" ]; then
