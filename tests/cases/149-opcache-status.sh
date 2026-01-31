@@ -1,71 +1,29 @@
 # Override curl in opcache-status.sh to execute PHP locally with mocked opcache_get_status
+fixture_content=$(tail -n +2 "$world_path/../../fixtures/opcache-status-output.php")
 {
-    cat << 'CURL_MOCK'
+    cat << CURL_MOCK
 curl() {
-    local url="$1"
+    local url="\$1"
     local wrapper
-    wrapper=$(mktemp)
+    wrapper=\$(mktemp)
 
-    printf '<?php\n\n' > "$wrapper"
+    printf '<?php\nnamespace LitTest;\n\n' > "\$wrapper"
 
-    if [[ "$url" == *"?json"* ]]; then
-        printf '$_GET["json"] = "1";\n\n' >> "$wrapper"
+    if [[ "\$url" == *"?json"* ]]; then
+        printf '\$_GET["json"] = "1";\n\n' >> "\$wrapper"
     fi
 
-    cat << 'MOCK_FUNCTION' >> "$wrapper"
-function opcache_get_status($include_scripts = true) {
-    return [
-        'opcache_enabled' => true,
-        'cache_full' => false,
-        'restart_pending' => false,
-        'restart_in_progress' => false,
-        'memory_usage' => [
-            'used_memory' => 106993152,
-            'free_memory' => 429877760,
-            'wasted_memory' => 0,
-            'current_wasted_percentage' => 0,
-        ],
-        'interned_strings_usage' => [
-            'buffer_size' => 67108864,
-            'used_memory' => 21033368,
-            'free_memory' => 46075496,
-            'number_of_strings' => 64091,
-        ],
-        'opcache_statistics' => [
-            'num_cached_scripts' => 922,
-            'num_cached_keys' => 1817,
-            'max_cached_keys' => 262237,
-            'hits' => 48343,
-            'start_time' => 1769675952,
-            'last_restart_time' => 0,
-            'oom_restarts' => 0,
-            'hash_restarts' => 0,
-            'manual_restarts' => 0,
-            'misses' => 922,
-            'blacklist_misses' => 0,
-            'blacklist_miss_ratio' => 0,
-            'opcache_hit_rate' => 98.12848878514157,
-        ],
-        'jit' => [
-            'enabled' => true,
-            'on' => false,
-            'kind' => 0,
-            'opt_level' => 0,
-            'opt_flags' => 0,
-            'buffer_size' => 67108848,
-            'buffer_free' => 67106363,
-        ],
-    ];
-}
+    cat << 'MOCK_FUNCTION' >> "\$wrapper"
+${fixture_content}
 MOCK_FUNCTION
 
     # Append the original PHP script without the opening <?php tag
-    tail -n +2 "$opcache_status_script_file_path" >> "$wrapper"
+    tail -n +2 "\$opcache_status_script_file_path" >> "\$wrapper"
 
-    php "$wrapper"
-    local php_exit_code=$?
-    rm -f "$wrapper"
-    return $php_exit_code
+    php "\$wrapper"
+    local php_exit_code=\$?
+    rm -f "\$wrapper"
+    return \$php_exit_code
 }
 CURL_MOCK
     cat "$world_path/lit/scripts/opcache-status.sh"
@@ -99,7 +57,7 @@ set -e
 assert_same 0 "$status_code" || exit 1
 
 # Normalize the dynamic "Started" time-ago value
-output=$(echo "$output" | sed 's/Started:           .*/Started:           X ago/')
+output=$(echo "$output" | sed 's/Started:                 .*/Started:                 X ago/')
 
 expected_output='Calling "https://example.com" to get OPCache status.
 OPCache:
@@ -140,14 +98,50 @@ set -e
 
 assert_same 0 "$status_code" || exit 1
 
-assert_string_contains "$output" 'Calling "https://example.com" to get OPCache status.' || exit 1
-assert_string_contains "$output" '"opcache_enabled": true' || exit 1
-assert_string_contains "$output" '"used_memory": 106993152' || exit 1
-assert_string_contains "$output" '"free_memory": 429877760' || exit 1
-assert_string_contains "$output" '"num_cached_scripts": 922' || exit 1
-assert_string_contains "$output" '"hits": 48343' || exit 1
-assert_string_contains "$output" '"opcache_hit_rate":' || exit 1
-assert_string_contains "$output" '"buffer_free": 67106363' || exit 1
+expected_output='Calling "https://example.com" to get OPCache status.
+{
+    "opcache_enabled": true,
+    "cache_full": false,
+    "restart_pending": false,
+    "restart_in_progress": false,
+    "memory_usage": {
+        "used_memory": 106993152,
+        "free_memory": 429877760,
+        "wasted_memory": 0,
+        "current_wasted_percentage": 0
+    },
+    "interned_strings_usage": {
+        "buffer_size": 67108864,
+        "used_memory": 21033368,
+        "free_memory": 46075496,
+        "number_of_strings": 64091
+    },
+    "opcache_statistics": {
+        "num_cached_scripts": 922,
+        "num_cached_keys": 1817,
+        "max_cached_keys": 262237,
+        "hits": 48343,
+        "start_time": 1769675952,
+        "last_restart_time": 0,
+        "oom_restarts": 0,
+        "hash_restarts": 0,
+        "manual_restarts": 0,
+        "misses": 922,
+        "blacklist_misses": 0,
+        "blacklist_miss_ratio": 0,
+        "opcache_hit_rate": 98.12848878514157
+    },
+    "jit": {
+        "enabled": true,
+        "on": false,
+        "kind": 0,
+        "opt_level": 0,
+        "opt_flags": 0,
+        "buffer_size": 67108848,
+        "buffer_free": 67106363
+    }
+}'
+assert_exact_output "$expected_output" "$output" || exit 1
 
 # Verify the temporary PHP file was cleaned up
 php_files=$(find "$project_path/current/public" -name "lit-opcache-status-*.php" 2>/dev/null | wc -l | tr -d ' ')
