@@ -66,7 +66,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           find . -maxdepth 1 ! -name .git ! -name . -exec rm -rf {} +
-          cp -r "$GITHUB_WORKSPACE"/. .
+          find "$GITHUB_WORKSPACE" -maxdepth 1 ! -name .git ! -name . ! -path "$GITHUB_WORKSPACE" -exec cp -r {} . \;
           rm -rf tests .github CLAUDE.md LICENSE.md
           git add -A
 
