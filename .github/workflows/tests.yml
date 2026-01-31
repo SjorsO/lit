@@ -60,24 +60,19 @@ jobs:
 
       - name: Push to release branch
         run: |
+          git clone --branch release https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git ../release 2>/dev/null || \
+            git clone https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git ../release && git -C ../release checkout --orphan release && git -C ../release rm -rf .
+
+          cd ../release
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git fetch origin release:release 2>/dev/null || true
-
-          if git rev-parse --verify release >/dev/null 2>&1; then
-            git checkout release
-            git merge --no-commit -s ours main
-          else
-            git checkout -b release
-          fi
-
-          git checkout main -- .
+          find . -maxdepth 1 ! -name .git ! -name . -exec rm -rf {} +
+          cp -r "$GITHUB_WORKSPACE"/. .
           rm -rf tests .github CLAUDE.md LICENSE.md
           git add -A
 
           if [ -z "$(git status --porcelain)" ]; then
-            git merge --abort 2>/dev/null || true
             printf 'No changes to release branch\n'
             exit 0
           fi
