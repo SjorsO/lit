@@ -16,6 +16,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # PHP is not available by default on the MacOS runner
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+
       - name: Run tests
         run: bash tests/run-tests-in-parallel.sh
 
