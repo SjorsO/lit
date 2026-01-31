@@ -46,3 +46,38 @@ jobs:
             --prerelease
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  Push-Release-Branch:
+    if: github.ref == 'refs/heads/main'
+    needs: Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Push to release branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin release:release 2>/dev/null || true
+
+          if git rev-parse --verify release >/dev/null 2>&1; then
+            git checkout release
+          else
+            git checkout --orphan release
+            git rm -rf . 2>/dev/null || true
+          fi
+
+          git read-tree -u --reset main
+          git rm -r --ignore-unmatch tests .github CLAUDE.md LICENSE.md
+
+          if git rev-parse --verify HEAD >/dev/null 2>&1 && git diff --cached --quiet; then
+            printf 'No changes to release branch\n'
+            exit 0
+          fi
+
+          git commit -m "Release from main@${GITHUB_SHA::11}"
+          git push origin release
