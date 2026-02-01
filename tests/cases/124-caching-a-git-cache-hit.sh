@@ -45,9 +45,9 @@ assert_file_exists "$project_path/releases/1/cache-marker" || exit 1
 main_cache_marker=$(cat "$project_path/releases/1/cache-marker")
 main_cache_file=$(find "$world_path/lit/cached-releases" -name "*.tar" | head -1)
 
-# Checkout another-branch - should build and cache for that branch
+# Checkout this-branch-is-used-in-unit-tests - should build and cache for that branch
 set +e
-output=$(lit checkout another-branch 2>&1)
+output=$(lit checkout this-branch-is-used-in-unit-tests 2>&1)
 status_code=$?
 set -e
 
@@ -57,7 +57,7 @@ assert_same 0 "$status_code" || exit 1
 output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
 output=$(echo "$output" | sed 's/[[:space:]]*$//')
 
-expected_output='Switching to branch "another-branch"...
+expected_output='Switching to branch "this-branch-is-used-in-unit-tests"...
 Cloning repository...
 Running "lit/hooks/before-caching.sh"...
 Caching release...
@@ -71,9 +71,9 @@ assert_exact_output "$expected_output" "$output" || exit 1
 assert_directory_exists "$project_path/releases/2" || exit 1
 assert_file_exists "$project_path/releases/2/cache-marker" || exit 1
 
-# Save the another-branch cache marker value (should be different from main)
-another_branch_cache_marker=$(cat "$project_path/releases/2/cache-marker")
-if [ "$main_cache_marker" = "$another_branch_cache_marker" ]; then
+# Save the this-branch-is-used-in-unit-tests cache marker value (should be different from main)
+other_branch_cache_marker=$(cat "$project_path/releases/2/cache-marker")
+if [ "$main_cache_marker" = "$other_branch_cache_marker" ]; then
     printf 'Expected different cache markers for different branches\n'
     exit 1
 fi
@@ -122,9 +122,9 @@ fi
 assert_file_exists "$project_path/releases/3/before-release-ran" || exit 1
 assert_file_exists "$project_path/releases/3/after-release-ran" || exit 1
 
-# Checkout another-branch again - should use cache with same marker value
+# Checkout this-branch-is-used-in-unit-tests again - should use cache with same marker value
 set +e
-output=$(lit checkout another-branch 2>&1)
+output=$(lit checkout this-branch-is-used-in-unit-tests 2>&1)
 status_code=$?
 set -e
 
@@ -134,7 +134,7 @@ assert_same 0 "$status_code" || exit 1
 output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
 output=$(echo "$output" | sed 's/[[:space:]]*$//')
 
-expected_output='Switching to branch "another-branch"...
+expected_output='Switching to branch "this-branch-is-used-in-unit-tests"...
 Reusing deployment from cache
 Creating "'"$project_path"'/releases/4" for the new release...
 Extracting release...
@@ -145,7 +145,7 @@ Deleting old release directory "'"$project_path"'/releases/2"...
 Finished successfully (in X seconds)'
 assert_exact_output "$expected_output" "$output" || exit 1
 assert_directory_exists "$project_path/releases/4" || exit 1
-assert_file_content "$project_path/releases/4/cache-marker" "$another_branch_cache_marker" || exit 1
+assert_file_content "$project_path/releases/4/cache-marker" "$other_branch_cache_marker" || exit 1
 # Verify before/after release hooks still run with cached releases
 assert_file_exists "$project_path/releases/4/before-release-ran" || exit 1
 assert_file_exists "$project_path/releases/4/after-release-ran" || exit 1
@@ -163,8 +163,8 @@ output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
 output=$(echo "$output" | sed 's/([a-f0-9]\{11\})/(COMMIT)/g')
 output=$(echo "$output" | sed 's/[[:space:]]*$//')
 
-expected_output='Reading branch "another-branch" of "https://github.com/SjorsO/lit.git"...
-Latest commit of "another-branch" is already deployed (COMMIT)
+expected_output='Reading branch "this-branch-is-used-in-unit-tests" of "https://github.com/SjorsO/lit.git"...
+Latest commit of "this-branch-is-used-in-unit-tests" is already deployed (COMMIT)
 Using "--force", redeploying...
 Reusing deployment from cache
 Creating "'"$project_path"'/releases/5" for the new release...
@@ -175,7 +175,7 @@ Releasing the new deployment "'"$project_path"'/releases/5"
 Deleting old release directory "'"$project_path"'/releases/3"...
 Finished successfully (in X seconds)'
 assert_exact_output "$expected_output" "$output" || exit 1
-assert_file_content "$project_path/current/cache-marker" "$another_branch_cache_marker" || exit 1
+assert_file_content "$project_path/current/cache-marker" "$other_branch_cache_marker" || exit 1
 # Verify before/after release hooks still run with cached releases
 assert_file_exists "$project_path/current/before-release-ran" || exit 1
 assert_file_exists "$project_path/current/after-release-ran" || exit 1

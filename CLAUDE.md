@@ -21,7 +21,7 @@ After running, all log files are collected into `worlds/_lit-logs/` and `worlds/
 ## Notes
 - It's "zero downtime", not "zero-downtime"
 - Always verify that path variables are where we expect them to be (by checking if files/directories that we expect there actually exist, for example). Never take the risk of doing something in the wrong directory.
-- The lit repository (https://github.com/SjorsO/lit.git) has a branch called "another-branch" that can be used for testing `lit checkout`
+- The lit repository (https://github.com/SjorsO/lit.git) has a branch called "this-branch-is-used-in-unit-tests" that can be used for testing `lit checkout`
 - In usage strings: required args use `<arg>`, optional args use `[arg]`, optional flags use `[--flag]`
 - Use `printf` instead of `echo` for output (more portable)
 - Use single quotes for printf format strings: `printf 'Hello %s\n' "$name"`

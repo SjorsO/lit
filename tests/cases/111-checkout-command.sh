@@ -51,9 +51,9 @@ expected_output='Switching to branch "this-branch-does-not-exist"...
 Branch "this-branch-does-not-exist" does not exist on remote'
 assert_exact_output "$expected_output" "$output" || exit 1
 
-# Checkout "another-branch" should succeed and deploy
+# Checkout "this-branch-is-used-in-unit-tests" should succeed and deploy
 set +e
-output=$(lit checkout another-branch 2>&1)
+output=$(lit checkout this-branch-is-used-in-unit-tests 2>&1)
 status_code=$?
 set -e
 
@@ -63,7 +63,7 @@ assert_same 0 "$status_code" || exit 1
 output=$(echo "$output" | sed 's/(in [0-9]*\.[0-9]*s)/(in X seconds)/g')
 output=$(echo "$output" | sed 's/[[:space:]]*$//')
 
-expected_output='Switching to branch "another-branch"...
+expected_output='Switching to branch "this-branch-is-used-in-unit-tests"...
 Creating "'"$project_path"'/releases/1" for the new release...
 Cloning repository...
 Creating a symlink to the storage directory
@@ -73,7 +73,7 @@ Finished successfully (in X seconds)'
 assert_exact_output "$expected_output" "$output" || exit 1
 assert_directory_exists "$project_path/releases/1" || exit 1
 assert_symlink "$project_path/current" || exit 1
-assert_file_content "$project_path/git-branch" "another-branch" || exit 1
+assert_file_content "$project_path/git-branch" "this-branch-is-used-in-unit-tests" || exit 1
 
 # Switch back to main - commit hash should be reused from checkout (not fetched again by deploy)
 set +e
