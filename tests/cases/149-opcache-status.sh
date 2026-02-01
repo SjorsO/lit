@@ -18,7 +18,7 @@ ${fixture_content}
 MOCK_FUNCTION
 
     # Append the original PHP script without the opening <?php tag
-    tail -n +2 "\$opcache_status_script_file_path" >> "\$wrapper"
+    tail -n +2 "\$script_file_path" >> "\$wrapper"
 
     php "\$wrapper"
     local php_exit_code=\$?
@@ -87,7 +87,7 @@ JIT:
 assert_exact_output "$expected_output" "$output" || exit 1
 
 # Verify the temporary PHP file was cleaned up
-php_files=$(find "$project_path/current/public" -name "lit-opcache-status-*.php" 2>/dev/null | wc -l | tr -d ' ')
+php_files=$(find "$project_path/current/public" -name "lit-*.php" 2>/dev/null | wc -l | tr -d ' ')
 assert_same "0" "$php_files" || exit 1
 
 # Test --json output
@@ -144,5 +144,5 @@ expected_output='Calling "https://example.com" to get OPcache status.
 assert_exact_output "$expected_output" "$output" || exit 1
 
 # Verify the temporary PHP file was cleaned up
-php_files=$(find "$project_path/current/public" -name "lit-opcache-status-*.php" 2>/dev/null | wc -l | tr -d ' ')
+php_files=$(find "$project_path/current/public" -name "lit-*.php" 2>/dev/null | wc -l | tr -d ' ')
 assert_same "0" "$php_files" || exit 1

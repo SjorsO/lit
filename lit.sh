@@ -74,7 +74,7 @@ lock_directory_path="$project_base_path/lit-is-currently-running"
 
 # Allow running "lit flush-opcache" from inside a "lit deploy" without it logging to "lit.log"
 if [ "$command" = "flush-opcache" ] && [ "$__lit_allow_flush_opcache_without_lock" = "true" ]; then
-    bash "$lit_base_path/scripts/flush-opcache.sh" "$project_base_path"
+    bash "$lit_base_path/scripts/flush-opcache.sh" "$lit_base_path" "$project_base_path"
 
     exit $?
 fi
@@ -129,7 +129,7 @@ mkdir "$lock_directory_path"
 has_created_lock_directory=true
 
 # A git pre-commit hook automatically increments this version number.
-echo "70" > "$lit_base_path/data/lit-version"
+echo "71" > "$lit_base_path/data/lit-version"
 
 if [ -f "$lit_base_path/data/telemetry-enabled" ] && [ ! -s "$lit_base_path/data/telemetry-salt" ]; then
     uuidgen | tr '[:upper:]' '[:lower:]' > "$lit_base_path/data/telemetry-salt"
@@ -150,9 +150,9 @@ elif [ "$command" = "enable-telemetry" ]; then
 elif [ "$command" = "disable-telemetry" ]; then
     bash "$lit_base_path/scripts/disable-telemetry.sh" "$lit_base_path" "$project_base_path"
 elif [ "$command" = "flush-opcache" ]; then
-    bash "$lit_base_path/scripts/flush-opcache.sh" "$project_base_path"
+    bash "$lit_base_path/scripts/flush-opcache.sh" "$lit_base_path" "$project_base_path"
 elif [ "$command" = "opcache-status" ]; then
-    bash "$lit_base_path/scripts/opcache-status.sh" "$project_base_path" "$2"
+    bash "$lit_base_path/scripts/opcache-status.sh" "$lit_base_path" "$project_base_path" "$2"
 else
     echo "failed (unknown command)" > "$project_base_path/current-run-result"
 

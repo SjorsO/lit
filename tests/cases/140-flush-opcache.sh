@@ -46,7 +46,7 @@ Cloning repository...
 Creating a symlink to the storage directory
 Creating a symlink to the .env file
 Releasing the new deployment "'"$project_path"'/releases/1"
-Not flushing opcache because this appears to be the first deployment
+Not flushing OPcache because this appears to be the first deployment
 Finished successfully (in X seconds)'
 assert_exact_output "$expected_output" "$output" || exit 1
 
@@ -74,14 +74,14 @@ Cloning repository...
 Creating a symlink to the storage directory
 Creating a symlink to the .env file
 Releasing the new deployment "'"$project_path"'/releases/2"
-Pinging "https://example.com" to flush OPcache.
+Calling "https://example.com" to flush OPcache.
 OPcache flushed successfully (simulated).
 Finished successfully (in X seconds)'
 assert_exact_output "$expected_output" "$output" || exit 1
 
 # Verify the temporary PHP files were cleaned up
-php_files_in_current=$(find "$project_path/current/public" -name "lit-flush-opcache-*.php" 2>/dev/null | wc -l | tr -d ' ')
-php_files_in_release1=$(find "$project_path/releases/1/public" -name "lit-flush-opcache-*.php" 2>/dev/null | wc -l | tr -d ' ')
+php_files_in_current=$(find "$project_path/current/public" -name "lit-*.php" 2>/dev/null | wc -l | tr -d ' ')
+php_files_in_release1=$(find "$project_path/releases/1/public" -name "lit-*.php" 2>/dev/null | wc -l | tr -d ' ')
 
 assert_same "0" "$php_files_in_current" || exit 1
 assert_same "0" "$php_files_in_release1" || exit 1
@@ -96,7 +96,7 @@ set -e
 
 assert_same 0 "$status_code" || exit 1
 
-expected_output='Pinging "https://single-quoted.com" to flush OPcache.
+expected_output='Calling "https://single-quoted.com" to flush OPcache.
 OPcache flushed successfully (simulated).'
 assert_exact_output "$expected_output" "$output" || exit 1
 
@@ -110,7 +110,7 @@ set -e
 
 assert_same 0 "$status_code" || exit 1
 
-expected_output='Pinging "https://double-quoted.com" to flush OPcache.
+expected_output='Calling "https://double-quoted.com" to flush OPcache.
 OPcache flushed successfully (simulated).'
 assert_exact_output "$expected_output" "$output" || exit 1
 
@@ -125,7 +125,7 @@ status_code=$?
 set -e
 
 assert_same 1 "$status_code" || exit 1
-assert_exact_output 'Unable to flush opcache, APP_URL not found in .env file' "$output" || exit 1
+assert_exact_output 'Unable to flush OPcache, APP_URL not found in .env file' "$output" || exit 1
 
 # Missing .env file
 rm "$project_path/.env"
@@ -136,4 +136,4 @@ status_code=$?
 set -e
 
 assert_same 1 "$status_code" || exit 1
-assert_exact_output 'Unable to flush opcache, no .env file found' "$output" || exit 1
+assert_exact_output 'Unable to flush OPcache, no .env file found' "$output" || exit 1
