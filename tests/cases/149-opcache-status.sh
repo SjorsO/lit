@@ -59,8 +59,8 @@ assert_same 0 "$status_code" || exit 1
 # Normalize the dynamic "Started" time-ago value
 output=$(echo "$output" | sed 's/Started:                 .*/Started:                 X ago/')
 
-expected_output='Calling "https://example.com" to get OPCache status.
-OPCache:
+expected_output='Calling "https://example.com" to get OPcache status.
+OPcache:
   Cache full:              No
   Restart pending:         No
   Restart in progress:     No
@@ -98,7 +98,7 @@ set -e
 
 assert_same 0 "$status_code" || exit 1
 
-expected_output='Calling "https://example.com" to get OPCache status.
+expected_output='Calling "https://example.com" to get OPcache status.
 {
     "opcache_enabled": true,
     "cache_full": false,

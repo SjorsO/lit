@@ -39,7 +39,7 @@ on_exit() {
     fi
 
     if [[ "$has_fetched_opcache_status" == false ]]; then
-        printf 'Failed to get OPCache status. The APP_URL in your .env file is set to "%s", is this correct?\n' "$app_url"
+        printf 'Failed to get OPcache status. The APP_URL in your .env file is set to "%s", is this correct?\n' "$app_url"
     fi
 
     exit "$script_status_code"
@@ -54,7 +54,7 @@ if [ "$json_flag" = "--json" ]; then
     opcache_status_url="$opcache_status_url?json"
 fi
 
-printf 'Calling "%s" to get OPCache status.\n' "$app_url"
+printf 'Calling "%s" to get OPcache status.\n' "$app_url"
 
 curl "$opcache_status_url" \
     --silent \

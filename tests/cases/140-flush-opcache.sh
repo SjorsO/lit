@@ -1,6 +1,6 @@
 # Override curl in flush-opcache.sh to simulate success without making HTTP requests
 {
-    echo 'curl() { printf "OPCache flushed successfully (simulated).\n"; }'
+    echo 'curl() { printf "OPcache flushed successfully (simulated).\n"; }'
     cat "$world_path/lit/scripts/flush-opcache.sh"
 } > "$world_path/lit/scripts/flush-opcache.sh.tmp"
 mv "$world_path/lit/scripts/flush-opcache.sh.tmp" "$world_path/lit/scripts/flush-opcache.sh"
@@ -74,8 +74,8 @@ Cloning repository...
 Creating a symlink to the storage directory
 Creating a symlink to the .env file
 Releasing the new deployment "'"$project_path"'/releases/2"
-Pinging "https://example.com" to flush OPCache.
-OPCache flushed successfully (simulated).
+Pinging "https://example.com" to flush OPcache.
+OPcache flushed successfully (simulated).
 Finished successfully (in X seconds)'
 assert_exact_output "$expected_output" "$output" || exit 1
 
@@ -96,8 +96,8 @@ set -e
 
 assert_same 0 "$status_code" || exit 1
 
-expected_output='Pinging "https://single-quoted.com" to flush OPCache.
-OPCache flushed successfully (simulated).'
+expected_output='Pinging "https://single-quoted.com" to flush OPcache.
+OPcache flushed successfully (simulated).'
 assert_exact_output "$expected_output" "$output" || exit 1
 
 # Test APP_URL with double quotes
@@ -110,8 +110,8 @@ set -e
 
 assert_same 0 "$status_code" || exit 1
 
-expected_output='Pinging "https://double-quoted.com" to flush OPCache.
-OPCache flushed successfully (simulated).'
+expected_output='Pinging "https://double-quoted.com" to flush OPcache.
+OPcache flushed successfully (simulated).'
 assert_exact_output "$expected_output" "$output" || exit 1
 
 # Test error cases

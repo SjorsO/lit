@@ -21,8 +21,8 @@ expected_output='╭────────────────────
 │                                                                              │
 │ Other commands:                                                              │
 │                                                                              │
-│   flush-opcache                  Flush PHP-FPM OPCache                       │
-│   opcache-status [--json]        Show PHP-FPM OPCache status                 │
+│   flush-opcache                  Flush PHP-FPM OPcache                       │
+│   opcache-status [--json]        Show PHP-FPM OPcache status                 │
 │   enable-git-release-caching     For faster deployments of the same commit   │
 │   disable-git-release-caching    Disable git release caching                 │
 │   enable-telemetry               Send anonymous telemetry after a deployment │
