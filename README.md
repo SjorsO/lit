@@ -1,4 +1,4 @@
-![Lit deploy](https://wilson-static.fsn1.your-objectstorage.com/lit-deploy-for-readme-v2.gif)
+![Lit deploy](.github/assets/lit-deploy-for-readme.gif)
 
 <p align="center">
     <img src="https://sjorso.com/images/logos/lit-logo.png" width="48" height="48">
