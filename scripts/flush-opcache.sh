@@ -46,7 +46,7 @@ has_flushed_opcache=false
 
 opcache_reset_script_file_name="lit-flush-opcache-$(uuidgen | cut -c1-8 | tr '[:upper:]' '[:lower:]').php"
 
-# We flush OPCache right after we create the symlink for our new release. We have to create the file
+# We flush OPcache right after we create the symlink for our new release. We have to create the file
 # twice because Nginx needs a brief moment to realise that the release directory has been changed.
 opcache_reset_script_file_path_1="$current_release_directory_path/public/$opcache_reset_script_file_name"
 opcache_reset_script_file_path_2="$previous_release_directory_path/public/$opcache_reset_script_file_name"
@@ -63,7 +63,7 @@ on_exit() {
     fi
 
     if [[ "$has_flushed_opcache" == false ]]; then
-        printf 'Failed to flush OPCache. The APP_URL in your .env file is set to "%s", is this correct?\n' "$app_url"
+        printf 'Failed to flush OPcache. The APP_URL in your .env file is set to "%s", is this correct?\n' "$app_url"
     fi
 
     exit "$script_status_code"
@@ -74,13 +74,13 @@ cat << PHP > "$opcache_reset_script_file_path_1"
 <?php
 
 echo function_exists('opcache_reset') && opcache_reset()
-    ? "OPCache flushed successfully.\n"
-    : "OPCache is not enabled.\n";
+    ? "OPcache flushed successfully.\n"
+    : "OPcache is not enabled.\n";
 PHP
 
 cp "$opcache_reset_script_file_path_1" "$opcache_reset_script_file_path_2"
 
-printf 'Pinging "%s" to flush OPCache.\n' "$app_url"
+printf 'Pinging "%s" to flush OPcache.\n' "$app_url"
 
 curl "$app_url/$opcache_reset_script_file_name" \
     --silent \

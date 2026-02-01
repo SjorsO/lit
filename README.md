@@ -37,7 +37,7 @@ For bundle deployments:
 - `lit deploy` downloads the bundle and deploys it
 
 Other commands:
-- `lit flush-opcache` flushes PHP-FPM OPCache
+- `lit flush-opcache` flushes PHP-FPM OPcache
 - `lit enable-git-release-caching` for faster deployments of the same commit
 - `lit disable-git-release-caching` disables git release caching
 - `lit enable-telemetry` enables sending anonymous telemetry after a deployment (disabled by default)

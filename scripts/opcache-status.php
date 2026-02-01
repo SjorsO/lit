@@ -1,7 +1,7 @@
 <?php
 
 if (! function_exists('opcache_get_status')) {
-    echo "OPCache is not available.\n";
+    echo "OPcache is not available.\n";
 
     exit;
 }
@@ -9,7 +9,7 @@ if (! function_exists('opcache_get_status')) {
 $status = opcache_get_status(false);
 
 if ($status === false) {
-    echo "OPCache is not enabled.\n";
+    echo "OPcache is not enabled.\n";
 
     exit;
 }
@@ -64,7 +64,7 @@ $interned = $status['interned_strings_usage'];
 $jit = $status['jit'];
 
 echo sprintf(<<<STRING
-OPCache:
+OPcache:
   Cache full:              %s
   Restart pending:         %s
   Restart in progress:     %s
