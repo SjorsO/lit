@@ -1,6 +1,4 @@
-<p align="center">
-    <img src="https://wilson-static.fsn1.your-objectstorage.com/lit-deploy-for-readme-v2.gif" height="400">
-</p>
+![Lit deploy](https://wilson-static.fsn1.your-objectstorage.com/lit-deploy-for-readme-v2.gif)
 
 <p align="center">
     <img src="https://sjorso.com/images/logos/lit-logo.png" width="48" height="48">
