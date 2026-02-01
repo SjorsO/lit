@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="https://wilson-static.fsn1.your-objectstorage.com/lit-deploy-for-readme.gif" height="400">
+    <img src="https://wilson-static.fsn1.your-objectstorage.com/lit-deploy-for-readme-v2.gif" height="400">
 </p>
 
 <p align="center">
