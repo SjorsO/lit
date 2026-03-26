@@ -3,7 +3,7 @@ composer install --no-interaction --no-progress --optimize-autoloader --no-dev
 if [ -s "$HOME/.nvm/nvm.sh" ]; then
     export NVM_DIR="$HOME/.nvm"
     . "$NVM_DIR/nvm.sh"
-    nvm use
+    nvm use 2>&1
 fi
 
 npm ci
