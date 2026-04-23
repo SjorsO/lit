@@ -498,12 +498,13 @@ else
     printf 'Wanted to run "%s/hooks/after-release.sh" but it does not exist\n' "$project_base_path"
 fi
 
-# Only keep 2 release directories
+# Keep the 6 most recent releases. We need to keep several old releases because multiple quick deployments
+# in a row could otherwise delete a release that a long-running job is still referencing.
 #
 # shellcheck disable=SC2012
 # SC2012 = use find instead of ls to better handle non-alphanumeric filenames.
 # We can safely use `ls` because we've already ensured all release directory names are numeric.
-for old_release_directory in $(ls "$releases_directory" | sort --numeric-sort --reverse | tail -n+3) ; do
+for old_release_directory in $(ls "$releases_directory" | sort --numeric-sort --reverse | tail -n+7) ; do
     printf 'Deleting old release directory "%s/%s"... ' "$releases_directory" "$old_release_directory"
 
     rm -rf "${releases_directory:?}/$old_release_directory"
