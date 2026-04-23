@@ -107,7 +107,6 @@ Extracting release...
 Creating a symlink to the storage directory
 Creating a symlink to the .env file
 Releasing the new deployment "'"$project_path"'/releases/3"
-Deleting old release directory "'"$project_path"'/releases/1"...
 Finished successfully (in X seconds)'
 assert_exact_output "$expected_output" "$output" || exit 1
 assert_directory_exists "$project_path/releases/3" || exit 1
@@ -141,7 +140,6 @@ Extracting release...
 Creating a symlink to the storage directory
 Creating a symlink to the .env file
 Releasing the new deployment "'"$project_path"'/releases/4"
-Deleting old release directory "'"$project_path"'/releases/2"...
 Finished successfully (in X seconds)'
 assert_exact_output "$expected_output" "$output" || exit 1
 assert_directory_exists "$project_path/releases/4" || exit 1
@@ -172,7 +170,6 @@ Extracting release...
 Creating a symlink to the storage directory
 Creating a symlink to the .env file
 Releasing the new deployment "'"$project_path"'/releases/5"
-Deleting old release directory "'"$project_path"'/releases/3"...
 Finished successfully (in X seconds)'
 assert_exact_output "$expected_output" "$output" || exit 1
 assert_file_content "$project_path/current/cache-marker" "$other_branch_cache_marker" || exit 1

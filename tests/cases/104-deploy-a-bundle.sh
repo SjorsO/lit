@@ -179,13 +179,11 @@ Extracting bundle...
 Creating a symlink to the storage directory
 Creating a symlink to the .env file
 Releasing the new deployment "'"$project_path"'/releases/10"
-Deleting old release directory "'"$project_path"'/releases/1"...
 Finished successfully (in X seconds)'
 assert_exact_output "$expected_output" "$output" || exit 1
 assert_directory_exists "$project_path/releases/10" || exit 1
 assert_directory_exists "$project_path/releases/9" || exit 1
-# first release was deleted because we only keep 2 releases.
-assert_file_missing "$project_path/releases/1" || exit 1
+assert_directory_exists "$project_path/releases/1" || exit 1
 current_target=$(readlink "$project_path/current")
 assert_string_contains "$current_target" "releases/10" || exit 1
 
@@ -215,11 +213,10 @@ Extracting bundle...
 Creating a symlink to the storage directory
 Creating a symlink to the .env file
 Releasing the new deployment "'"$project_path"'/releases/11"
-Deleting old release directory "'"$project_path"'/releases/9"...
 Finished successfully (in X seconds)'
 assert_exact_output "$expected_output" "$output" || exit 1
 assert_directory_exists "$project_path/releases/11" || exit 1
 assert_directory_exists "$project_path/releases/10" || exit 1
-assert_file_missing "$project_path/releases/9" || exit 1
+assert_directory_exists "$project_path/releases/9" || exit 1
 current_target=$(readlink "$project_path/current")
 assert_string_contains "$current_target" "releases/11" || exit 1

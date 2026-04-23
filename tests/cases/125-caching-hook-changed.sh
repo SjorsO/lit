@@ -109,7 +109,6 @@ Extracting release...
 Creating a symlink to the storage directory
 Creating a symlink to the .env file
 Releasing the new deployment "'"$project_path"'/releases/3"
-Deleting old release directory "'"$project_path"'/releases/1"...
 Finished successfully (in X seconds)'
 assert_exact_output "$expected_output" "$output" || exit 1
 
