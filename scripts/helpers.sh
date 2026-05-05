@@ -67,7 +67,12 @@ replace_log_placeholder() {
     acquire_lit_log_lock
 
     if [ -n "$result" ]; then
-        sed "s/ (pending:$pid)\$/ → $result (in ${pretty_runtime})/" "$log_file" > "$log_file.tmp"
+        # Escape sed-special chars in $result so branch names containing "/"
+        # (e.g. "feature/foo") don't break the s/// command
+        local escaped_result="${result//\\/\\\\}"
+        escaped_result="${escaped_result//&/\\&}"
+        escaped_result="${escaped_result//\//\\/}"
+        sed "s/ (pending:$pid)\$/ → $escaped_result (in ${pretty_runtime})/" "$log_file" > "$log_file.tmp"
     else
         sed "s/ (pending:$pid)\$//" "$log_file" > "$log_file.tmp"
     fi
