@@ -1,6 +1,7 @@
 project_base_directory="$1"
 new_release_directory="$2"
 lit_base_path="$3"
+previous_release_directory="$4" # empty on the first deploy
 
 php artisan storage:link
 
