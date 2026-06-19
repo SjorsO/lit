@@ -138,6 +138,12 @@ current_release_id=$(ls "$releases_directory" | sort --numeric-sort | tail -n1)
 
 new_release_directory="$releases_directory/$((current_release_id + 1))"
 
+previous_release_directory=""
+
+if [ -L "$current_directory_path" ]; then
+    previous_release_directory="$releases_directory/$(basename "$(readlink "$current_directory_path")")"
+fi
+
 if [ "$source_type" = "git" ]; then
     git_repository_url="$(get_file_value "$project_base_path/git-repository-url")"
     current_branch="$(get_file_value "$project_base_path/git-branch")"
@@ -471,7 +477,7 @@ fi
 
 if [ -f "$project_base_path/hooks/before-release.sh" ]; then
     hook_entry_directory=$(pwd)
-    cat "$project_base_path/hooks/before-release.sh" | bash -se -- "$project_base_path" "$new_release_directory" "$lit_base_path"
+    cat "$project_base_path/hooks/before-release.sh" | bash -se -- "$project_base_path" "$new_release_directory" "$lit_base_path" "$previous_release_directory"
     cd "$hook_entry_directory" || exit 1
 else
     printf 'Wanted to run "%s/hooks/before-release.sh" but it does not exist\n' "$project_base_path"
@@ -492,7 +498,7 @@ fi
 
 if [ -f "$project_base_path/hooks/after-release.sh" ]; then
     hook_entry_directory=$(pwd)
-    cat "$project_base_path/hooks/after-release.sh" | bash -se -- "$project_base_path" "$new_release_directory" "$lit_base_path"
+    cat "$project_base_path/hooks/after-release.sh" | bash -se -- "$project_base_path" "$new_release_directory" "$lit_base_path" "$previous_release_directory"
     cd "$hook_entry_directory" || exit 1
 else
     printf 'Wanted to run "%s/hooks/after-release.sh" but it does not exist\n' "$project_base_path"
