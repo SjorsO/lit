@@ -64,6 +64,15 @@ if [ ! -d "$project_base_path/storage" ] && [ ! -d "$project_base_path/shared/st
     exit 1
 fi
 
+# The releases directory and git-commit file might not exist when moving an application between servers
+if [ ! -d "$project_base_path/releases" ]; then
+    mkdir -p "$project_base_path/releases"
+fi
+
+if [ -f "$project_base_path/git-repository-url" ] && [ ! -f "$project_base_path/git-commit" ]; then
+    echo "not deployed yet" > "$project_base_path/git-commit"
+fi
+
 source "$lit_base_path/scripts/helpers.sh"
 
 if [ ! -d "$project_base_path/logs" ]; then
@@ -129,7 +138,7 @@ mkdir "$lock_directory_path"
 has_created_lock_directory=true
 
 # A git pre-commit hook automatically increments this version number.
-echo "74" > "$lit_base_path/data/lit-version"
+echo "75" > "$lit_base_path/data/lit-version"
 
 if [ -f "$lit_base_path/data/telemetry-enabled" ] && [ ! -s "$lit_base_path/data/telemetry-salt" ]; then
     uuidgen | tr '[:upper:]' '[:lower:]' > "$lit_base_path/data/telemetry-salt"
