@@ -1,0 +1,281 @@
+<?php
+
+function get_source_type(string $projectBasePath): string
+{
+    if (file_exists("$projectBasePath/git-repository-url")) {
+        return 'git';
+    }
+
+    if (file_exists("$projectBasePath/bundle-url")) {
+        return 'bundle';
+    }
+
+    return '';
+}
+
+function get_file_value(string $filePath): string
+{
+    return trim(file_get_contents($filePath));
+}
+
+function current_time_in_ms(): int
+{
+    return intdiv(hrtime(true), 1_000_000);
+}
+
+function get_human_timestamp(): string
+{
+    return date('Y-m-d H:i:s');
+}
+
+function is_macos(): bool
+{
+    return PHP_OS_FAMILY === 'Darwin';
+}
+
+function pretty_runtime(int $runtimeInMs): string
+{
+    return sprintf('%d.%02ds', intdiv($runtimeInMs, 1000), intdiv($runtimeInMs % 1000, 10));
+}
+
+function uuid(): string
+{
+    $bytes = random_bytes(16);
+
+    $bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40);
+    $bytes[8] = chr((ord($bytes[8]) & 0x3f) | 0x80);
+
+    $hex = bin2hex($bytes);
+
+    return sprintf('%s-%s-%s-%s-%s', substr($hex, 0, 8), substr($hex, 8, 4), substr($hex, 12, 4), substr($hex, 16, 4), substr($hex, 20, 12));
+}
+
+// The size format of "ls -lah": no decimal above 10, one decimal below 10
+function human_file_size(int $bytes): string
+{
+    $units = ['B', 'K', 'M', 'G', 'T'];
+    $size = (float) $bytes;
+    $unitIndex = 0;
+
+    while ($size >= 1024 && $unitIndex < count($units) - 1) {
+        $size /= 1024;
+        $unitIndex++;
+    }
+
+    if ($unitIndex === 0) {
+        return $size.'B';
+    }
+
+    if ($size >= 10) {
+        return ceil($size).$units[$unitIndex];
+    }
+
+    return sprintf('%.1f%s', ceil($size * 10) / 10, $units[$unitIndex]);
+}
+
+// Write to stdout, and to the lit-output.log once logging has started
+function out(string $text): void
+{
+    echo $text;
+
+    if ($GLOBALS['lit_output_log_path'] ?? null) {
+        file_put_contents($GLOBALS['lit_output_log_path'], $text, FILE_APPEND);
+    }
+}
+
+function lit_exit(int $statusCode): void
+{
+    $GLOBALS['lit_exit_code'] = $statusCode;
+
+    exit($statusCode);
+}
+
+function register_cleanup(callable $cleanup): void
+{
+    $GLOBALS['cleanup_stack'][] = $cleanup;
+}
+
+function delete_directory(string $directoryPath): void
+{
+    run_command_and_capture(['rm', '-rf', $directoryPath]);
+}
+
+// Deletes a file if it exists, the is_link check covers symlinks
+// with a missing target (file_exists returns false for those)
+function delete_file(string $filePath): void
+{
+    if (file_exists($filePath) || is_link($filePath)) {
+        unlink($filePath);
+    }
+}
+
+// Waits for readable data without blocking signal delivery: a blocking fread would
+// be restarted by PHP after a signal, so Ctrl+C could not abort while a hook runs.
+// A signal interrupting the select causes an expected "Interrupted system call"
+// warning, silence only that warning and let the signal handler take over
+function wait_for_readable_pipes(array $pipes): void
+{
+    $read = $pipes;
+    $write = null;
+    $except = null;
+
+    set_error_handler(fn (int $errorNumber, string $errorMessage) => str_contains($errorMessage, 'Interrupted system call'));
+
+    stream_select($read, $write, $except, 0, 200_000);
+
+    restore_error_handler();
+}
+
+// Streams stdout and stderr of the command through out(), returns the status code
+function run_command(array $command, ?string $stdinContent = null, ?string $currentDirectory = null): int
+{
+    $descriptors = [1 => ['pipe', 'w'], 2 => ['redirect', 1]];
+
+    if ($stdinContent !== null) {
+        $descriptors[0] = ['pipe', 'r'];
+    }
+
+    $process = proc_open($command, $descriptors, $pipes, $currentDirectory);
+
+    $GLOBALS['current_child_process'] = $process;
+
+    if ($stdinContent !== null) {
+        fwrite($pipes[0], $stdinContent);
+        fclose($pipes[0]);
+    }
+
+    stream_set_blocking($pipes[1], false);
+
+    while (! feof($pipes[1])) {
+        wait_for_readable_pipes([$pipes[1]]);
+
+        out(fread($pipes[1], 8192) ?: '');
+    }
+
+    fclose($pipes[1]);
+
+    $GLOBALS['current_child_process'] = null;
+
+    return proc_close($process);
+}
+
+// Returns [statusCode, output], with stderr merged into stdout, nothing is streamed
+function run_command_and_capture(array $command, ?string $currentDirectory = null): array
+{
+    $process = proc_open($command, [1 => ['pipe', 'w'], 2 => ['redirect', 1]], $pipes, $currentDirectory);
+
+    $GLOBALS['current_child_process'] = $process;
+
+    stream_set_blocking($pipes[1], false);
+
+    $output = '';
+
+    while (! feof($pipes[1])) {
+        wait_for_readable_pipes([$pipes[1]]);
+
+        $output .= fread($pipes[1], 8192) ?: '';
+    }
+
+    fclose($pipes[1]);
+
+    $GLOBALS['current_child_process'] = null;
+
+    return [proc_close($process), $output];
+}
+
+// Returns [statusCode, stdout], stderr is streamed through out()
+function run_command_and_capture_stdout(array $command): array
+{
+    $process = proc_open($command, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+
+    $GLOBALS['current_child_process'] = $process;
+
+    stream_set_blocking($pipes[1], false);
+    stream_set_blocking($pipes[2], false);
+
+    $stdout = '';
+
+    while (! feof($pipes[1]) || ! feof($pipes[2])) {
+        $readablePipes = array_filter([$pipes[1], $pipes[2]], fn ($pipe) => ! feof($pipe));
+
+        if (! $readablePipes) {
+            break;
+        }
+
+        wait_for_readable_pipes($readablePipes);
+
+        $stdout .= stream_get_contents($pipes[1]) ?: '';
+
+        out(stream_get_contents($pipes[2]) ?: '');
+    }
+
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+
+    $GLOBALS['current_child_process'] = null;
+
+    return [proc_close($process), $stdout];
+}
+
+// Hooks are run by piping them into bash, this has been proven to work reliably.
+// The -e ensures hooks fail properly. Symlinked hooks work because
+// file_get_contents follows symlinks.
+function run_hook(string $hookPath, array $hookArguments): int
+{
+    return run_command(['bash', '-se', '--', ...$hookArguments], file_get_contents($hookPath));
+}
+
+function acquire_lit_log_lock(string $projectBasePath): void
+{
+    // The mkdir warns with "File exists" when another lit process holds the lock,
+    // that is the expected contention case, silence only that warning
+    set_error_handler(fn (int $errorNumber, string $errorMessage) => str_contains($errorMessage, 'File exists'));
+
+    for ($attempts = 0; $attempts < 10; $attempts++) {
+        if (mkdir("$projectBasePath/lit-log-lock")) {
+            restore_error_handler();
+
+            return;
+        }
+
+        usleep(100_000);
+    }
+
+    restore_error_handler();
+}
+
+function release_lit_log_lock(string $projectBasePath): void
+{
+    if (is_dir("$projectBasePath/lit-log-lock")) {
+        rmdir("$projectBasePath/lit-log-lock");
+    }
+}
+
+function replace_log_placeholder(string $projectBasePath, int $pid, string $result, int $runtimeInMs): void
+{
+    $logFilePath = "$projectBasePath/logs/lit.log";
+
+    acquire_lit_log_lock($projectBasePath);
+
+    $lines = explode("\n", file_get_contents($logFilePath));
+
+    foreach ($lines as $index => $line) {
+        if (! str_ends_with($line, " (pending:$pid)")) {
+            continue;
+        }
+
+        $linePrefix = substr($line, 0, -strlen(" (pending:$pid)"));
+
+        if ($result === '') {
+            $lines[$index] = $linePrefix;
+        } else {
+            $prettyRuntime = pretty_runtime($runtimeInMs);
+
+            $lines[$index] = "$linePrefix → $result (in $prettyRuntime)";
+        }
+    }
+
+    file_put_contents($logFilePath, implode("\n", $lines));
+
+    release_lit_log_lock($projectBasePath);
+}

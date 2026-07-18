@@ -12,6 +12,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
+        php-version: ['8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
 
     steps:
       - uses: actions/checkout@v5
@@ -20,10 +21,10 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: ${{ matrix.php-version }}
 
       - name: Run tests
-        run: bash tests/run-tests-in-parallel.sh
+        run: php tests/run-tests.php
 
   Create-Release-Bundle:
     needs: Tests
@@ -38,6 +39,7 @@ jobs:
         run: |
           tar --create --gzip \
             --exclude="tests" \
+            --exclude="__old_v1" \
             --exclude="CLAUDE.md" \
             --exclude="LICENSE.md" \
             --file ~/lit.tar.gz *
@@ -80,7 +82,7 @@ jobs:
 
           find . -maxdepth 1 ! -name .git ! -name . -exec rm -rf {} +
           find "$GITHUB_WORKSPACE" -maxdepth 1 ! -name .git ! -name . ! -path "$GITHUB_WORKSPACE" -exec cp -r {} . \;
-          rm -rf tests .github CLAUDE.md LICENSE.md .gitignore
+          rm -rf tests __old_v1 .github CLAUDE.md LICENSE.md .gitignore
           git add -A
 
           if [ -z "$(git status --porcelain)" ]; then

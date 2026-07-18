@@ -1,0 +1,148 @@
+<?php
+
+require __DIR__.'/scripts/helpers.php';
+
+if (! extension_loaded('pcntl')) {
+    echo "Lit requires the pcntl PHP extension\n";
+
+    lit_exit(1);
+}
+
+$litBasePath = __DIR__;
+$projectBasePath = getcwd();
+$arguments = array_slice($argv, 1);
+$command = $arguments[0] ?? '';
+
+$GLOBALS['cleanup_stack'] = [];
+$GLOBALS['lit_exit_code'] = 0;
+$GLOBALS['lit_output_log_path'] = null;
+$GLOBALS['current_child_process'] = null;
+$GLOBALS['current_run_result'] = '';
+
+register_shutdown_function(function () {
+    foreach (array_reverse($GLOBALS['cleanup_stack']) as $closure) {
+        $closure($GLOBALS['lit_exit_code']);
+    }
+});
+
+pcntl_async_signals(true);
+
+foreach ([SIGINT, SIGTERM, SIGHUP] as $signal) {
+    pcntl_signal($signal, function (int $signal) {
+        if ($GLOBALS['current_child_process']) {
+            proc_terminate($GLOBALS['current_child_process'], SIGTERM);
+        }
+
+        lit_exit(128 + $signal);
+    }, restart_syscalls: false);
+}
+
+if (! file_exists("$litBasePath/data/installation-id")) {
+    require "$litBasePath/scripts/install.php";
+
+    lit_exit(0);
+}
+
+if ($command === 'init') {
+    require "$litBasePath/scripts/init.php";
+
+    lit_exit(0);
+}
+
+if ($command === 'help') {
+    echo file_get_contents("$litBasePath/help.txt");
+
+    lit_exit(0);
+}
+
+if (! file_exists("$projectBasePath/git-repository-url") && ! file_exists("$projectBasePath/bundle-url")) {
+    echo "This is not a Lit directory\n";
+
+    lit_exit(1);
+}
+
+if (! is_dir("$projectBasePath/storage") && ! is_dir("$projectBasePath/shared/storage")) {
+    echo "This looks like a Lit directory, but the storage directory does not exist\n";
+
+    lit_exit(1);
+}
+
+// The releases directory and git-commit file might not exist when moving an application between servers
+if (! is_dir("$projectBasePath/releases")) {
+    mkdir("$projectBasePath/releases");
+}
+
+if (file_exists("$projectBasePath/git-repository-url") && ! file_exists("$projectBasePath/git-commit")) {
+    file_put_contents("$projectBasePath/git-commit", "not deployed yet");
+}
+
+if (! is_dir("$projectBasePath/logs")) {
+    mkdir("$projectBasePath/logs");
+}
+
+$lockDirectoryPath = "$projectBasePath/lit-is-currently-running";
+
+// Allow running "lit flush-opcache" from inside a "lit deploy" without it logging to "lit.log"
+if ($command === 'flush-opcache' && getenv('__lit_allow_flush_opcache_without_lock') === 'true') {
+    require "$litBasePath/scripts/flush-opcache.php";
+
+    lit_exit(0);
+}
+
+$startTime = current_time_in_ms();
+$commandLine = rtrim('lit '.implode(' ', $arguments));
+$pid = getmypid();
+
+acquire_lit_log_lock($projectBasePath);
+file_put_contents("$projectBasePath/logs/lit.log", '['.get_human_timestamp()."] $commandLine (pending:$pid)\n", FILE_APPEND);
+release_lit_log_lock($projectBasePath);
+
+file_put_contents("$projectBasePath/logs/lit-output.log", '['.get_human_timestamp()."] $commandLine\n", FILE_APPEND);
+
+// From this point on, everything written with out() also goes to lit-output.log
+$GLOBALS['lit_output_log_path'] = "$projectBasePath/logs/lit-output.log";
+
+if (is_dir($lockDirectoryPath)) {
+    out("Another Lit command is currently running for this project, aborting...\n");
+    out("If this is wrong, manually run:\n");
+    out("    rmdir \"$lockDirectoryPath\"\n");
+
+    replace_log_placeholder($projectBasePath, $pid, 'aborted, another lit command is currently running', current_time_in_ms() - $startTime);
+
+    lit_exit(1);
+}
+
+// Ensure we can't run multiple commands at the same time.
+mkdir($lockDirectoryPath);
+
+register_cleanup(function () use ($projectBasePath, $lockDirectoryPath, $pid, $startTime) {
+    replace_log_placeholder($projectBasePath, $pid, $GLOBALS['current_run_result'], current_time_in_ms() - $startTime);
+
+    if (is_dir($lockDirectoryPath)) {
+        rmdir($lockDirectoryPath);
+    }
+});
+
+if ($command === 'deploy') {
+    putenv('__lit_allow_flush_opcache_without_lock=true');
+
+    require "$litBasePath/scripts/deploy.php";
+} elseif ($command === 'checkout') {
+    putenv('__lit_allow_flush_opcache_without_lock=true');
+
+    require "$litBasePath/scripts/checkout.php";
+} elseif ($command === 'enable-git-release-caching') {
+    require "$litBasePath/scripts/enable-git-release-caching.php";
+} elseif ($command === 'disable-git-release-caching') {
+    require "$litBasePath/scripts/disable-git-release-caching.php";
+} elseif ($command === 'flush-opcache') {
+    require "$litBasePath/scripts/flush-opcache.php";
+} elseif ($command === 'opcache-status') {
+    require "$litBasePath/scripts/opcache-status.php";
+} else {
+    $GLOBALS['current_run_result'] = 'failed (unknown command)';
+
+    out(file_get_contents("$litBasePath/help.txt"));
+
+    lit_exit(1);
+}

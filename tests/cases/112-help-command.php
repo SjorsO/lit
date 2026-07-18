@@ -1,3 +1,20 @@
+<?php
+
+require __DIR__.'/../test-helpers.php';
+
+// Test the lit help command
+
+[$statusCode] = lit('init', 'https://github.com/SjorsO/lit.git');
+
+assert_same(0, $statusCode);
+
+chdir(world_path().'/case/lit');
+
+[$statusCode, $output] = lit('help');
+
+assert_same(0, $statusCode);
+
+assert_same(<<<'EXPECTED'
 ╭──────────────────────────────────────────────────────────────────────────────╮
 │ usage: lit <command>                                                         │
 │                                                                              │
@@ -16,3 +33,4 @@
 │                                                                              │
 │ For more info, visit: https://github.com/SjorsO/lit                          │
 ╰──────────────────────────────────────────────────────────────────────────────╯
+EXPECTED, $output);
