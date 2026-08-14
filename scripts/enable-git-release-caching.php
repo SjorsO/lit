@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @var string $litBasePath
+ * @var string $projectBasePath
+ */
+
 $sourceType = get_source_type($projectBasePath);
 
 if ($sourceType !== 'git') {

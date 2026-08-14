@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * @var string $litBasePath
+ * @var string $projectBasePath
+ * @var string[] $arguments
+ */
+
 $firstOption = $arguments[1] ?? '';
 $secondOption = $arguments[2] ?? '';
 

@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @var string $litBasePath
+ */
+
 // Runs the first time Lit is used (when data/installation-id does not exist)
 
 if (! is_dir("$litBasePath/data")) {

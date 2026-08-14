@@ -1,9 +1,15 @@
 <?php
 
-// Runs a PHP script ($phpSourceFile) inside PHP-FPM by copying it into the public
-// directory of the current release and calling it over HTTP via the APP_URL.
-// The wrapper that requires this file sets $phpSourceFile, $actionLabel,
-// $notIfFirstRelease and $queryString.
+/**
+ * Runs a PHP script ($phpSourceFile) inside PHP-FPM by copying it into the public
+ * directory of the current release and calling it over HTTP via the APP_URL.
+ *
+ * @var string $projectBasePath
+ * @var string $phpSourceFile
+ * @var string $actionLabel
+ * @var bool $notIfFirstRelease
+ * @var string $queryString
+ */
 
 $currentReleaseDirectoryPath = "$projectBasePath/current";
 

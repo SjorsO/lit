@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * @var string $litBasePath
+ * @var string $projectBasePath
+ * @var string[] $arguments
+ */
+
 $newBranch = $arguments[1] ?? '';
 
 if ($newBranch === '' || isset($arguments[2])) {

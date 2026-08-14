@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @var string $litBasePath
+ * @var string[] $arguments
+ */
+
 $phpSourceFile = "$litBasePath/scripts/payloads/opcache-status.php";
 $actionLabel = 'get OPcache status';
 $notIfFirstRelease = false;

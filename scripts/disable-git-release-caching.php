@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @var string $projectBasePath
+ */
+
 if (! file_exists("$projectBasePath/git-release-caching-enabled")) {
     out("Release caching for git is already disabled\n");
 

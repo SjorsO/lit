@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * @var string $litBasePath
+ * @var string $projectBasePath
+ * @var string[] $arguments
+ */
+
 // When you run `lit init <url> [project name]`:
 // - If a [project name] is passed in, that directory is used.
 // - If [project name] is empty or ".", the current directory is used if it is a Laravel project.
@@ -15,7 +21,6 @@
 // - A directory containing a non-zero downtime structure Laravel project (containing the "artisan"
 //   and "composer.json" files, but missing the "releases" directory).
 
-$basePath = $projectBasePath;
 $sourceUrl = $arguments[1] ?? '';
 $customProjectName = $arguments[2] ?? '';
 
@@ -60,12 +65,12 @@ $projectPath = '';
 
 // When running "lit init <url>" without specifying a project name, check if the current directory
 // is an existing Laravel project, if yes, init in the current directory.
-if ($customProjectName === '.' || ($customProjectName === '' && is_laravel_project($basePath))) {
-    $projectPath = $basePath;
-    $projectName = basename($basePath);
+if ($customProjectName === '.' || ($customProjectName === '' && is_laravel_project($projectBasePath))) {
+    $projectPath = $projectBasePath;
+    $projectName = basename($projectBasePath);
     $initInCurrentDirectory = true;
 
-    if (! is_existing_zero_downtime_project($basePath)) {
+    if (! is_existing_zero_downtime_project($projectBasePath)) {
         $initInNonZeroDowntimeProject = true;
     }
 }
@@ -90,7 +95,7 @@ if (! $initInCurrentDirectory) {
         $projectName = preg_replace('/(.*)\.tar.*/', '$1', basename($sourceUrl));
     }
 
-    $projectPath = "$basePath/$projectName";
+    $projectPath = "$projectBasePath/$projectName";
 }
 
 // Check if the directory already exists and is not empty

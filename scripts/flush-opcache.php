@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @var string $litBasePath
+ */
+
 $phpSourceFile = "$litBasePath/scripts/payloads/flush-opcache.php";
 $actionLabel = 'flush OPcache';
 $notIfFirstRelease = true;
