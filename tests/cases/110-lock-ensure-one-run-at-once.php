@@ -10,9 +10,7 @@ assert_same(0, $statusCode);
 
 $projectPath = world_path().'/case/lit';
 
-// Empty hooks so the deploy can succeed
-file_put_contents("$projectPath/hooks/before-release.sh", "\n");
-file_put_contents("$projectPath/hooks/after-release.sh", "\n");
+neutralize_hooks($projectPath);
 
 file_put_contents("$projectPath/.env", "APP_KEY=test\n");
 
@@ -58,3 +56,6 @@ Releasing the new deployment "$projectPath/releases/1"
 Finished successfully (in X seconds)
 EXPECTED, $output);
 assert_directory_exists("$projectPath/releases/1");
+
+// Lit's own lock should be cleaned up after a successful deploy
+assert_file_missing("$projectPath/lit-is-currently-running");

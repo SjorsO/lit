@@ -18,8 +18,7 @@ assert_directory_exists("$projectPath/storage/framework/sessions");
 assert_directory_exists("$projectPath/storage/framework/views");
 assert_directory_exists("$projectPath/storage/logs");
 
-file_put_contents("$projectPath/hooks/before-release.sh", "\n");
-file_put_contents("$projectPath/hooks/after-release.sh", "\n");
+neutralize_hooks($projectPath);
 file_put_contents("$projectPath/.env", "APP_KEY=test\n");
 
 chdir($projectPath);

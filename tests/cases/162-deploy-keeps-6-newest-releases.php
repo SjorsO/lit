@@ -11,8 +11,7 @@ assert_same(0, $statusCode);
 $projectPath = world_path().'/case/lit';
 
 file_put_contents("$projectPath/.env", "APP_KEY=test\n");
-file_put_contents("$projectPath/hooks/before-release.sh", "\n");
-file_put_contents("$projectPath/hooks/after-release.sh", "\n");
+neutralize_hooks($projectPath);
 
 chdir($projectPath);
 
@@ -57,7 +56,7 @@ assert_string_contains(readlink("$projectPath/current"), 'releases/7');
 
 assert_same(0, $statusCode);
 
-$output = replace_commits(normalize_output($output));
+$output = normalize_output($output);
 
 assert_same(<<<EXPECTED
 Reading branch "main" of "https://github.com/SjorsO/lit.git"...
@@ -80,3 +79,14 @@ assert_directory_exists("$projectPath/releases/5");
 assert_directory_exists("$projectPath/releases/6");
 assert_directory_exists("$projectPath/releases/7");
 assert_directory_exists("$projectPath/releases/8");
+
+// Delete all releases and deploy again, the numbering should restart at 1
+// (the current symlink still exists, pointing at nothing)
+run_process(['rm', '-rf', ...glob("$projectPath/releases/*")], $projectPath);
+
+[$statusCode] = lit('deploy', '--force');
+
+assert_same(0, $statusCode);
+
+assert_directory_exists("$projectPath/releases/1");
+assert_string_contains(readlink("$projectPath/current"), 'releases/1');

@@ -2,37 +2,16 @@
 
 require __DIR__.'/../test-helpers.php';
 
-// Test that lit help works outside of a lit directory
+// Test that lit help works outside a lit directory
 
 $worldPath = world_path();
-
-$expectedOutput = <<<'EXPECTED'
-╭──────────────────────────────────────────────────────────────────────────────╮
-│ usage: lit <command>                                                         │
-│                                                                              │
-│ Common Lit commands:                                                         │
-│                                                                              │
-│   init <url> [name]    Initialize a new Lit directory from git or a bundle   │
-│   deploy               Run a new deployment                                  │
-│   checkout <branch>    Git checkout the given branch and deploy it           │
-│                                                                              │
-│ Other commands:                                                              │
-│                                                                              │
-│   flush-opcache                  Flush PHP-FPM OPcache                       │
-│   opcache-status [--json]        Show PHP-FPM OPcache status                 │
-│   enable-git-release-caching     For faster deployments of the same commit   │
-│   disable-git-release-caching    Disable git release caching                 │
-│                                                                              │
-│ For more info, visit: https://github.com/SjorsO/lit                          │
-╰──────────────────────────────────────────────────────────────────────────────╯
-EXPECTED;
 
 // We're in $worldPath/case which is not a lit directory
 [$statusCode, $output] = lit('help');
 
 // Help should work even outside a lit directory
 assert_same(0, $statusCode);
-assert_same($expectedOutput, $output);
+assert_output_is_help_text($output);
 
 // Also test that init works outside lit directory (it should)
 [$statusCode, $output] = lit('init');
@@ -59,7 +38,7 @@ chdir("$worldPath/case/lit");
 [$statusCode, $output] = lit('help');
 
 assert_same(0, $statusCode);
-assert_same($expectedOutput, $output);
+assert_output_is_help_text($output);
 
 // Help should not be logged
 $outputLogContent = is_file("$worldPath/case/lit/logs/lit-output.log") ? file_get_contents("$worldPath/case/lit/logs/lit-output.log") : '';

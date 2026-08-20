@@ -19,9 +19,7 @@ chdir($projectPath);
 
 assert_same(0, $statusCode);
 
-// Override hooks to do nothing
-file_put_contents("$projectPath/hooks/before-release.sh", "# no-op\n");
-file_put_contents("$projectPath/hooks/after-release.sh", "# no-op\n");
+neutralize_hooks($projectPath);
 file_put_contents("$projectPath/hooks/before-caching.sh", "# no-op\n");
 
 // Create 4 fake cache files of 200MB each (800MB total, exceeds 500MB limit)

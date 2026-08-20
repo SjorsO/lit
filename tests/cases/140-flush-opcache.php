@@ -64,7 +64,7 @@ if (! is_dir("$projectPath/releases/1/public")) {
 
 assert_same(0, $statusCode);
 
-$output = replace_commits(normalize_output($output));
+$output = normalize_output($output);
 
 assert_same(<<<EXPECTED
 Reading branch "main" of "https://github.com/SjorsO/lit.git"...

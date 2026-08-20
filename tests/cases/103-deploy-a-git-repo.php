@@ -14,6 +14,9 @@ $projectPath = world_path().'/case/lit';
 file_put_contents("$projectPath/hooks/before-release.sh", '[ -d "$1/storage" ] && [ -d "$1/logs" ] && [ -f "$2/lit.sh" ] && touch "$1/before-release-ran" && touch "$2/before-release-release"'."\n");
 file_put_contents("$projectPath/hooks/after-release.sh", '[ -d "$1/storage" ] && [ -d "$1/logs" ] && [ -f "$2/lit.sh" ] && touch "$1/after-release-ran" && touch "$2/after-release-release"'."\n");
 
+// Nothing fails in this test, this hook should never run
+file_put_contents("$projectPath/hooks/on-failure.sh", 'touch "$1/on-failure-called"'."\n");
+
 chdir($projectPath);
 
 // First deploy with empty .env should fail
@@ -70,7 +73,7 @@ assert_matches('/\[[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\]/', fi
 
 assert_same(0, $statusCode);
 
-$output = replace_commits(normalize_output($output));
+$output = normalize_output($output);
 
 assert_same(<<<EXPECTED
 Reading branch "main" of "https://github.com/SjorsO/lit.git"...
@@ -80,12 +83,15 @@ Finished successfully (in X seconds)
 EXPECTED, $output);
 assert_file_missing("$projectPath/releases/2");
 
+// A skipped deploy is not a failure, it should not run the on-failure hook
+assert_file_missing("$projectPath/on-failure-called");
+
 // Deploy with --force should redeploy
 [$statusCode, $output] = lit('deploy', '--force');
 
 assert_same(0, $statusCode);
 
-$output = replace_commits(normalize_output($output));
+$output = normalize_output($output);
 
 assert_same(<<<EXPECTED
 Reading branch "main" of "https://github.com/SjorsO/lit.git"...
@@ -112,7 +118,7 @@ run_process(['ln', '-snf', "$projectPath/releases/9", "$projectPath/current"], $
 
 assert_same(0, $statusCode);
 
-$output = replace_commits(normalize_output($output));
+$output = normalize_output($output);
 
 assert_same(<<<EXPECTED
 Reading branch "main" of "https://github.com/SjorsO/lit.git"...
@@ -135,7 +141,7 @@ assert_string_contains(readlink("$projectPath/current"), 'releases/10');
 
 assert_same(0, $statusCode);
 
-$output = replace_commits(normalize_output($output));
+$output = normalize_output($output);
 
 assert_same(<<<EXPECTED
 Reading branch "main" of "https://github.com/SjorsO/lit.git"...
@@ -152,3 +158,6 @@ assert_directory_exists("$projectPath/releases/11");
 assert_directory_exists("$projectPath/releases/10");
 assert_directory_exists("$projectPath/releases/9");
 assert_string_contains(readlink("$projectPath/current"), 'releases/11');
+
+// No deploy failed, the on-failure hook should never have run
+assert_file_missing("$projectPath/on-failure-called");

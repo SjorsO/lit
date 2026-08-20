@@ -1,12 +1,15 @@
 <?php
 
+function is_macos(): bool
+{
+    return PHP_OS_FAMILY === 'Darwin';
+}
+
 function world_path(): string
 {
     return getenv('LIT_WORLD_PATH');
 }
 
-// Black box entry point: run the Lit implementation as a separate process.
-// To test a different implementation (Rust, Go, ...), only change this command.
 function lit_command(array $arguments): array
 {
     return [PHP_BINARY, world_path().'/lit/lit.php', ...$arguments];
@@ -22,12 +25,16 @@ function lit_with_environment(array $extraEnvironment, string ...$arguments): ar
     return run_process(lit_command($arguments), getcwd(), lit_environment($extraEnvironment));
 }
 
-// If the world has a "bin" directory, it is prepended to the PATH. Tests use
-// this to mock binaries like curl.
+function lit_with_input(string $stdinContent, array $extraEnvironment, string ...$arguments): array
+{
+    return run_process(lit_command($arguments), getcwd(), lit_environment($extraEnvironment), $stdinContent);
+}
+
 function lit_environment(array $extraEnvironment = []): array
 {
     $environment = array_merge(getenv(), $extraEnvironment);
 
+    // If "bin" exists, prepend it to the PATH. Tests use this to mock binaries like curl.
     $worldBinPath = world_path().'/bin';
 
     if (is_dir($worldBinPath)) {
@@ -35,6 +42,13 @@ function lit_environment(array $extraEnvironment = []): array
     }
 
     return $environment;
+}
+
+// Overwrite the release hooks so they do nothing
+function neutralize_hooks(string $projectPath): void
+{
+    file_put_contents("$projectPath/hooks/before-release.sh", "\n");
+    file_put_contents("$projectPath/hooks/after-release.sh", "\n");
 }
 
 function timer(): object
@@ -78,6 +92,7 @@ function run_process(array $command, string $currentDirectory, ?array $environme
 
     if ($stdinContent !== null) {
         fwrite($pipes[0], $stdinContent);
+
         fclose($pipes[0]);
     }
 
@@ -88,29 +103,18 @@ function run_process(array $command, string $currentDirectory, ?array $environme
     return [proc_close($process), rtrim($output, "\n")];
 }
 
-function lit_with_input(string $stdinContent, array $extraEnvironment, string ...$arguments): array
-{
-    return run_process(lit_command($arguments), getcwd(), lit_environment($extraEnvironment), $stdinContent);
-}
-
-// Replaces timings with placeholders and strips trailing whitespace from every line
-function normalize_output(string $output): string
+function normalize_output(string $output, bool $preserveHashes = false): string
 {
     $output = preg_replace('/\(in [0-9]+\.[0-9]+ seconds\)/', '(in X seconds)', $output);
     $output = preg_replace('/\(in [0-9]+\.[0-9]+s\)/', '(in X seconds)', $output);
     $output = preg_replace('/\([0-9]+K in [0-9]+\.[0-9]+ seconds\)/', '(XK in X seconds)', $output);
+    $output = preg_replace('/\([a-f0-9]{11}\)/', '(COMMIT)', $output);
+
+    if (! $preserveHashes) {
+        $output = preg_replace('/[a-f0-9]{40}/', 'HASH', $output);
+    }
 
     return preg_replace('/[ \t]+$/m', '', $output);
-}
-
-function replace_hashes(string $output): string
-{
-    return preg_replace('/[a-f0-9]{40}/', 'HASH', $output);
-}
-
-function replace_commits(string $output): string
-{
-    return preg_replace('/\([a-f0-9]{11}\)/', '(COMMIT)', $output);
 }
 
 function replace_curl_errors(string $output): string
@@ -146,7 +150,6 @@ function assert_directory_exists(string $directoryPath): void
     }
 }
 
-// Compares like bash "$(cat file)": trailing newlines are ignored
 function assert_file_content(string $filePath, string $expected): void
 {
     if (! is_file($filePath)) {
@@ -195,9 +198,9 @@ function assert_string_not_contains(string $haystack, string $needle): void
     }
 }
 
-function is_macos(): bool
+function assert_output_is_help_text(string $output): void
 {
-    return PHP_OS_FAMILY === 'Darwin';
+    assert_same(rtrim(file_get_contents(world_path().'/lit/help.txt'), "\n"), $output);
 }
 
 function fail_assertion(string $message): void

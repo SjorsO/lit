@@ -10,8 +10,7 @@ assert_same(0, $statusCode);
 
 $projectPath = world_path().'/case/lit';
 
-file_put_contents("$projectPath/hooks/before-release.sh", "\n");
-file_put_contents("$projectPath/hooks/after-release.sh", "\n");
+neutralize_hooks($projectPath);
 file_put_contents("$projectPath/.env", "APP_KEY=test\n");
 
 chdir($projectPath);

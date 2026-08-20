@@ -6,15 +6,14 @@ require __DIR__.'/../test-helpers.php';
 // The .hash file contains "1234567890000000000000000000000000000000" which doesn't match the actual bundle
 // The actual bundle hash is "95632a16d315752fc2c8e5b298546b389094a9d2".
 
-[$statusCode] = lit('init', 'https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests-with-wrong-hash.tar');
+[$statusCode] = lit('init', 'https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests-with-wrong-hash.tar');
 
 assert_same(0, $statusCode);
 
 $worldPath = world_path();
 $projectPath = "$worldPath/case/bundle-for-lit-tests-with-wrong-hash";
 
-file_put_contents("$projectPath/hooks/before-release.sh", "\n");
-file_put_contents("$projectPath/hooks/after-release.sh", "\n");
+neutralize_hooks($projectPath);
 file_put_contents("$projectPath/.env", "APP_KEY=test\n");
 
 chdir($projectPath);
@@ -24,12 +23,12 @@ chdir($projectPath);
 
 assert_same(0, $statusCode);
 
-$output = normalize_output($output);
+$output = normalize_output($output, preserveHashes: true);
 
 assert_same(<<<EXPECTED
-Checking bundle version from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests-with-wrong-hash.tar.hash"... (in X seconds)
-Downloading bundle from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests-with-wrong-hash.tar"... (XK in X seconds)
-Warning: the hash from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests-with-wrong-hash.tar.hash" does not match the actual hash from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests-with-wrong-hash.tar"
+Checking bundle version from "https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests-with-wrong-hash.tar.hash"... (in X seconds)
+Downloading bundle from "https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests-with-wrong-hash.tar"... (XK in X seconds)
+Warning: the hash from "https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests-with-wrong-hash.tar.hash" does not match the actual hash from "https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests-with-wrong-hash.tar"
 Warning: actual bundle hash "95632a16d315752fc2c8e5b298546b389094a9d2", hash from hash file "1234567890000000000000000000000000000000"
 Adding bundle to cache ($worldPath/lit/cached-releases/95632a16d315752fc2c8e5b298546b389094a9d2.tar)
 Creating "$projectPath/releases/1" for the new release...
@@ -50,12 +49,12 @@ assert_file_content("$projectPath/bundle-hash", '95632a16d315752fc2c8e5b298546b3
 
 assert_same(0, $statusCode);
 
-$output = normalize_output($output);
+$output = normalize_output($output, preserveHashes: true);
 
 assert_same(<<<EXPECTED
-Checking bundle version from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests-with-wrong-hash.tar.hash"... (in X seconds)
-Downloading bundle from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests-with-wrong-hash.tar"... (XK in X seconds)
-Warning: the hash from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests-with-wrong-hash.tar.hash" does not match the actual hash from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests-with-wrong-hash.tar"
+Checking bundle version from "https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests-with-wrong-hash.tar.hash"... (in X seconds)
+Downloading bundle from "https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests-with-wrong-hash.tar"... (XK in X seconds)
+Warning: the hash from "https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests-with-wrong-hash.tar.hash" does not match the actual hash from "https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests-with-wrong-hash.tar"
 Warning: actual bundle hash "95632a16d315752fc2c8e5b298546b389094a9d2", hash from hash file "1234567890000000000000000000000000000000"
 Bundle exists in cache, but using the downloaded bundle instead
 Bundle is already deployed (hash: 95632a16d315752fc2c8e5b298546b389094a9d2)
@@ -70,12 +69,12 @@ assert_file_missing("$projectPath/releases/2");
 
 assert_same(0, $statusCode);
 
-$output = normalize_output($output);
+$output = normalize_output($output, preserveHashes: true);
 
 assert_same(<<<EXPECTED
-Checking bundle version from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests-with-wrong-hash.tar.hash"... (in X seconds)
-Downloading bundle from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests-with-wrong-hash.tar"... (XK in X seconds)
-Warning: the hash from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests-with-wrong-hash.tar.hash" does not match the actual hash from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests-with-wrong-hash.tar"
+Checking bundle version from "https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests-with-wrong-hash.tar.hash"... (in X seconds)
+Downloading bundle from "https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests-with-wrong-hash.tar"... (XK in X seconds)
+Warning: the hash from "https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests-with-wrong-hash.tar.hash" does not match the actual hash from "https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests-with-wrong-hash.tar"
 Warning: actual bundle hash "95632a16d315752fc2c8e5b298546b389094a9d2", hash from hash file "1234567890000000000000000000000000000000"
 Bundle exists in cache, but using the downloaded bundle instead
 Bundle is already deployed (hash: 95632a16d315752fc2c8e5b298546b389094a9d2)

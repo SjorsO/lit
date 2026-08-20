@@ -3,6 +3,7 @@
 require __DIR__.'/test-helpers.php';
 
 $caseFilter = '';
+
 $maxConcurrentTests = (int) trim((string) shell_exec('getconf _NPROCESSORS_ONLN')) ?: 4;
 
 foreach (array_slice($argv, 1) as $argument) {
@@ -23,9 +24,9 @@ if (! $queuedCaseFiles) {
 
 $timer = timer();
 
-shuffle($queuedCaseFiles);
+run_process(['rm', '-rf', __DIR__.'/worlds'], __DIR__);
 
-$maxNameLength = max(array_map(fn ($caseFile) => strlen(basename($caseFile)), glob(__DIR__.'/cases/*.php')));
+$maxNameLength = max(array_map(fn ($caseFile) => strlen(basename($caseFile)), $queuedCaseFiles));
 
 $runningCases = [];
 $failures = [];
@@ -34,10 +35,8 @@ function setup_world(string $worldPath): void
 {
     $litSourcePath = dirname(__DIR__);
 
-    run_process(['rm', '-rf', $worldPath], __DIR__);
-
-    mkdir("$worldPath/lit/data", 0777, true);
-    mkdir("$worldPath/case", 0777, true);
+    mkdir("$worldPath/lit/data", recursive: true);
+    mkdir("$worldPath/case", recursive: true);
 
     run_process(['cp', '-R', "$litSourcePath/scripts", "$worldPath/lit/scripts"], __DIR__);
     run_process(['cp', '-R', "$litSourcePath/stubs", "$worldPath/lit/stubs"], __DIR__);
@@ -48,8 +47,8 @@ function setup_world(string $worldPath): void
     file_put_contents("$worldPath/lit/data/installation-id", "testing\n");
 }
 
-// If we're inside of a directory that has been deleted, then shell-init/getcwd
-// errors happen. This should never happen, so check after every test.
+// If we're inside a directory that has been deleted, then shell-init/getcwd errors happen.
+// This should never happen, so check the logs after every test.
 function find_getcwd_error(string $worldPath): string
 {
     foreach (glob("$worldPath/case/*/logs/lit-output.log") ?: [] as $logFile) {
@@ -69,7 +68,7 @@ while ($queuedCaseFiles || $runningCases) {
         $caseName = basename($caseFile);
         $caseNumber = explode('-', $caseName)[0];
 
-        // Each case runs in its own world directory, reset before every run
+        // Give each test case its own fresh world
         $worldPath = __DIR__."/worlds/world-$caseNumber";
 
         setup_world($worldPath);
@@ -84,7 +83,7 @@ while ($queuedCaseFiles || $runningCases) {
     }
 
     foreach (array_keys($runningCases) as $caseName) {
-        // Keep draining the pipe so the case can't block on a full buffer
+        // Keep draining the pipe so we can't block on a full buffer
         $runningCases[$caseName]['output'] .= stream_get_contents($runningCases[$caseName]['pipe']);
 
         $processStatus = proc_get_status($runningCases[$caseName]['process']);
@@ -100,10 +99,12 @@ while ($queuedCaseFiles || $runningCases) {
         proc_close($runningCases[$caseName]['process']);
 
         $statusCode = $processStatus['exitcode'];
+
         $getcwdError = find_getcwd_error($runningCases[$caseName]['worldPath']);
 
         if ($statusCode === 0 && $getcwdError !== '') {
             $statusCode = 1;
+
             $runningCases[$caseName]['output'] .= $getcwdError;
         }
 

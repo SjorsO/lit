@@ -3,7 +3,6 @@
 require __DIR__.'/../test-helpers.php';
 
 // Test the install flow (non-interactive mode via piped input).
-// In v2 the installer runs automatically the first time any lit command is used.
 
 $worldPath = world_path();
 
@@ -47,8 +46,7 @@ assert_string_contains(file_get_contents($fakeRcFile), 'lit.php');
 [$statusCode, $output] = lit_with_input('', ['HOME' => $worldPath], 'help');
 
 assert_same(0, $statusCode);
-assert_string_not_contains($output, 'Welcome to Lit');
-assert_string_contains($output, 'usage: lit <command>');
+assert_output_is_help_text($output);
 
 // Test 4: Installing when the alias already exists should not ask again
 unlink("$worldPath/lit/data/installation-id");

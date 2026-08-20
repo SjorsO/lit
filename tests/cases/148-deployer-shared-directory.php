@@ -20,8 +20,7 @@ file_put_contents("$projectPath/git-commit", "not deployed yet\n");
 
 mkdir("$projectPath/hooks");
 
-file_put_contents("$projectPath/hooks/before-release.sh", "\n");
-file_put_contents("$projectPath/hooks/after-release.sh", "\n");
+neutralize_hooks($projectPath);
 
 mkdir("$projectPath/releases");
 

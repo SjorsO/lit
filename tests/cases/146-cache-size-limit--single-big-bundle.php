@@ -19,9 +19,7 @@ chdir($projectPath);
 
 assert_same(0, $statusCode);
 
-// Override hooks
-file_put_contents("$projectPath/hooks/before-release.sh", "# no-op\n");
-file_put_contents("$projectPath/hooks/after-release.sh", "# no-op\n");
+neutralize_hooks($projectPath);
 
 file_put_contents("$projectPath/hooks/before-caching.sh", 'head -c 600000000 /dev/urandom > "$1/big-file.bin"'."\n");
 

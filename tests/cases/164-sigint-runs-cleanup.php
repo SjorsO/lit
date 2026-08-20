@@ -2,9 +2,8 @@
 
 require __DIR__.'/../test-helpers.php';
 
-// New in v2: aborting a deploy with Ctrl+C (SIGINT) or SIGTERM must still run
-// all cleanup: delete the unreleased release, run the on-failure hook, release
-// the lock, and finish the log placeholder.
+// Aborting a deploy with Ctrl+C (SIGINT) or SIGTERM must still run all cleanup: delete the unreleased
+// release, run the on-failure hook, release the lock, and finish the log placeholder.
 
 [$statusCode] = lit('init', 'https://github.com/SjorsO/lit.git');
 

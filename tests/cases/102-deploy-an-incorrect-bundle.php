@@ -3,7 +3,7 @@
 require __DIR__.'/../test-helpers.php';
 
 // Test deploying a bundle with incorrect structure (missing top-level directory)
-[$statusCode] = lit('init', 'https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-with-files-in-root-for-lit-tests.tar.zst', 'bundle-for-lit-tests');
+[$statusCode] = lit('init', 'https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-with-files-in-root-for-lit-tests.tar.zst', 'bundle-for-lit-tests');
 
 assert_same(0, $statusCode);
 
@@ -18,11 +18,11 @@ file_put_contents("$projectPath/.env", "APP_KEY=test\n");
 
 assert_same(1, $statusCode);
 
-$output = normalize_output($output);
+$output = normalize_output($output, preserveHashes: true);
 
 assert_same(<<<EXPECTED
-Checking bundle version from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-with-files-in-root-for-lit-tests.tar.zst.hash"... (in X seconds)
-Downloading bundle from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-with-files-in-root-for-lit-tests.tar.zst"... (XK in X seconds)
+Checking bundle version from "https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-with-files-in-root-for-lit-tests.tar.zst.hash"... (in X seconds)
+Downloading bundle from "https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-with-files-in-root-for-lit-tests.tar.zst"... (XK in X seconds)
 Adding bundle to cache ($worldPath/lit/cached-releases/bb22dfeac05ac841f274afce3955dae95017ab5b.tar)
 Creating "$projectPath/releases/1" for the new release...
 Extracting bundle...

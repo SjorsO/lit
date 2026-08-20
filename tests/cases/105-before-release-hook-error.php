@@ -78,7 +78,7 @@ file_put_contents("$projectPath/hooks/before-release.sh", "exit 1\n");
 
 assert_same(1, $statusCode);
 
-$output = replace_commits(normalize_output($output));
+$output = normalize_output($output);
 
 assert_same(<<<EXPECTED
 Reading branch "main" of "https://github.com/SjorsO/lit.git"...

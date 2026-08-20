@@ -148,7 +148,7 @@ assert_file_exists("$projectPath/releases/4/after-release-ran");
 
 assert_same(0, $statusCode);
 
-$output = replace_commits(normalize_output($output));
+$output = normalize_output($output);
 
 assert_same(<<<EXPECTED
 Reading branch "this-branch-is-used-in-unit-tests" of "https://github.com/SjorsO/lit.git"...

@@ -15,8 +15,7 @@ assert_same(0, $statusCode);
 chdir($projectPath);
 
 file_put_contents("$projectPath/.env", "APP_KEY=test\n");
-file_put_contents("$projectPath/hooks/before-release.sh", "\n");
-file_put_contents("$projectPath/hooks/after-release.sh", "\n");
+neutralize_hooks($projectPath);
 
 // Deploy git repo
 [$statusCode, $output] = lit('deploy');
@@ -42,13 +41,13 @@ assert_directory_exists("$projectPath/releases/1");
 assert_string_contains(readlink("$projectPath/current"), 'releases/1');
 
 // Switch to bundle
-[$statusCode, $output] = lit('init', 'https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst', '.');
+[$statusCode, $output] = lit('init', 'https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests.tar.zst', '.');
 
 assert_same(0, $statusCode);
 
 assert_same(<<<'EXPECTED'
 Changing from git URL: https://github.com/SjorsO/lit.git (branch: main)
-Bundle URL set to "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst"
+Bundle URL set to "https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests.tar.zst"
 
 Finished initializing "my-app"
 
@@ -76,11 +75,11 @@ array_map('unlink', glob("$worldPath/lit/cached-releases/*.tar"));
 
 assert_same(0, $statusCode);
 
-$output = replace_hashes(normalize_output($output));
+$output = normalize_output($output);
 
 assert_same(<<<EXPECTED
-Checking bundle version from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst.hash"... (in X seconds)
-Downloading bundle from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst"... (XK in X seconds)
+Checking bundle version from "https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests.tar.zst.hash"... (in X seconds)
+Downloading bundle from "https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests.tar.zst"... (XK in X seconds)
 Adding bundle to cache ($worldPath/lit/cached-releases/HASH.tar)
 Creating "$projectPath/releases/2" for the new release...
 Extracting bundle...
@@ -103,7 +102,7 @@ assert_same(0, $statusCode);
 assert_same(<<<'EXPECTED'
 Reading "https://github.com/SjorsO/lit.git"... Done!
 
-Changing from bundle URL: https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst
+Changing from bundle URL: https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests.tar.zst
 Current branch set to "main"
 
 Finished initializing "my-app"

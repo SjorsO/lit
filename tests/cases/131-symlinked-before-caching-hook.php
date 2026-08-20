@@ -22,8 +22,7 @@ $project2Path = "$worldPath/case/project2";
 
 // Setup both projects
 foreach ([$project1Path, $project2Path] as $projectPath) {
-    file_put_contents("$projectPath/hooks/before-release.sh", "\n");
-    file_put_contents("$projectPath/hooks/after-release.sh", "\n");
+    neutralize_hooks($projectPath);
     file_put_contents("$projectPath/.env", "APP_KEY=test\n");
 
     chdir($projectPath);
@@ -91,7 +90,7 @@ chdir($project1Path);
 
 assert_same(0, $statusCode);
 
-$output = replace_commits(normalize_output($output));
+$output = normalize_output($output);
 
 assert_same(<<<EXPECTED
 Reading branch "main" of "https://github.com/SjorsO/lit.git"...
@@ -106,7 +105,7 @@ assert_file_missing("$project1Path/releases/2");
 
 assert_same(0, $statusCode);
 
-$output = replace_commits(normalize_output($output));
+$output = normalize_output($output);
 
 assert_same(<<<EXPECTED
 Reading branch "main" of "https://github.com/SjorsO/lit.git"...
@@ -132,7 +131,7 @@ chdir($project2Path);
 
 assert_same(0, $statusCode);
 
-$output = replace_commits(normalize_output($output));
+$output = normalize_output($output);
 
 assert_same(<<<EXPECTED
 Reading branch "main" of "https://github.com/SjorsO/lit.git"...

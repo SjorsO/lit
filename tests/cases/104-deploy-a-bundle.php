@@ -2,7 +2,7 @@
 
 require __DIR__.'/../test-helpers.php';
 
-[$statusCode] = lit('init', 'https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst');
+[$statusCode] = lit('init', 'https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests.tar.zst');
 
 assert_same(0, $statusCode);
 
@@ -45,11 +45,11 @@ assert_matches('/\([0-9]+K in [0-9]+\.[0-9]{2} seconds\)/', $output);
 // Final runtime: "(in X.XXs)" format
 assert_matches('/\(in [0-9]+\.[0-9]{2}s\)/', $output);
 
-$output = replace_hashes(normalize_output($output));
+$output = normalize_output($output);
 
 assert_same(<<<EXPECTED
-Checking bundle version from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst.hash"... (in X seconds)
-Downloading bundle from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst"... (XK in X seconds)
+Checking bundle version from "https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests.tar.zst.hash"... (in X seconds)
+Downloading bundle from "https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests.tar.zst"... (XK in X seconds)
 Adding bundle to cache ($worldPath/lit/cached-releases/HASH.tar)
 Creating "$projectPath/releases/1" for the new release...
 Extracting bundle...
@@ -88,10 +88,10 @@ assert_file_exists("$projectPath/releases/1/config/database.php");
 
 assert_same(0, $statusCode);
 
-$output = replace_hashes(normalize_output($output));
+$output = normalize_output($output);
 
 assert_same(<<<EXPECTED
-Checking bundle version from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst.hash"... (in X seconds)
+Checking bundle version from "https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests.tar.zst.hash"... (in X seconds)
 Bundle is already deployed (hash: HASH)
 Run "lit deploy --force" to redeploy
 Finished successfully (in X seconds)
@@ -105,11 +105,11 @@ array_map('unlink', glob("$worldPath/lit/cached-releases/*.tar"));
 
 assert_same(0, $statusCode);
 
-$output = replace_hashes(normalize_output($output));
+$output = normalize_output($output);
 
 assert_same(<<<EXPECTED
-Checking bundle version from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst.hash"... (in X seconds)
-Downloading bundle from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst"... (XK in X seconds)
+Checking bundle version from "https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests.tar.zst.hash"... (in X seconds)
+Downloading bundle from "https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests.tar.zst"... (XK in X seconds)
 Adding bundle to cache ($worldPath/lit/cached-releases/HASH.tar)
 Bundle is already deployed (hash: HASH)
 Using "--force", redeploying...
@@ -134,11 +134,11 @@ array_map('unlink', glob("$worldPath/lit/cached-releases/*.tar"));
 
 assert_same(0, $statusCode);
 
-$output = replace_hashes(normalize_output($output));
+$output = normalize_output($output);
 
 assert_same(<<<EXPECTED
-Checking bundle version from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst.hash"... (in X seconds)
-Downloading bundle from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst"... (XK in X seconds)
+Checking bundle version from "https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests.tar.zst.hash"... (in X seconds)
+Downloading bundle from "https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests.tar.zst"... (XK in X seconds)
 Adding bundle to cache ($worldPath/lit/cached-releases/HASH.tar)
 Bundle is already deployed (hash: HASH)
 Using "--force", redeploying...
@@ -161,11 +161,11 @@ array_map('unlink', glob("$worldPath/lit/cached-releases/*.tar"));
 
 assert_same(0, $statusCode);
 
-$output = replace_hashes(normalize_output($output));
+$output = normalize_output($output);
 
 assert_same(<<<EXPECTED
-Checking bundle version from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst.hash"... (in X seconds)
-Downloading bundle from "https://watchtower-static.fsn1.your-objectstorage.com/lit-fixtures/bundle-for-lit-tests.tar.zst"... (XK in X seconds)
+Checking bundle version from "https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests.tar.zst.hash"... (in X seconds)
+Downloading bundle from "https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests.tar.zst"... (XK in X seconds)
 Adding bundle to cache ($worldPath/lit/cached-releases/HASH.tar)
 Bundle is already deployed (hash: HASH)
 Using "--force", redeploying...

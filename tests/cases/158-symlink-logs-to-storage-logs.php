@@ -13,9 +13,8 @@ $projectPath = world_path().'/case/lit';
 // Fill in .env
 file_put_contents("$projectPath/.env", "APP_KEY=test\n");
 
-// Empty out the hooks (default hooks run composer install which fails for this repo)
-file_put_contents("$projectPath/hooks/before-release.sh", "\n");
-file_put_contents("$projectPath/hooks/after-release.sh", "\n");
+// The default hooks run composer install, which fails for this repo
+neutralize_hooks($projectPath);
 
 // Remove the logs directory created by init
 run_process(['rm', '-rf', "$projectPath/logs"], $projectPath);
