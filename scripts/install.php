@@ -185,7 +185,9 @@ if ($aliasFile === '') {
     $menuAnswer = yes_no_menu();
 
     if ($menuAnswer === 'y') {
-        file_put_contents($aliasFile, "\n$aliasCommand\n", FILE_APPEND);
+        $fileContents = rtrim(file_get_contents($aliasFile));
+
+        file_put_contents($aliasFile, "$fileContents\n\n$aliasCommand\n");
     }
 }
 

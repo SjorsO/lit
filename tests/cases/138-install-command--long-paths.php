@@ -86,8 +86,13 @@ assert_same(<<<EXPECTED
 ╰────────────────────────────────────────────────────────────────────────╯
 EXPECTED, $output);
 
-// Alias should be added to bashrc
-assert_string_contains(file_get_contents($fakeRcFile), "alias lit=\"php $worldPath/lit/lit.php\"");
+// The alias is added with exactly 1 empty line above it
+assert_same(<<<EXPECTED
+# fresh bashrc
+
+alias lit="php $worldPath/lit/lit.php"
+
+EXPECTED, file_get_contents($fakeRcFile));
 
 // Test 3: If no rc file exists, show how to add the alias manually
 unlink("$worldPath/lit/data/installation-id");

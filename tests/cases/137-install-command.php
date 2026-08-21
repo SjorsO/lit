@@ -86,8 +86,13 @@ assert_same(<<<EXPECTED
 ╰────────────────────────────────────────────────────────────────────────╯
 EXPECTED, $output);
 
-// The real alias with the full path should be added to bashrc
-assert_string_contains(file_get_contents($fakeRcFile), "alias lit=\"php $worldPath/lit/lit.php\"");
+// The real alias with the full path is added, with exactly 1 empty line above it
+assert_same(<<<EXPECTED
+# fresh bashrc
+
+alias lit="php $worldPath/lit/lit.php"
+
+EXPECTED, file_get_contents($fakeRcFile));
 
 // Test 3: Running again with an existing installation-id should not run the installer
 [$statusCode, $output] = lit_with_input('', ['HOME' => $worldPath], 'help');
