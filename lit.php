@@ -39,8 +39,6 @@ foreach ([SIGINT, SIGTERM, SIGHUP] as $signal) {
 
 if (! file_exists("$litBasePath/data/installation-id")) {
     require "$litBasePath/scripts/install.php";
-
-    lit_exit(0);
 }
 
 if ($command === 'init') {

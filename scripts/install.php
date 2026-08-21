@@ -1,13 +1,39 @@
 <?php
 
 /**
+ * Runs the first time Lit is used (when data/installation-id does not exist)
+ *
  * @var string $litBasePath
  */
 
-// Runs the first time Lit is used (when data/installation-id does not exist)
-
 if (! is_dir("$litBasePath/data")) {
     mkdir("$litBasePath/data");
+}
+
+$homeDirectory = getenv('HOME') ?: '';
+
+$aliasFile = '';
+
+foreach ([
+    "$homeDirectory/.bash_aliases",
+    "$homeDirectory/.zsh_aliases",
+    "$homeDirectory/.zshrc",
+    "$homeDirectory/.bashrc",
+    "$homeDirectory/.bash_profile",
+    "$homeDirectory/.profile",
+] as $aliasFileCandidate) {
+    if (is_file($aliasFileCandidate)) {
+        $aliasFile = $aliasFileCandidate;
+
+        break;
+    }
+}
+
+// The alias already exists, install silently and keep running lit
+if ($aliasFile !== '' && str_contains(file_get_contents($aliasFile), 'lit.php')) {
+    file_put_contents("$litBasePath/data/installation-id", time().':'.uuid()."\n");
+
+    return;
 }
 
 $stdinIsTty = function_exists('posix_isatty') && posix_isatty(STDIN);
@@ -36,23 +62,43 @@ if ($stdoutIsTty) {
 function yes_no_menu(): string
 {
     $current = 0;
+    $firstDraw = true;
 
     while (true) {
-        fwrite(STDERR, "\033[1A\r\033[K");
+        // Redraws jump back up to the menu line
+        if (! $firstDraw) {
+            fwrite(STDERR, "\033[1A");
+        }
+
+        $firstDraw = false;
+
+        fwrite(STDERR, "\r\033[K");
+
+        // Padded so the instructions end 2 spaces before the box edge above
+        $instructions = str_repeat(' ', 32)."\033[2m←/→ + enter to select\033[0m";
 
         if ($current === 0) {
-            fwrite(STDERR, "  \033[32m[Yes]\033[0m    [No]\n");
+            fwrite(STDERR, "  \033[32m(●) Yes\033[0m    ( ) No$instructions\n");
         } else {
-            fwrite(STDERR, "  [Yes]    \033[32m[No]\033[0m\n");
+            fwrite(STDERR, "  ( ) Yes    \033[32m(●) No\033[0m$instructions\n");
         }
 
         $key = fread(STDIN, 1);
 
-        if ($key === '' || $key === false) {
+        if ($key === '' || $key === false || $key === 'q' || $key === 'Q') {
             lit_exit(130);
         }
 
         if ($key === "\e") {
+            $read = [STDIN];
+            $write = null;
+            $except = null;
+
+            // exit if escape is pressed (escape has no bytes after it, arrow keys do)
+            if (stream_select($read, $write, $except, 0, 50_000) === 0) {
+                lit_exit(130);
+            }
+
             $arrowKey = fread(STDIN, 2);
 
             if ($arrowKey === '[C') {
@@ -70,72 +116,96 @@ function yes_no_menu(): string
     }
 }
 
-$homeDirectory = getenv('HOME') ?: '';
+// Replace the home directory with a "~"
+function pretty_path(string $path): string
+{
+    $homeDirectory = getenv('HOME') ?: '';
 
-$aliasFiles = [
-    "$homeDirectory/.bash_aliases",
-    "$homeDirectory/.zsh_aliases",
-    "$homeDirectory/.zshrc",
-    "$homeDirectory/.bashrc",
-    "$homeDirectory/.bash_profile",
-    "$homeDirectory/.profile",
-];
-
-$aliasFile = '';
-
-foreach ($aliasFiles as $aliasFileCandidate) {
-    if (is_file($aliasFileCandidate)) {
-        $aliasFile = $aliasFileCandidate;
-
-        break;
+    if ($homeDirectory !== '' && str_starts_with($path, $homeDirectory)) {
+        return '~'.substr($path, strlen($homeDirectory));
     }
+
+    return $path;
+}
+
+// Add box edges to the line, but only if the whole output fits in the box
+function boxed_line(string $line = ''): string
+{
+    if (! $GLOBALS['outputFitsInBox']) {
+        return $line;
+    }
+
+    // Color codes and multibyte characters have no extra width
+    $lineWidth = strlen(preg_replace(['/\e\[[0-9;]*m/', '/[\x80-\xBF]/'], '', $line));
+
+    return '│'.$line.str_repeat(' ', 72 - $lineWidth).'│';
 }
 
 $aliasCommand = "alias lit=\"php $litBasePath/lit.php\"";
 
+// Only used for printing, the real paths are used everywhere else
+$displayedAliasFile = pretty_path($aliasFile);
+$displayedAliasCommand = 'alias lit="php '.pretty_path("$litBasePath/lit.php").'"';
+
+// Long paths can make lines too wide for the box
+$outputFitsInBox = strlen("    $displayedAliasFile") <= 72 && strlen("    $displayedAliasCommand") <= 72;
+
 echo "                           ┌──────────────────┐\n";
 echo "╭──────────────────────────┤  Welcome to Lit  ├──────────────────────────╮\n";
-echo "                           └──────────────────┘\n";
+
+// The corner needs one space less inside the box, that keeps it aligned
+if ($outputFitsInBox) {
+    echo "│                          └──────────────────┘                          │\n";
+} else {
+    echo "                           └──────────────────┘\n";
+}
+
+$menuAnswer = '';
 
 if ($aliasFile === '') {
-    echo "  Normally Lit would ask you if you want to add an alias, but Lit\n";
-    echo "  can't find the file to put the alias in.\n";
-    echo "\n";
-    echo "  You can add the following alias manually:\n";
-    echo "\n";
-    echo "    $aliasCommand\n";
-} elseif (str_contains(file_get_contents($aliasFile), 'lit.php')) {
-    echo "  You already have an alias for Lit.\n";
+    echo boxed_line("  Unable to find shell config, so no alias was added automatically.")."\n";
+    echo boxed_line()."\n";
+    echo boxed_line("  You can add the following alias manually:")."\n";
+    echo boxed_line()."\n";
+    echo boxed_line("    $displayedAliasCommand")."\n";
+    echo boxed_line()."\n";
+    echo "╰────────────────────────────────────────────────────────────────────────╯\n";
 } else {
-    echo "  Would you like to add an alias for Lit?\n";
-    echo "\n";
-    echo "  File:\n";
-    echo "    $aliasFile\n";
-    echo "\n";
-    echo "  Alias:\n";
-    echo "    $aliasCommand\n";
-    echo "\n";
-    echo "  Add alias?\n";
-    echo "\n";
-    echo "\n";
+    echo boxed_line("  Add an alias for Lit?")."\n";
+    echo boxed_line()."\n";
+    echo boxed_line("  File:")."\n";
+    echo boxed_line("    $displayedAliasFile")."\n";
+    echo boxed_line()."\n";
+    echo boxed_line("  Alias:")."\n";
+    echo boxed_line("    $displayedAliasCommand")."\n";
+    echo boxed_line()."\n";
+    echo "╰────────────────────────────────────────────────────────────────────────╯\n";
 
-    if (yes_no_menu() === 'y') {
+    // The menu draws itself below the closed box
+    $menuAnswer = yes_no_menu();
+
+    if ($menuAnswer === 'y') {
         file_put_contents($aliasFile, "\n$aliasCommand\n", FILE_APPEND);
-
-        echo "\n";
-        echo "  Alias added, restart your shell to start using \"lit\".\n";
-    } else {
-        echo "\n";
-        echo "  Not adding alias.\n";
     }
 }
 
 echo "\n";
-echo "├────────────────────────────────────────────────────────────────────────┤\n";
-echo "\n";
-echo "  All done, you're ready to use Lit.\n";
-echo "\n";
+echo "╭────────────────────────────────────────────────────────────────────────╮\n";
+
+if ($menuAnswer === 'y') {
+    echo boxed_line('  ✓ Alias added. Restart your shell to start using it.')."\n";
+    echo boxed_line()."\n";
+}
+
+if ($menuAnswer === 'n') {
+    echo boxed_line("  Not adding alias.")."\n";
+    echo boxed_line()."\n";
+}
+
+echo boxed_line("  Setup complete. Rerun your command to continue.")."\n";
 echo "╰────────────────────────────────────────────────────────────────────────╯\n";
 echo "\n";
 
-file_put_contents("$litBasePath/data/installation-id", uuid()."\n");
+file_put_contents("$litBasePath/data/installation-id", time().':'.uuid()."\n");
+
+lit_exit(0);

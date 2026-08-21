@@ -105,6 +105,10 @@ function run_process(array $command, string $currentDirectory, ?array $environme
 
 function normalize_output(string $output, bool $preserveHashes = false): string
 {
+    // Strip ANSI escape codes and carriage returns (the install menu uses them)
+    $output = preg_replace('/\e\[[0-9;]*[A-Za-z]/', '', $output);
+    $output = str_replace("\r", '', $output);
+
     $output = preg_replace('/\(in [0-9]+\.[0-9]+ seconds\)/', '(in X seconds)', $output);
     $output = preg_replace('/\(in [0-9]+\.[0-9]+s\)/', '(in X seconds)', $output);
     $output = preg_replace('/\([0-9]+K in [0-9]+\.[0-9]+ seconds\)/', '(XK in X seconds)', $output);
