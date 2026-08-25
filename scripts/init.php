@@ -1,25 +1,25 @@
 <?php
 
 /**
+ * When you run `lit init <url> [project name]`:
+ * - If a [project name] is passed in, that directory is used.
+ * - If [project name] is empty or ".", the current directory is used if it is a Laravel project.
+ * - If the current directory is not a Laravel project, and no [project name] is specified, Lit will
+ * use the project name from the <url>.
+ * - If the directory that Lit will use is not empty, and not a Laravel project, then Lit aborts.
+ *
+ * Lit can init in:
+ * - An empty directory
+ * - A directory containing a Lit project (to update the git/bundle url)
+ * - A directory containing a zero downtime structure Laravel project (containing a ".env" file and
+ * "storage" directory, and "releases" directory).
+ * - A directory containing a non-zero downtime structure Laravel project (containing the "artisan"
+ * and "composer.json" files, but missing the "releases" directory).
+ *
  * @var string $litBasePath
  * @var string $projectBasePath
  * @var string[] $arguments
  */
-
-// When you run `lit init <url> [project name]`:
-// - If a [project name] is passed in, that directory is used.
-// - If [project name] is empty or ".", the current directory is used if it is a Laravel project.
-// - If the current directory is not a Laravel project, and no [project name] is specified, Lit will
-//   use the project name from the <url>.
-// - If the directory that Lit will use is not empty, and not a Laravel project, then Lit aborts.
-//
-// Lit can init in:
-// - An empty directory
-// - A directory containing a Lit project (to update the git/bundle url)
-// - A directory containing a zero downtime structure Laravel project (containing a ".env" file and
-//   "storage" directory, and "releases" directory).
-// - A directory containing a non-zero downtime structure Laravel project (containing the "artisan"
-//   and "composer.json" files, but missing the "releases" directory).
 
 $sourceUrl = $arguments[1] ?? '';
 $customProjectName = $arguments[2] ?? '';
@@ -56,6 +56,47 @@ function directory_is_not_empty(string $path): bool
     }
 
     return is_dir($path) && count(scandir($path)) > 2;
+}
+
+function create_env_from_git_env_example(string $projectPath, string $sourceUrl): bool
+{
+    $clonePath = "$projectPath/env-example-clone";
+
+    delete_directory($clonePath);
+
+    // "--filter=blob:none" skips downloading file contents, "--no-cone" then
+    // fetches only the ".env.example" blob instead of every file in the root
+    [$cloneStatusCode] = run_command_and_capture(['git', 'clone', '--quiet', '--no-checkout', '--depth', '1', '--filter=blob:none', $sourceUrl, $clonePath]);
+
+    if ($cloneStatusCode === 0) {
+        run_command_and_capture(['git', 'sparse-checkout', 'set', '--no-cone', '.env.example'], $clonePath);
+        run_command_and_capture(['git', 'checkout'], $clonePath);
+    }
+
+    $createdEnvFile = file_exists("$clonePath/.env.example");
+
+    if ($createdEnvFile) {
+        $envContents = file_get_contents("$clonePath/.env.example");
+
+        // Generate an APP_KEY the same way "php artisan key:generate" does
+        $appKey = 'base64:'.base64_encode(random_bytes(32));
+
+        $replacedAppKeyCount = 0;
+
+        $envContents = preg_replace('/^APP_KEY=.*/m', "APP_KEY=$appKey", $envContents, count: $replacedAppKeyCount);
+
+        file_put_contents("$projectPath/.env", $envContents);
+
+        out("Created \".env\" from the \".env.example\" in the repository\n");
+
+        if ($replacedAppKeyCount > 0) {
+            out("Application key (APP_KEY) set successfully.\n");
+        }
+    }
+
+    delete_directory($clonePath);
+
+    return $createdEnvFile;
 }
 
 $initInCurrentDirectory = false;
@@ -222,14 +263,22 @@ if (! is_dir("$projectPath/storage") && ! is_dir("$projectPath/shared/storage"))
     }
 }
 
+$createdEnvFromEnvExample = false;
+
 if (file_exists("$projectPath/.env")) {
     $envFilePath = "$projectPath/.env";
 } elseif (file_exists("$projectPath/shared/.env")) {
     $envFilePath = "$projectPath/shared/.env";
 } else {
-    touch("$projectPath/.env");
-
     $envFilePath = "$projectPath/.env";
+
+    if ($sourceType === 'git') {
+        $createdEnvFromEnvExample = create_env_from_git_env_example($projectPath, $sourceUrl);
+    }
+
+    if (! file_exists($envFilePath)) {
+        touch($envFilePath);
+    }
 }
 
 if (! is_dir("$projectPath/releases")) {
@@ -238,9 +287,10 @@ if (! is_dir("$projectPath/releases")) {
 
 out("Finished initializing \"$projectName\"\n");
 
-$envFileIsEmpty = filesize($envFilePath) === 0;
+// A ".env" copied from the ".env.example" only holds defaults, so it still needs filling in
+$envFileNeedsFillingIn = filesize($envFilePath) === 0 || $createdEnvFromEnvExample;
 
-$hasNextSteps = ! $initInCurrentDirectory || $envFileIsEmpty || $createdHooks || $switchedLitSourceType || $initInNonZeroDowntimeProject;
+$hasNextSteps = ! $initInCurrentDirectory || $envFileNeedsFillingIn || $createdHooks || $switchedLitSourceType || $initInNonZeroDowntimeProject;
 
 if ($hasNextSteps) {
     out("\n");
@@ -250,7 +300,7 @@ if ($hasNextSteps) {
         out("- cd \"$projectName\"\n");
     }
 
-    if ($envFileIsEmpty) {
+    if ($envFileNeedsFillingIn) {
         out("- Fill in the \".env\" file\n");
     }
 
