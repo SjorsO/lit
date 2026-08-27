@@ -134,6 +134,10 @@ if ($command === 'deploy') {
     putenv('__lit_allow_flush_opcache_without_lock=true');
 
     require "$litBasePath/scripts/checkout.php";
+} elseif ($command === 'redeploy') {
+    putenv('__lit_allow_flush_opcache_without_lock=true');
+
+    require "$litBasePath/scripts/redeploy.php";
 } elseif ($command === 'enable-git-release-caching') {
     require "$litBasePath/scripts/enable-git-release-caching.php";
 } elseif ($command === 'disable-git-release-caching') {

@@ -10,9 +10,13 @@ $firstOption = $arguments[1] ?? '';
 $secondOption = $arguments[2] ?? '';
 
 $currentRemoteCommit = '';
+$isRedeploying = false;
 
 if ($firstOption === '--use-commit-from-checkout') {
     $currentRemoteCommit = $secondOption;
+} elseif ($firstOption === '--redeploy') {
+    $currentRemoteCommit = $secondOption;
+    $isRedeploying = true;
 } elseif ($secondOption !== '' || ($firstOption !== '' && $firstOption !== '--force')) {
     out("usage: lit deploy [--force]\n");
 
@@ -164,6 +168,12 @@ if ($sourceType === 'git') {
     $state->currentRefType = $litState['git_ref_type'] ?? 'branch';
     $state->currentCommit = $litState['git_commit_sha'] ?? 'not deployed yet';
 
+    // A redeploy pins the exact commit, even when the ref is a branch or tag
+    if ($isRedeploying) {
+        $state->currentRef = $currentRemoteCommit;
+        $state->currentRefType = 'commit';
+    }
+
     // If we are deploying after a "lit checkout", then we already have the commit.
     if ($currentRemoteCommit === '') {
         if ($state->currentRefType === 'commit') {
@@ -180,7 +190,7 @@ if ($sourceType === 'git') {
         }
     }
 
-    if ($state->currentCommit === $currentRemoteCommit) {
+    if (! $isRedeploying && $state->currentCommit === $currentRemoteCommit) {
         $shortRemoteCommit = substr($currentRemoteCommit, 0, 11);
 
         if ($state->currentRefType === 'branch') {
@@ -360,63 +370,76 @@ if ($sourceType === 'git') {
         mkdir("$litBasePath/cached-releases", 0777, true);
     }
 
-    // To avoid downloading the full bundle, download just a file containing the bundle hash.
-    out("Checking bundle version from \"$bundleHashUrl\"... ");
+    // A cached bundle is already the exact deployed bundle, no need to check the remote
+    $redeployBundleIsCached = $isRedeploying && file_exists("$litBasePath/cached-releases/$currentBundleHash.tar");
 
-    [$curlStatusCode, $curlResult] = run_command_and_capture(['curl', '--fail', '--silent', '--show-error', '--location', '--write-out', "\n__CURL_TIME__:%{time_total}", $bundleHashUrl]);
+    if (! $redeployBundleIsCached) {
+        // To avoid downloading the full bundle, download just a file containing the bundle hash.
+        out("Checking bundle version from \"$bundleHashUrl\"... ");
 
-    $curlTime = '0';
-    $curlOutputLines = [];
+        [$curlStatusCode, $curlResult] = run_command_and_capture(['curl', '--fail', '--silent', '--show-error', '--location', '--write-out', "\n__CURL_TIME__:%{time_total}", $bundleHashUrl]);
 
-    foreach (explode("\n", $curlResult) as $curlLine) {
-        if (str_starts_with($curlLine, '__CURL_TIME__:')) {
-            $curlTime = substr($curlLine, strlen('__CURL_TIME__:'));
+        $curlTime = '0';
+        $curlOutputLines = [];
+
+        foreach (explode("\n", $curlResult) as $curlLine) {
+            if (str_starts_with($curlLine, '__CURL_TIME__:')) {
+                $curlTime = substr($curlLine, strlen('__CURL_TIME__:'));
+            } else {
+                $curlOutputLines[] = $curlLine;
+            }
+        }
+
+        $curlOutput = trim(implode("\n", $curlOutputLines));
+
+        out(sprintf("(in %.2f seconds)\n", (float) $curlTime));
+
+        if ($curlStatusCode === 0) {
+            $remoteBundleHashFromHashFile = preg_replace('/\s+/', '', $curlOutput);
+
+            if (! preg_match('/^[a-fA-F0-9]{40}$/', $remoteBundleHashFromHashFile)) {
+                out("Warning: \"$bundleHashUrl\" does not contain a valid SHA1 hash\n");
+                out("Hash file contents: $curlOutput\n");
+
+                $remoteBundleHashFromHashFile = '';
+            } elseif ($isRedeploying && $currentBundleHash !== $remoteBundleHashFromHashFile) {
+                out("The remote bundle (hash: $remoteBundleHashFromHashFile) does not match the deployed bundle (hash: $currentBundleHash)\n");
+                out("Cannot redeploy the exact same bundle\n");
+
+                $GLOBALS['current_run_result'] = 'failed (the remote bundle has changed)';
+
+                lit_exit(1);
+            } elseif (! $isRedeploying && ! $isForcing && $currentBundleHash === $remoteBundleHashFromHashFile) {
+                out("Bundle is already deployed (hash: $remoteBundleHashFromHashFile)\n");
+                out("Run \"lit deploy --force\" to redeploy\n");
+
+                $GLOBALS['current_run_result'] = 'aborted, same bundle is already deployed';
+
+                lit_exit(0);
+            }
         } else {
-            $curlOutputLines[] = $curlLine;
+            out("Warning: $curlOutput\n");
         }
-    }
-
-    $curlOutput = trim(implode("\n", $curlOutputLines));
-
-    out(sprintf("(in %.2f seconds)\n", (float) $curlTime));
-
-    if ($curlStatusCode === 0) {
-        $remoteBundleHashFromHashFile = preg_replace('/\s+/', '', $curlOutput);
-
-        if (! preg_match('/^[a-fA-F0-9]{40}$/', $remoteBundleHashFromHashFile)) {
-            out("Warning: \"$bundleHashUrl\" does not contain a valid SHA1 hash\n");
-            out("Hash file contents: $curlOutput\n");
-
-            $remoteBundleHashFromHashFile = '';
-        } elseif (! $isForcing && $currentBundleHash === $remoteBundleHashFromHashFile) {
-            out("Bundle is already deployed (hash: $remoteBundleHashFromHashFile)\n");
-            out("Run \"lit deploy --force\" to redeploy\n");
-
-            $GLOBALS['current_run_result'] = 'aborted, same bundle is already deployed';
-
-            lit_exit(0);
-        }
-    } else {
-        out("Warning: $curlOutput\n");
     }
 
     $tempBundlePath = "$projectBasePath/bundle-for-current-deployment.tar";
 
-    // Try to find bundle in cache by .hash file hash
+    // Try to find bundle in cache, a redeploy looks for the deployed hash
+    $cachedBundleHash = $isRedeploying ? $currentBundleHash : $remoteBundleHashFromHashFile;
     $cachedBundlePath = '';
 
-    if ($remoteBundleHashFromHashFile !== '' && file_exists("$litBasePath/cached-releases/$remoteBundleHashFromHashFile.tar")) {
-        $cachedBundlePath = "$litBasePath/cached-releases/$remoteBundleHashFromHashFile.tar";
+    if ($cachedBundleHash !== '' && file_exists("$litBasePath/cached-releases/$cachedBundleHash.tar")) {
+        $cachedBundlePath = "$litBasePath/cached-releases/$cachedBundleHash.tar";
     }
 
     if ($cachedBundlePath !== '') {
-        out("Using cached bundle (hash: $remoteBundleHashFromHashFile)\n");
+        out("Using cached bundle (hash: $cachedBundleHash)\n");
 
         copy($cachedBundlePath, $tempBundlePath);
 
         touch($cachedBundlePath);
 
-        $state->newBundleHash = $remoteBundleHashFromHashFile;
+        $state->newBundleHash = $cachedBundleHash;
     } else {
         out("Downloading bundle from \"$bundleUrl\"... ");
 
@@ -453,6 +476,18 @@ if ($sourceType === 'git') {
 
         $state->newBundleHash = sha1_file($tempBundlePath);
 
+        // A redeploy must get the exact deployed bundle back
+        if ($isRedeploying && $state->newBundleHash !== $currentBundleHash) {
+            out("The downloaded bundle (hash: {$state->newBundleHash}) does not match the deployed bundle (hash: $currentBundleHash)\n");
+            out("Cannot redeploy the exact same bundle\n");
+
+            $GLOBALS['current_run_result'] = 'failed (the remote bundle has changed)';
+
+            delete_file($tempBundlePath);
+
+            lit_exit(1);
+        }
+
         if ($remoteBundleHashFromHashFile !== '' && $remoteBundleHashFromHashFile !== $state->newBundleHash) {
             out("Warning: the hash from \"$bundleHashUrl\" does not match the actual hash from \"$bundleUrl\"\n");
             out("Warning: actual bundle hash \"{$state->newBundleHash}\", hash from hash file \"$remoteBundleHashFromHashFile\"\n");
@@ -469,7 +504,7 @@ if ($sourceType === 'git') {
         }
     }
 
-    if ($currentBundleHash === $state->newBundleHash) {
+    if (! $isRedeploying && $currentBundleHash === $state->newBundleHash) {
         out("Bundle is already deployed (hash: {$state->newBundleHash})\n");
 
         if ($isForcing) {

@@ -33,6 +33,7 @@ For git deployments:
 - `lit init <git repository url> [name]` initializes a new Lit directory
 - `lit deploy` runs `git clone` and deploys the current branch
 - `lit checkout <branch|tag|commit>` switches to a different branch, tag, or commit and deploys it
+- `lit redeploy` deploys the exact same commit or bundle again
 
 For bundle deployments:
 - `lit init <bundle download url> [name]` initializes a new Lit directory
