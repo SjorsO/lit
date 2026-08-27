@@ -104,7 +104,8 @@ function clone_git_ref_into(string $gitRepositoryUrl, string $ref, string $refTy
 
 function print_recent_commits(string $repositoryPath): void
 {
-    [$logStatusCode, $logOutput] = run_command_and_capture(['git', '-C', $repositoryPath, '-c', 'core.abbrev=7', 'log', '--oneline', '--no-decorate', '-5']);
+    // Output is piped, git would hide decorations, force them on (tags only)
+    [$logStatusCode, $logOutput] = run_command_and_capture(['git', '-C', $repositoryPath, '-c', 'core.abbrev=7', 'log', '--oneline', '--decorate', '--decorate-refs=refs/tags', '-10']);
 
     $logOutput = trim($logOutput);
 
@@ -113,9 +114,13 @@ function print_recent_commits(string $repositoryPath): void
         return;
     }
 
+    out("\n");
+
     foreach (explode("\n", $logOutput) as $index => $logLine) {
         out(($index === 0 ? '> ' : '  ').$logLine."\n");
     }
+
+    out("\n");
 }
 
 function expand_short_commit(string $gitRepositoryUrl, string $litBasePath, string $shortCommit): array

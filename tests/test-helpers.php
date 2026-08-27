@@ -143,8 +143,9 @@ function normalize_output(string $output, bool $preserveHashes = false): string
     $output = preg_replace('/\e\[[0-9;]*[A-Za-z]/', '', $output);
     $output = str_replace("\r", '', $output);
 
-    // Deploys print recent commits, drop those lines (hashes and messages change)
-    $output = preg_replace('/^(?:> |  )[a-f0-9]{7,40} .*\n?/m', '', $output);
+    // Deploys print recent commits, drop that block (hashes and messages change)
+    // The block has an empty line before and after, drop those too
+    $output = preg_replace('/^\n(?:(?:> |  )[a-f0-9]{7,40} .*\n)+\n/m', '', $output);
 
     $output = preg_replace('/\(in [0-9]+\.[0-9]+ seconds\)/', '(in X seconds)', $output);
     $output = preg_replace('/\(in [0-9]+\.[0-9]+s\)/', '(in X seconds)', $output);
