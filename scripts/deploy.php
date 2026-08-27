@@ -641,6 +641,9 @@ if ($sourceType === 'git') {
     update_lit_state($projectBasePath, 'bundle_hash', $state->newBundleHash);
 }
 
+// Remember which .env this release went live with
+update_lit_state($projectBasePath, 'deployed_dotenv_hash', sha1_file($realEnvFilePath));
+
 if (file_exists("$projectBasePath/hooks/after-release.sh")) {
     $hookStatusCode = run_hook("$projectBasePath/hooks/after-release.sh", [$projectBasePath, $state->newReleaseDirectory, $litBasePath, $previousReleaseDirectory]);
 

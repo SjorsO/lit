@@ -14,6 +14,8 @@ neutralize_hooks($projectPath);
 
 file_put_contents("$projectPath/.env", "APP_KEY=test\n");
 
+$dotenvHash = sha1_file("$projectPath/.env");
+
 chdir($projectPath);
 
 // Checkout without branch should fail
@@ -114,7 +116,8 @@ assert_file_content("$projectPath/lit.json", <<<EXPECTED
     "git_ref": "$testBranchCommit",
     "git_ref_type": "commit",
     "git_commit_sha": "$testBranchCommit",
-    "git_release_caching_enabled": false
+    "git_release_caching_enabled": false,
+    "deployed_dotenv_hash": "$dotenvHash"
 }
 EXPECTED);
 
@@ -162,7 +165,8 @@ assert_file_content("$projectPath/lit.json", <<<EXPECTED
     "git_ref": "$testBranchCommit",
     "git_ref_type": "commit",
     "git_commit_sha": "$testBranchCommit",
-    "git_release_caching_enabled": false
+    "git_release_caching_enabled": false,
+    "deployed_dotenv_hash": "$dotenvHash"
 }
 EXPECTED);
 

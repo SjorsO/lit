@@ -61,6 +61,8 @@ $projectPath = "$caseDir/origin-repo";
 neutralize_hooks($projectPath);
 file_put_contents("$projectPath/.env", "APP_KEY=test\n");
 
+$dotenvHash = sha1_file("$projectPath/.env");
+
 chdir($projectPath);
 
 // Deploy the default branch first
@@ -96,7 +98,8 @@ assert_file_content("$projectPath/lit.json", <<<EXPECTED
     "git_ref": "v1.0",
     "git_ref_type": "tag",
     "git_commit_sha": "$commitOne",
-    "git_release_caching_enabled": false
+    "git_release_caching_enabled": false,
+    "deployed_dotenv_hash": "$dotenvHash"
 }
 EXPECTED);
 
@@ -141,7 +144,8 @@ assert_file_content("$projectPath/lit.json", <<<EXPECTED
     "git_ref": "v9",
     "git_ref_type": "branch",
     "git_commit_sha": "$commitTwo",
-    "git_release_caching_enabled": false
+    "git_release_caching_enabled": false,
+    "deployed_dotenv_hash": "$dotenvHash"
 }
 EXPECTED);
 
@@ -184,7 +188,8 @@ assert_file_content("$projectPath/lit.json", <<<EXPECTED
     "git_ref": "$commitOne",
     "git_ref_type": "commit",
     "git_commit_sha": "$commitOne",
-    "git_release_caching_enabled": false
+    "git_release_caching_enabled": false,
+    "deployed_dotenv_hash": "$dotenvHash"
 }
 EXPECTED);
 
@@ -217,7 +222,8 @@ assert_file_content("$projectPath/lit.json", <<<EXPECTED
     "git_ref": "$commitTwo",
     "git_ref_type": "commit",
     "git_commit_sha": "$commitTwo",
-    "git_release_caching_enabled": false
+    "git_release_caching_enabled": false,
+    "deployed_dotenv_hash": "$dotenvHash"
 }
 EXPECTED);
 
@@ -259,7 +265,8 @@ assert_file_content("$projectPath/lit.json", <<<EXPECTED
     "git_ref": "v0.9-light",
     "git_ref_type": "tag",
     "git_commit_sha": "$commitOne",
-    "git_release_caching_enabled": false
+    "git_release_caching_enabled": false,
+    "deployed_dotenv_hash": "$dotenvHash"
 }
 EXPECTED);
 
@@ -290,6 +297,7 @@ assert_file_content("$projectPath/lit.json", <<<EXPECTED
     "git_ref": "$branchNamedLikeHash",
     "git_ref_type": "branch",
     "git_commit_sha": "$commitTwo",
-    "git_release_caching_enabled": false
+    "git_release_caching_enabled": false,
+    "deployed_dotenv_hash": "$dotenvHash"
 }
 EXPECTED);

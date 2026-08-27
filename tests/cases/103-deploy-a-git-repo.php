@@ -68,6 +68,14 @@ assert_symlink("$projectPath/releases/1/storage");
 // Assert lit.log has correct timestamp format (YYYY-MM-DD HH:MM:SS)
 assert_matches('/\[[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\]/', file_get_contents("$projectPath/logs/lit.log"));
 
+// The hash of the deployed .env is stored in lit.json
+$firstDotenvHash = sha1_file("$projectPath/.env");
+
+assert_lit_state_value($projectPath, 'deployed_dotenv_hash', $firstDotenvHash);
+
+// Change the .env, a skipped deploy should not store the new hash
+file_put_contents("$projectPath/.env", "APP_KEY=test\nAPP_DEBUG=false\n");
+
 // Deploy again - should skip because already deployed
 [$statusCode, $output] = lit('deploy');
 
@@ -85,6 +93,9 @@ assert_file_missing("$projectPath/releases/2");
 
 // A skipped deploy is not a failure, it should not run the on-failure hook
 assert_file_missing("$projectPath/on-failure-called");
+
+// The skipped deploy did not release, the old .env hash should still be stored
+assert_lit_state_value($projectPath, 'deployed_dotenv_hash', $firstDotenvHash);
 
 // Deploy with --force should redeploy
 [$statusCode, $output] = lit('deploy', '--force');
@@ -109,6 +120,9 @@ assert_symlink("$projectPath/current");
 
 // Verify current points to release 2
 assert_string_contains(readlink("$projectPath/current"), 'releases/2');
+
+// This deploy released, the new .env hash should now be stored
+assert_lit_state_value($projectPath, 'deployed_dotenv_hash', sha1_file("$projectPath/.env"));
 
 // Rename release 2 to 9 to test numeric sorting (1,9,10 not 1,10,9)
 rename("$projectPath/releases/2", "$projectPath/releases/9");

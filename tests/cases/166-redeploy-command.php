@@ -40,6 +40,8 @@ $projectPath = "$caseDir/origin-repo";
 neutralize_hooks($projectPath);
 file_put_contents("$projectPath/.env", "APP_KEY=test\n");
 
+$dotenvHash = sha1_file("$projectPath/.env");
+
 chdir($projectPath);
 
 // Redeploy before any deploy should fail
@@ -87,7 +89,8 @@ assert_file_content("$projectPath/lit.json", <<<EXPECTED
     "git_ref": "main",
     "git_ref_type": "branch",
     "git_commit_sha": "$commitOne",
-    "git_release_caching_enabled": false
+    "git_release_caching_enabled": false,
+    "deployed_dotenv_hash": "$dotenvHash"
 }
 EXPECTED);
 

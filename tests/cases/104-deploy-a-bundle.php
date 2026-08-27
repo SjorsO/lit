@@ -83,6 +83,9 @@ assert_symlink("$projectPath/releases/1/storage");
 assert_file_missing("$projectPath/releases/1/database.php");
 assert_file_exists("$projectPath/releases/1/config/database.php");
 
+// The hash of the deployed .env is stored in lit.json, also for bundle deploys
+assert_lit_state_value($projectPath, 'deployed_dotenv_hash', sha1_file("$projectPath/.env"));
+
 // Deploy again - should skip because same bundle hash
 [$statusCode, $output] = lit('deploy');
 
