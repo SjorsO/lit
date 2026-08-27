@@ -3,9 +3,10 @@
 require __DIR__.'/../test-helpers.php';
 
 // A deploy prints the last 10 commits.
-// The ">" arrow marks the commit being deployed.
+// The "─▶" arrow marks the commit being deployed.
 // The list has an empty line before and after it.
 // Tags show next to their commit.
+// If the old commit is in the list, a line runs from it up to the new one.
 
 $worldPath = world_path();
 $caseDir = "$worldPath/case";
@@ -61,20 +62,20 @@ chdir($projectPath);
 assert_same(0, $statusCode);
 
 // An empty line sits before the list
-assert_string_contains($output, "Cloning repository... \n\n> {$shortHashes['twelve']} twelve");
+assert_string_contains($output, "Cloning repository... \n\n─▶ {$shortHashes['twelve']} twelve");
 
 // An empty line sits after the list
 assert_string_contains($output, <<<EXPECTED
-> {$shortHashes['twelve']} twelve
-  {$shortHashes['eleven']} eleven
-  {$shortHashes['ten']} (tag: v1.0) ten
-  {$shortHashes['nine']} nine
-  {$shortHashes['eight']} eight
-  {$shortHashes['seven']} seven
-  {$shortHashes['six']} six
-  {$shortHashes['five']} five
-  {$shortHashes['four']} four
-  {$shortHashes['three']} three
+─▶ {$shortHashes['twelve']} twelve
+   {$shortHashes['eleven']} eleven
+   {$shortHashes['ten']} (tag: v1.0) ten
+   {$shortHashes['nine']} nine
+   {$shortHashes['eight']} eight
+   {$shortHashes['seven']} seven
+   {$shortHashes['six']} six
+   {$shortHashes['five']} five
+   {$shortHashes['four']} four
+   {$shortHashes['three']} three
 
 Creating a symlink to the storage directory
 EXPECTED);
@@ -89,9 +90,9 @@ assert_string_not_contains($output, "{$shortHashes['one']} one");
 assert_same(0, $statusCode);
 
 assert_string_contains($output, <<<EXPECTED
-> {$shortHashes['three']} three
-  {$shortHashes['two']} two
-  {$shortHashes['one']} one
+─▶ {$shortHashes['three']} three
+   {$shortHashes['two']} two
+   {$shortHashes['one']} one
 
 Creating a symlink to the storage directory
 EXPECTED);
@@ -108,3 +109,29 @@ Creating a symlink to the .env file
 Releasing the new deployment "$projectPath/releases/2"
 Finished successfully (in X seconds)
 EXPECTED, $output);
+
+// Checkout main again, the old commit "three" is in the list
+// A line runs from the old commit up to the new one
+[$statusCode, $output] = lit('checkout', 'main');
+
+assert_same(0, $statusCode);
+
+assert_string_contains($output, <<<EXPECTED
+┌▶ {$shortHashes['twelve']} twelve
+│  {$shortHashes['eleven']} eleven
+│  {$shortHashes['ten']} (tag: v1.0) ten
+│  {$shortHashes['nine']} nine
+│  {$shortHashes['eight']} eight
+│  {$shortHashes['seven']} seven
+│  {$shortHashes['six']} six
+│  {$shortHashes['five']} five
+│  {$shortHashes['four']} four
+└─ {$shortHashes['three']} three
+
+Creating a symlink to the storage directory
+EXPECTED);
+
+// The normalizer also removes the line block
+$output = normalize_output($output);
+
+assert_string_contains($output, "Cloning repository...\nCreating a symlink to the storage directory");

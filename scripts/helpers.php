@@ -102,7 +102,7 @@ function clone_git_ref_into(string $gitRepositoryUrl, string $ref, string $refTy
     return run_command(['git', '-C', $directoryPath, 'checkout', '--quiet', '--detach', 'FETCH_HEAD']);
 }
 
-function print_recent_commits(string $repositoryPath): void
+function print_recent_commits(string $repositoryPath, string $previousCommit = ''): void
 {
     // Output is piped, git would hide decorations, force them on (tags only)
     [$logStatusCode, $logOutput] = run_command_and_capture(['git', '-C', $repositoryPath, '-c', 'core.abbrev=7', 'log', '--oneline', '--decorate', '--decorate-refs=refs/tags', '-10']);
@@ -114,10 +114,35 @@ function print_recent_commits(string $repositoryPath): void
         return;
     }
 
+    $logLines = explode("\n", $logOutput);
+
+    // Find the previous commit, skip line one (a redeploy needs no arrow)
+    $previousIndex = null;
+
+    foreach ($logLines as $index => $logLine) {
+        if ($index > 0 && $previousCommit !== '' && str_starts_with($previousCommit, explode(' ', $logLine)[0])) {
+            $previousIndex = $index;
+            break;
+        }
+    }
+
     out("\n");
 
-    foreach (explode("\n", $logOutput) as $index => $logLine) {
-        out(($index === 0 ? '> ' : '  ').$logLine."\n");
+    // An arrow runs from the previous commit up to the new one
+    foreach ($logLines as $index => $logLine) {
+        if ($previousIndex === null) {
+            $prefix = $index === 0 ? '─▶ ' : '   ';
+        } elseif ($index === 0) {
+            $prefix = '┌▶ ';
+        } elseif ($index < $previousIndex) {
+            $prefix = '│  ';
+        } elseif ($index === $previousIndex) {
+            $prefix = '└─ ';
+        } else {
+            $prefix = '   ';
+        }
+
+        out($prefix.$logLine."\n");
     }
 
     out("\n");

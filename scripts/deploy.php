@@ -168,6 +168,9 @@ if ($sourceType === 'git') {
     $state->currentRefType = $litState['git_ref_type'] ?? 'branch';
     $state->currentCommit = $litState['git_commit_sha'] ?? 'not deployed yet';
 
+    // Remember the old commit, the commit log draws an arrow from it
+    $previousCommit = $litState['git_commit_sha'] ?? '';
+
     // A redeploy pins the exact commit, even when the ref is a branch or tag
     if ($isRedeploying) {
         $state->currentRef = $currentRemoteCommit;
@@ -336,7 +339,7 @@ if ($sourceType === 'git') {
 
         out("\n");
 
-        print_recent_commits($state->newReleaseDirectory);
+        print_recent_commits($state->newReleaseDirectory, $previousCommit);
     } else {
         out("Creating \"{$state->newReleaseDirectory}\" for the new release...\n");
 
@@ -360,7 +363,7 @@ if ($sourceType === 'git') {
 
         $state->currentCommit = trim($revParseOutput);
 
-        print_recent_commits($state->newReleaseDirectory);
+        print_recent_commits($state->newReleaseDirectory, $previousCommit);
     }
 } elseif ($sourceType === 'bundle') {
     $bundleUrl = $litState['bundle_url'];

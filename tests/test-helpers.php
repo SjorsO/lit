@@ -145,7 +145,7 @@ function normalize_output(string $output, bool $preserveHashes = false): string
 
     // Deploys print recent commits, drop that block (hashes and messages change)
     // The block has an empty line before and after, drop those too
-    $output = preg_replace('/^\n(?:(?:> |  )[a-f0-9]{7,40} .*\n)+\n/m', '', $output);
+    $output = preg_replace('/^\n(?:(?:─▶ |┌▶ |│  |└─ |   )[a-f0-9]{7,40} .*\n)+\n/m', '', $output);
 
     $output = preg_replace('/\(in [0-9]+\.[0-9]+ seconds\)/', '(in X seconds)', $output);
     $output = preg_replace('/\(in [0-9]+\.[0-9]+s\)/', '(in X seconds)', $output);
