@@ -2,7 +2,8 @@
 
 require __DIR__.'/../test-helpers.php';
 
-// Test deploy when current branch no longer exists on remote
+// Deploy when the current branch or tag no longer exists on the remote.
+// The deploy must stop right away, before creating a release directory.
 
 [$statusCode] = lit('init', 'https://github.com/SjorsO/lit.git');
 
@@ -20,18 +21,39 @@ set_lit_state_value($projectPath, 'git_ref', 'deleted-branch-that-does-not-exist
 
 [$statusCode, $output] = lit('deploy');
 
-// Should fail because branch doesn't exist
-assert_same(128, $statusCode);
+assert_same(1, $statusCode);
 
 $output = normalize_output($output);
 
-assert_same(<<<EXPECTED
+assert_same(<<<'EXPECTED'
 Reading branch "deleted-branch-that-does-not-exist" of "https://github.com/SjorsO/lit.git"...
-Creating "$projectPath/releases/1" for the new release...
-Cloning repository... fatal: Remote branch deleted-branch-that-does-not-exist not found in upstream origin
-Deleting new but unreleased release directory "$projectPath/releases/1"
+Branch "deleted-branch-that-does-not-exist" does not exist on the remote
 Finished with errors (in X seconds)
 EXPECTED, $output);
 
-// No release should be created
+// No release directory was created
 assert_file_missing("$projectPath/releases/1");
+
+// The same for a tag that doesn't exist
+set_lit_state_value($projectPath, 'git_ref', 'v99-does-not-exist');
+set_lit_state_value($projectPath, 'git_ref_type', 'tag');
+
+[$statusCode, $output] = lit('deploy');
+
+assert_same(1, $statusCode);
+
+$output = normalize_output($output);
+
+assert_same(<<<'EXPECTED'
+Reading tag "v99-does-not-exist" of "https://github.com/SjorsO/lit.git"...
+Tag "v99-does-not-exist" does not exist on the remote
+Finished with errors (in X seconds)
+EXPECTED, $output);
+
+assert_file_missing("$projectPath/releases/1");
+
+// The log entry says why the deploy failed
+$logContent = file_get_contents("$projectPath/logs/lit.log");
+
+assert_string_contains($logContent, '→ failed (the branch does not exist on the remote) (in ');
+assert_string_contains($logContent, '→ failed (the tag does not exist on the remote) (in ');

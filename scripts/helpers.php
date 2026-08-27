@@ -45,6 +45,10 @@ function resolve_remote_ref(string $gitRepositoryUrl, string $ref): array
     [$lsRemoteStatusCode, $lsRemoteOutput] = run_command_and_capture_stdout(['git', 'ls-remote', $gitRepositoryUrl, "refs/heads/$ref", "refs/tags/$ref*"]);
 
     if ($lsRemoteStatusCode !== 0) {
+        out("Reading the remote repository failed\n");
+
+        $GLOBALS['current_run_result'] = 'failed (reading the remote repository failed)';
+
         lit_exit($lsRemoteStatusCode);
     }
 

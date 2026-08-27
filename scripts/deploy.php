@@ -187,6 +187,15 @@ if ($sourceType === 'git') {
             $currentRemoteCommit = $state->currentRefType === 'tag' ? $tagCommit : $branchCommit;
 
             out("\n");
+
+            // Stop right away, deploying an empty commit would fail later at the clone
+            if ($currentRemoteCommit === '') {
+                out(ucfirst($state->currentRefType)." \"{$state->currentRef}\" does not exist on the remote\n");
+
+                $GLOBALS['current_run_result'] = "failed (the {$state->currentRefType} does not exist on the remote)";
+
+                lit_exit(1);
+            }
         }
     }
 
