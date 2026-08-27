@@ -2,15 +2,42 @@
 
 function get_source_type(string $projectBasePath): string
 {
-    if (file_exists("$projectBasePath/git-repository-url")) {
+    $litState = read_lit_state($projectBasePath);
+
+    if (($litState['git_repository_url'] ?? '') !== '') {
         return 'git';
     }
 
-    if (file_exists("$projectBasePath/bundle-url")) {
+    if (($litState['bundle_url'] ?? '') !== '') {
         return 'bundle';
     }
 
     return '';
+}
+
+function read_lit_state(string $projectBasePath): array
+{
+    if (! file_exists("$projectBasePath/lit.json")) {
+        return [];
+    }
+
+    $litState = json_decode(file_get_contents("$projectBasePath/lit.json"), associative: true);
+
+    return is_array($litState) ? $litState : [];
+}
+
+function write_lit_state(string $projectBasePath, array $litState): void
+{
+    file_put_contents("$projectBasePath/lit.json", json_encode($litState, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
+}
+
+function update_lit_state(string $projectBasePath, string $key, string|bool $value): void
+{
+    $litState = read_lit_state($projectBasePath);
+
+    $litState[$key] = $value;
+
+    write_lit_state($projectBasePath, $litState);
 }
 
 function get_file_value(string $filePath): string

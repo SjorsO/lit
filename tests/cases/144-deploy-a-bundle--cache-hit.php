@@ -37,8 +37,8 @@ EXPECTED, $output);
 
 assert_directory_exists("$projectPath/releases/1");
 
-// Verify bundle was cached using the hash from bundle-hash
-$bundleHash = rtrim(file_get_contents("$projectPath/bundle-hash"), "\n");
+// Verify bundle was cached using the hash from lit.json
+$bundleHash = lit_state($projectPath)['bundle_hash'];
 $cachedFile = "$worldPath/lit/cached-releases/$bundleHash.tar";
 
 assert_file_exists($cachedFile);

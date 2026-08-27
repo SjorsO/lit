@@ -14,10 +14,11 @@ assert_directory_exists("$projectPath/storage");
 assert_directory_exists("$projectPath/hooks");
 assert_directory_exists("$projectPath/releases");
 
-// Assert lit config files have correct content
-assert_file_content("$projectPath/git-repository-url", 'https://github.com/SjorsO/lit.git');
-assert_file_content("$projectPath/git-branch", 'main');
-assert_file_content("$projectPath/git-commit", 'not deployed yet');
+// Assert lit.json has correct content
+assert_lit_state_value($projectPath, 'git_repository_url', 'https://github.com/SjorsO/lit.git');
+assert_lit_state_value($projectPath, 'git_branch', 'main');
+assert_lit_state_value($projectPath, 'git_commit', 'not deployed yet');
+assert_lit_state_value($projectPath, 'git_release_caching_enabled', false);
 
 // Assert hooks are copied from the git stubs
 assert_files_match("$projectPath/hooks/before-release.sh", "$worldPath/lit/stubs/hooks-for-git/before-release.sh.stub");
@@ -41,9 +42,9 @@ assert_file_missing("$projectPath/current");
 // Assert before-caching hook isn't created (only created when caching is enabled)
 assert_file_missing("$projectPath/hooks/before-caching.sh");
 
-// Assert bundle files don't exist
-assert_file_missing("$projectPath/bundle-url");
-assert_file_missing("$projectPath/bundle-hash");
+// Assert bundle keys don't exist
+assert_lit_state_missing($projectPath, 'bundle_url');
+assert_lit_state_missing($projectPath, 'bundle_hash');
 
 // Init a repo that has a ".env.example", the ".env" should be created from it
 [$statusCode, $output] = lit('init', 'https://github.com/SjorsO/for-Lit-unit-tests-01.git');

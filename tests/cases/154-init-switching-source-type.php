@@ -68,9 +68,9 @@ After that, either:
 - Run "lit checkout <branch>" to deploy a different branch
 EXPECTED, $output);
 
-// Assert bundle files were deleted
-assert_file_missing("$projectPath/bundle-url");
-assert_file_missing("$projectPath/bundle-hash");
+// Assert bundle keys were removed
+assert_lit_state_missing($projectPath, 'bundle_url');
+assert_lit_state_missing($projectPath, 'bundle_hash');
 
 // Another git init (same source type)
 [$statusCode, $output] = lit('init', 'https://github.com/SjorsO/lit.git', '.');
@@ -89,8 +89,8 @@ Run "lit deploy" to deploy the current branch (main)
 Run "lit checkout <branch>" to deploy a different branch
 EXPECTED, $output);
 
-// Delete git-branch file to test "no branch" fallback
-unlink("$projectPath/git-branch");
+// Empty the branch to test the "no branch" fallback
+set_lit_state_value($projectPath, 'git_branch', '');
 
 // Switch back to bundle
 [$statusCode, $output] = lit('init', 'https://example.com/final-bundle.tar', '.');
@@ -112,10 +112,11 @@ Next steps:
 After that, run "lit deploy" to download and deploy the bundle
 EXPECTED, $output);
 
-// Assert git files were deleted
-assert_file_missing("$projectPath/git-repository-url");
-assert_file_missing("$projectPath/git-branch");
-assert_file_missing("$projectPath/git-commit");
+// Assert git keys were removed
+assert_lit_state_missing($projectPath, 'git_repository_url');
+assert_lit_state_missing($projectPath, 'git_branch');
+assert_lit_state_missing($projectPath, 'git_commit');
+assert_lit_state_missing($projectPath, 'git_release_caching_enabled');
 
 // Delete a hook, then init again - should recreate it and show message
 unlink("$projectPath/hooks/before-release.sh");

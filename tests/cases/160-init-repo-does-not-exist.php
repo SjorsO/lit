@@ -44,9 +44,9 @@ assert_same(128, $statusCode);
 assert_string_not_contains($output, 'Changing from git repository URL');
 
 // The existing configuration survived
-assert_file_content("$projectPath/git-repository-url", 'https://github.com/SjorsO/lit.git');
-assert_file_content("$projectPath/git-branch", 'main');
-assert_file_content("$projectPath/git-commit", 'not deployed yet');
+assert_lit_state_value($projectPath, 'git_repository_url', 'https://github.com/SjorsO/lit.git');
+assert_lit_state_value($projectPath, 'git_branch', 'main');
+assert_lit_state_value($projectPath, 'git_commit', 'not deployed yet');
 assert_file_content("$projectPath/.env", 'APP_NAME=keep-me');
 
 assert_directory_exists("$projectPath/storage");

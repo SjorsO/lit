@@ -44,6 +44,40 @@ function lit_environment(array $extraEnvironment = []): array
     return $environment;
 }
 
+function lit_state(string $projectPath): array
+{
+    return json_decode(file_get_contents("$projectPath/lit.json"), associative: true) ?: [];
+}
+
+function set_lit_state_value(string $projectPath, string $key, string|bool $value): void
+{
+    $litState = lit_state($projectPath);
+
+    $litState[$key] = $value;
+
+    file_put_contents("$projectPath/lit.json", json_encode($litState, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
+}
+
+function assert_lit_state_value(string $projectPath, string $key, string|bool $expected): void
+{
+    if (! is_file("$projectPath/lit.json")) {
+        fail_assertion("Expected file to exist: $projectPath/lit.json");
+    }
+
+    $actual = lit_state($projectPath)[$key] ?? null;
+
+    if ($actual !== $expected) {
+        fail_assertion(sprintf("lit.json key \"%s\":\nExpected: %s\n\nActual: %s", $key, var_export($expected, true), var_export($actual, true)));
+    }
+}
+
+function assert_lit_state_missing(string $projectPath, string $key): void
+{
+    if (array_key_exists($key, lit_state($projectPath))) {
+        fail_assertion("Expected lit.json to not have key \"$key\"");
+    }
+}
+
 // Overwrite the release hooks so they do nothing
 function neutralize_hooks(string $projectPath): void
 {

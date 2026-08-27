@@ -27,8 +27,8 @@ assert_file_missing("$projectPath/current");
 // Fill in .env and deploy again
 file_put_contents("$projectPath/.env", "APP_KEY=test\n");
 
-// Create git-release-caching-enabled file (should be deleted during bundle deploy)
-touch("$projectPath/git-release-caching-enabled");
+// Add a stray git caching key (should be removed during bundle deploy)
+set_lit_state_value($projectPath, 'git_release_caching_enabled', true);
 
 // Clear bundle cache to ensure we test the download path
 array_map('unlink', glob("$worldPath/lit/cached-releases/*.tar"));
@@ -59,8 +59,8 @@ Releasing the new deployment "$projectPath/releases/1"
 Finished successfully (in X seconds)
 EXPECTED, $output);
 
-// Caching-enabled file should be deleted during bundle deploy
-assert_file_missing("$projectPath/git-release-caching-enabled");
+// The stray git caching key should be removed during bundle deploy
+assert_lit_state_missing($projectPath, 'git_release_caching_enabled');
 
 // Assert hooks ran with $1 (project_base_directory)
 assert_file_exists("$projectPath/before-release-ran");

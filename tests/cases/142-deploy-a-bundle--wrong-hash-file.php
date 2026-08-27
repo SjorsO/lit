@@ -42,7 +42,7 @@ EXPECTED, $output);
 assert_directory_exists("$projectPath/releases/1");
 
 // The stored hash should be the ACTUAL bundle hash, not the wrong hash from the .hash file
-assert_file_content("$projectPath/bundle-hash", '95632a16d315752fc2c8e5b298546b389094a9d2');
+assert_lit_state_value($projectPath, 'bundle_hash', '95632a16d315752fc2c8e5b298546b389094a9d2');
 
 // Second deploy - should download (wrong hash means no cache hit) but not deploy (because actual hash matches)
 [$statusCode, $output] = lit('deploy');

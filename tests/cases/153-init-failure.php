@@ -19,8 +19,7 @@ assert_file_missing("$worldPath/case/this-repo-does-not-exist-12345/storage");
 [$statusCode, $output] = lit('init', 'https://example.com/this-does-not-exist.tar.gz');
 
 assert_same(0, $statusCode);
-assert_file_exists("$worldPath/case/this-does-not-exist/bundle-url");
-assert_file_content("$worldPath/case/this-does-not-exist/bundle-url", 'https://example.com/this-does-not-exist.tar.gz');
+assert_lit_state_value("$worldPath/case/this-does-not-exist", 'bundle_url', 'https://example.com/this-does-not-exist.tar.gz');
 
 // Invalid custom project names should be rejected
 [$statusCode, $output] = lit('init', 'https://example.com/app.tar.gz', 'path/traversal');
@@ -37,17 +36,17 @@ assert_same('Invalid project name ".."', $output);
 [$statusCode, $output] = lit('init', 'https://example.com/app.tar.gz', 'my-valid_project.name123');
 
 assert_same(0, $statusCode);
-assert_file_exists("$worldPath/case/my-valid_project.name123/bundle-url");
+assert_file_exists("$worldPath/case/my-valid_project.name123/lit.json");
 
 [$statusCode, $output] = lit('init', 'https://example.com/app.tar.gz', 'name with spaces');
 
 assert_same(0, $statusCode);
-assert_file_exists("$worldPath/case/name with spaces/bundle-url");
+assert_file_exists("$worldPath/case/name with spaces/lit.json");
 
 [$statusCode, $output] = lit('init', 'https://example.com/app.tar.gz', 'special@chars!');
 
 assert_same(0, $statusCode);
-assert_file_exists("$worldPath/case/special@chars!/bundle-url");
+assert_file_exists("$worldPath/case/special@chars!/lit.json");
 
 // Too many arguments should fail
 [$statusCode, $output] = lit('init', 'https://example.com/app.tar.gz', 'project', 'extra-arg');

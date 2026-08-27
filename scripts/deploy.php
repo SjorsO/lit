@@ -150,10 +150,12 @@ if (is_link($currentDirectoryPath)) {
     $previousReleaseDirectory = "$releasesDirectory/".basename(readlink($currentDirectoryPath));
 }
 
+$litState = read_lit_state($projectBasePath);
+
 if ($sourceType === 'git') {
-    $gitRepositoryUrl = get_file_value("$projectBasePath/git-repository-url");
-    $state->currentBranch = get_file_value("$projectBasePath/git-branch");
-    $state->currentCommit = get_file_value("$projectBasePath/git-commit");
+    $gitRepositoryUrl = $litState['git_repository_url'];
+    $state->currentBranch = $litState['git_branch'] ?? '';
+    $state->currentCommit = $litState['git_commit'] ?? 'not deployed yet';
 
     // If we are deploying after a "lit checkout", then we already have the commit.
     if ($currentRemoteCommit === '') {
@@ -192,7 +194,7 @@ if ($sourceType === 'git') {
         }
     }
 
-    $cachingEnabled = file_exists("$projectBasePath/git-release-caching-enabled");
+    $cachingEnabled = ($litState['git_release_caching_enabled'] ?? false) === true;
 
     if ($cachingEnabled) {
         if (is_link("$projectBasePath/hooks/before-caching.sh")) {
@@ -330,14 +332,18 @@ if ($sourceType === 'git') {
         $state->currentCommit = trim($revParseOutput);
     }
 } elseif ($sourceType === 'bundle') {
-    $bundleUrl = get_file_value("$projectBasePath/bundle-url");
-    $currentBundleHash = get_file_value("$projectBasePath/bundle-hash");
+    $bundleUrl = $litState['bundle_url'];
+    $currentBundleHash = $litState['bundle_hash'] ?? 'not deployed yet';
 
     $cachingEnabled = false;
 
-    // This file is only for git deployments, it should never exist unless the project
+    // This key is only for git deployments, it should never exist unless the project
     // was incorrectly converted from git to a bundle.
-    delete_file("$projectBasePath/git-release-caching-enabled");
+    if (array_key_exists('git_release_caching_enabled', $litState)) {
+        unset($litState['git_release_caching_enabled']);
+
+        write_lit_state($projectBasePath, $litState);
+    }
 
     $bundleHashUrl = "$bundleUrl.hash";
     $remoteBundleHashFromHashFile = '';
@@ -567,9 +573,9 @@ run_command(['ln', is_macos() ? '-nsf' : '-nsfr', $state->newReleaseDirectory, $
 $state->wasReleased = true;
 
 if ($sourceType === 'git') {
-    file_put_contents("$projectBasePath/git-commit", "{$state->currentCommit}\n");
+    update_lit_state($projectBasePath, 'git_commit', $state->currentCommit);
 } elseif ($sourceType === 'bundle') {
-    file_put_contents("$projectBasePath/bundle-hash", "{$state->newBundleHash}\n");
+    update_lit_state($projectBasePath, 'bundle_hash', $state->newBundleHash);
 }
 
 if (file_exists("$projectBasePath/hooks/after-release.sh")) {

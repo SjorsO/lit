@@ -43,3 +43,10 @@ assert_string_contains(readlink("$projectPath/releases/1/storage"), 'shared/stor
 
 // Verify the .env content is from the shared directory
 assert_string_contains(file_get_contents("$projectPath/releases/1/.env"), 'from-shared');
+
+// The v1 state files were migrated into lit.json before deploying
+assert_string_contains($output, 'Migrated Lit v1 state files into "lit.json"');
+assert_lit_state_value($projectPath, 'git_repository_url', 'https://github.com/SjorsO/lit.git');
+assert_file_missing("$projectPath/git-repository-url");
+assert_file_missing("$projectPath/git-branch");
+assert_file_missing("$projectPath/git-commit");

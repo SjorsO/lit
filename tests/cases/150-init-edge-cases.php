@@ -66,7 +66,7 @@ mkdir("$worldPath/case/empty-project");
 [$statusCode, $output] = lit('init', 'https://example.com/releases/empty-project.tar.gz');
 
 assert_same(0, $statusCode);
-assert_file_content("$worldPath/case/empty-project/bundle-url", 'https://example.com/releases/empty-project.tar.gz');
+assert_lit_state_value("$worldPath/case/empty-project", 'bundle_url', 'https://example.com/releases/empty-project.tar.gz');
 
 // Test .tar.zst extension is recognized as bundle and stripped properly
 chdir("$worldPath/case");
@@ -75,14 +75,14 @@ chdir("$worldPath/case");
 
 assert_same(0, $statusCode);
 assert_directory_exists("$worldPath/case/another-app");
-assert_file_content("$worldPath/case/another-app/bundle-url", 'https://example.com/releases/another-app.tar.zst');
+assert_lit_state_value("$worldPath/case/another-app", 'bundle_url', 'https://example.com/releases/another-app.tar.zst');
 
 // Test that project name is extracted from before the last .tar
 [$statusCode, $output] = lit('init', 'https://example.com/gus.tarballs.tar');
 
 assert_same(0, $statusCode);
 assert_directory_exists("$worldPath/case/gus.tarballs");
-assert_file_content("$worldPath/case/gus.tarballs/bundle-url", 'https://example.com/gus.tarballs.tar');
+assert_lit_state_value("$worldPath/case/gus.tarballs", 'bundle_url', 'https://example.com/gus.tarballs.tar');
 
 // Test that "." as project name fails if directory is not empty and not a zero downtime project
 mkdir("$worldPath/case/not-zero downtime");

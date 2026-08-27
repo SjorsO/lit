@@ -64,7 +64,7 @@ Finished successfully (in X seconds)
 EXPECTED, $output);
 assert_directory_exists("$projectPath/releases/1");
 assert_symlink("$projectPath/current");
-assert_file_content("$projectPath/git-branch", 'this-branch-is-used-in-unit-tests');
+assert_lit_state_value($projectPath, 'git_branch', 'this-branch-is-used-in-unit-tests');
 
 // Switch back to main - commit hash should be reused from checkout (not fetched again by deploy)
 [$statusCode, $output] = lit('checkout', 'main');
@@ -83,7 +83,7 @@ Releasing the new deployment "$projectPath/releases/2"
 Finished successfully (in X seconds)
 EXPECTED, $output);
 assert_directory_exists("$projectPath/releases/2");
-assert_file_content("$projectPath/git-branch", 'main');
+assert_lit_state_value($projectPath, 'git_branch', 'main');
 
 // Checkout on a bundle project should fail
 chdir(world_path().'/case');

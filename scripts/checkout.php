@@ -26,8 +26,10 @@ if ($sourceType !== 'git') {
     lit_exit(1);
 }
 
-$gitRepositoryUrl = get_file_value("$projectBasePath/git-repository-url");
-$currentBranch = get_file_value("$projectBasePath/git-branch");
+$litState = read_lit_state($projectBasePath);
+
+$gitRepositoryUrl = $litState['git_repository_url'];
+$currentBranch = $litState['git_branch'] ?? '';
 
 if ($currentBranch === $newBranch) {
     out("Current branch is already \"$newBranch\"\n");
@@ -65,7 +67,7 @@ foreach (explode("\n", $remoteBranchInfo) as $lsRemoteLine) {
     }
 }
 
-file_put_contents("$projectBasePath/git-branch", "$newBranch\n");
+update_lit_state($projectBasePath, 'git_branch', $newBranch);
 
 $arguments = ['deploy', '--use-commit-from-checkout', $currentRemoteCommit];
 

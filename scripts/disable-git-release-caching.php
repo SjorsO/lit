@@ -4,13 +4,15 @@
  * @var string $projectBasePath
  */
 
-if (! file_exists("$projectBasePath/git-release-caching-enabled")) {
+$litState = read_lit_state($projectBasePath);
+
+if (($litState['git_release_caching_enabled'] ?? false) !== true) {
     out("Release caching for git is already disabled\n");
 
     lit_exit(1);
 }
 
-unlink("$projectBasePath/git-release-caching-enabled");
+update_lit_state($projectBasePath, 'git_release_caching_enabled', false);
 
 out("Release caching for git disabled\n");
 out("\n");

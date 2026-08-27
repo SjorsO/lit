@@ -40,7 +40,7 @@ After you have deployed with Lit:
 
 (Optional) Delete the original Laravel project files, keeping only:
 - Directories: current/, hooks/, logs/, releases/, storage/
-- Files: .env, git-repository-url, git-branch, git-commit
+- Files: .env, lit.json
 EXPECTED, $output);
 
 // Fill in .env so it doesn't show in next steps
@@ -96,7 +96,7 @@ After you have deployed with Lit:
 
 (Optional) Delete the original Laravel project files, keeping only:
 - Directories: current/, hooks/, releases/, storage/
-- Files: .env, bundle-url, bundle-hash
+- Files: .env, lit.json
 EXPECTED, $output);
 
 // Init again - should now detect it's a zero downtime project

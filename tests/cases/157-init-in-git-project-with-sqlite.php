@@ -41,7 +41,7 @@ After you have deployed with Lit:
 
 (Optional) Delete the original Laravel project files, keeping only:
 - Directories: current/, hooks/, logs/, releases/, storage/
-- Files: .env, git-repository-url, git-branch, git-commit
+- Files: .env, lit.json
 
 Warning:
 The SQLite files in your "database/" directory must be moved.

@@ -53,7 +53,9 @@ if ($command === 'help') {
     lit_exit(0);
 }
 
-if (! file_exists("$projectBasePath/git-repository-url") && ! file_exists("$projectBasePath/bundle-url")) {
+$hasLitV1StateFiles = file_exists("$projectBasePath/git-repository-url") || file_exists("$projectBasePath/bundle-url");
+
+if (! file_exists("$projectBasePath/lit.json") && ! $hasLitV1StateFiles) {
     echo "This is not a Lit directory\n";
 
     lit_exit(1);
@@ -65,13 +67,16 @@ if (! is_dir("$projectBasePath/storage") && ! is_dir("$projectBasePath/shared/st
     lit_exit(1);
 }
 
-// The releases directory and git-commit file might not exist when moving an application between servers
-if (! is_dir("$projectBasePath/releases")) {
-    mkdir("$projectBasePath/releases");
+// Apps still on Lit v1 have separate state files instead of a "lit.json"
+if (! file_exists("$projectBasePath/lit.json")) {
+    require_once "$litBasePath/scripts/migrate-state-from-v1-to-v2.php";
+
+    migrate_state_from_v1_to_v2($projectBasePath);
 }
 
-if (file_exists("$projectBasePath/git-repository-url") && ! file_exists("$projectBasePath/git-commit")) {
-    file_put_contents("$projectBasePath/git-commit", "not deployed yet");
+// The releases directory might not exist when moving an application between servers
+if (! is_dir("$projectBasePath/releases")) {
+    mkdir("$projectBasePath/releases");
 }
 
 if (! is_dir("$projectBasePath/logs")) {

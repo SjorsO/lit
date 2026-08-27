@@ -13,13 +13,15 @@ if ($sourceType !== 'git') {
     lit_exit(1);
 }
 
-if (file_exists("$projectBasePath/git-release-caching-enabled")) {
+$litState = read_lit_state($projectBasePath);
+
+if (($litState['git_release_caching_enabled'] ?? false) === true) {
     out("Release caching for git is already enabled\n");
 
     lit_exit(1);
 }
 
-touch("$projectBasePath/git-release-caching-enabled");
+update_lit_state($projectBasePath, 'git_release_caching_enabled', true);
 
 out("Release caching for git enabled\n");
 out("\n");

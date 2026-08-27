@@ -60,12 +60,12 @@ Next steps:
 After that, run "lit deploy" to download and deploy the bundle
 EXPECTED, $output);
 
-// Git files should be deleted
-assert_file_missing("$projectPath/git-repository-url");
-assert_file_missing("$projectPath/git-branch");
+// Git keys should be removed
+assert_lit_state_missing($projectPath, 'git_repository_url');
+assert_lit_state_missing($projectPath, 'git_branch');
 
-// Bundle files should exist
-assert_file_exists("$projectPath/bundle-url");
+// Bundle keys should exist
+assert_lit_state_value($projectPath, 'bundle_url', 'https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests.tar.zst');
 
 // Clear bundle cache to ensure we test the download path
 array_map('unlink', glob("$worldPath/lit/cached-releases/*.tar"));
@@ -118,13 +118,13 @@ After that, either:
 - Run "lit checkout <branch>" to deploy a different branch
 EXPECTED, $output);
 
-// Bundle files should be deleted
-assert_file_missing("$projectPath/bundle-url");
-assert_file_missing("$projectPath/bundle-hash");
+// Bundle keys should be removed
+assert_lit_state_missing($projectPath, 'bundle_url');
+assert_lit_state_missing($projectPath, 'bundle_hash');
 
-// Git files should exist
-assert_file_exists("$projectPath/git-repository-url");
-assert_file_exists("$projectPath/git-branch");
+// Git keys should exist
+assert_lit_state_value($projectPath, 'git_repository_url', 'https://github.com/SjorsO/lit.git');
+assert_lit_state_value($projectPath, 'git_branch', 'main');
 
 // Deploy git repo again
 [$statusCode, $output] = lit('deploy');

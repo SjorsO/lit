@@ -13,7 +13,7 @@ $projectPath = world_path().'/case/lit';
 chdir($projectPath);
 
 // Verify caching is disabled by default
-assert_file_missing("$projectPath/git-release-caching-enabled");
+assert_lit_state_value($projectPath, 'git_release_caching_enabled', false);
 assert_file_missing("$projectPath/hooks/before-caching.sh");
 
 // 1. Enable caching (first time) - should succeed and create hook
@@ -31,7 +31,7 @@ Review and update these hooks:
 - "hooks/before-release.sh"
 - "hooks/after-release.sh"
 EXPECTED, $output);
-assert_file_exists("$projectPath/git-release-caching-enabled");
+assert_lit_state_value($projectPath, 'git_release_caching_enabled', true);
 assert_file_exists("$projectPath/hooks/before-caching.sh");
 
 // 2. Enable caching (again) - should fail
@@ -54,7 +54,7 @@ Review and update these hooks:
 
 This hook will not be used anymore: "lit/hooks/before-caching.sh"
 EXPECTED, $output);
-assert_file_missing("$projectPath/git-release-caching-enabled");
+assert_lit_state_value($projectPath, 'git_release_caching_enabled', false);
 assert_file_exists("$projectPath/hooks/before-caching.sh");
 
 // 4. Disable caching (again) - should fail
@@ -76,7 +76,7 @@ Review and update these hooks:
 - "hooks/before-release.sh"
 - "hooks/after-release.sh"
 EXPECTED, $output);
-assert_file_exists("$projectPath/git-release-caching-enabled");
+assert_lit_state_value($projectPath, 'git_release_caching_enabled', true);
 
 // 6. Delete hook manually and disable caching - should succeed
 unlink("$projectPath/hooks/before-caching.sh");
@@ -92,5 +92,5 @@ Review and update these hooks:
 - "hooks/before-release.sh"
 - "hooks/after-release.sh"
 EXPECTED, $output);
-assert_file_missing("$projectPath/git-release-caching-enabled");
+assert_lit_state_value($projectPath, 'git_release_caching_enabled', false);
 assert_file_missing("$projectPath/hooks/before-caching.sh");

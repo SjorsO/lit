@@ -181,52 +181,51 @@ if (! is_dir($projectPath)) {
 
 $switchedLitSourceType = false;
 
-if ($sourceType === 'git') {
-    if (file_exists("$projectPath/bundle-url") && filesize("$projectPath/bundle-url") > 0) {
-        $oldBundleUrl = rtrim(file_get_contents("$projectPath/bundle-url"), "\n");
+// The project might still be on Lit v1, migrate it first
+if (! file_exists("$projectPath/lit.json") && (file_exists("$projectPath/git-repository-url") || file_exists("$projectPath/bundle-url"))) {
+    require_once "$litBasePath/scripts/migrate-state-from-v1-to-v2.php";
 
-        out("Changing from bundle URL: $oldBundleUrl\n");
+    migrate_state_from_v1_to_v2($projectPath);
+}
+
+$oldLitState = read_lit_state($projectPath);
+
+if ($sourceType === 'git') {
+    if (($oldLitState['bundle_url'] ?? '') !== '') {
+        out("Changing from bundle URL: {$oldLitState['bundle_url']}\n");
 
         $switchedLitSourceType = true;
-    } elseif (file_exists("$projectPath/git-repository-url") && filesize("$projectPath/git-repository-url") > 0) {
-        $oldGitUrl = rtrim(file_get_contents("$projectPath/git-repository-url"), "\n");
-
-        out("Changing from git repository URL: $oldGitUrl\n");
+    } elseif (($oldLitState['git_repository_url'] ?? '') !== '') {
+        out("Changing from git repository URL: {$oldLitState['git_repository_url']}\n");
     }
 
-    delete_file("$projectPath/bundle-url");
-    delete_file("$projectPath/bundle-hash");
-
-    file_put_contents("$projectPath/git-repository-url", "$sourceUrl\n");
-    file_put_contents("$projectPath/git-branch", "$defaultBranch\n");
-    file_put_contents("$projectPath/git-commit", "not deployed yet\n");
+    write_lit_state($projectPath, [
+        'git_repository_url' => $sourceUrl,
+        'git_branch' => $defaultBranch,
+        'git_commit' => 'not deployed yet',
+        'git_release_caching_enabled' => ($oldLitState['git_release_caching_enabled'] ?? false) === true,
+    ]);
 
     out("Current branch set to \"$defaultBranch\"\n");
 } elseif ($sourceType === 'bundle') {
-    if (file_exists("$projectPath/git-repository-url") && filesize("$projectPath/git-repository-url") > 0) {
-        $oldGitUrl = rtrim(file_get_contents("$projectPath/git-repository-url"), "\n");
-        $oldBranch = file_exists("$projectPath/git-branch") ? rtrim(file_get_contents("$projectPath/git-branch"), "\n") : '';
+    if (($oldLitState['git_repository_url'] ?? '') !== '') {
+        $oldBranch = $oldLitState['git_branch'] ?? '';
 
         if ($oldBranch === '') {
             $oldBranch = 'no branch';
         }
 
-        out("Changing from git URL: $oldGitUrl (branch: $oldBranch)\n");
+        out("Changing from git URL: {$oldLitState['git_repository_url']} (branch: $oldBranch)\n");
 
         $switchedLitSourceType = true;
-    } elseif (file_exists("$projectPath/bundle-url") && filesize("$projectPath/bundle-url") > 0) {
-        $oldBundleUrl = rtrim(file_get_contents("$projectPath/bundle-url"), "\n");
-
-        out("Changing from bundle URL: $oldBundleUrl\n");
+    } elseif (($oldLitState['bundle_url'] ?? '') !== '') {
+        out("Changing from bundle URL: {$oldLitState['bundle_url']}\n");
     }
 
-    delete_file("$projectPath/git-repository-url");
-    delete_file("$projectPath/git-branch");
-    delete_file("$projectPath/git-commit");
-    delete_file("$projectPath/git-release-caching-enabled");
-
-    file_put_contents("$projectPath/bundle-url", "$sourceUrl\n");
-    file_put_contents("$projectPath/bundle-hash", "not deployed yet\n");
+    write_lit_state($projectPath, [
+        'bundle_url' => $sourceUrl,
+        'bundle_hash' => 'not deployed yet',
+    ]);
 
     out("Bundle URL set to \"$sourceUrl\"\n");
 }
@@ -337,11 +336,11 @@ if ($hasNextSteps) {
 
         if ($sourceType === 'git') {
             out("- Directories: current/, hooks/, logs/, releases/, storage/\n");
-            out("- Files: .env, git-repository-url, git-branch, git-commit\n");
         } else {
             out("- Directories: current/, hooks/, releases/, storage/\n");
-            out("- Files: .env, bundle-url, bundle-hash\n");
         }
+
+        out("- Files: .env, lit.json\n");
 
         if (glob("$projectPath/database/*.sqlite")) {
             out("\n");
