@@ -16,7 +16,7 @@ file_put_contents("$projectPath/.env", "APP_KEY=test\n");
 chdir($projectPath);
 
 // Manually set the branch to one that doesn't exist
-set_lit_state_value($projectPath, 'git_branch', 'deleted-branch-that-does-not-exist');
+set_lit_state_value($projectPath, 'git_ref', 'deleted-branch-that-does-not-exist');
 
 [$statusCode, $output] = lit('deploy');
 

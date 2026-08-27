@@ -32,7 +32,7 @@ Next steps:
 
 After that, either:
 - Run "lit deploy" to deploy the current branch (main)
-- Run "lit checkout <branch>" to deploy a different branch
+- Run "lit checkout <branch|tag|commit>" to deploy something else
 
 After you have deployed with Lit:
 - Update your cron and queue workers to point at "/current/artisan" instead of "/artisan"
@@ -60,7 +60,7 @@ Current branch set to "main"
 Finished initializing "my-app"
 
 Run "lit deploy" to deploy the current branch (main)
-Run "lit checkout <branch>" to deploy a different branch
+Run "lit checkout <branch|tag|commit>" to deploy something else
 EXPECTED, $output);
 
 // Test init in a non-zero downtime Laravel project (bundle)

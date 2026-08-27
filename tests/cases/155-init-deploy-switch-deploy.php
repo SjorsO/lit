@@ -60,12 +60,13 @@ Next steps:
 After that, run "lit deploy" to download and deploy the bundle
 EXPECTED, $output);
 
-// Git keys should be removed
-assert_lit_state_missing($projectPath, 'git_repository_url');
-assert_lit_state_missing($projectPath, 'git_branch');
-
-// Bundle keys should exist
-assert_lit_state_value($projectPath, 'bundle_url', 'https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests.tar.zst');
+// The git keys were replaced with bundle keys
+assert_file_content("$projectPath/lit.json", <<<'EXPECTED'
+{
+    "bundle_url": "https://sjorso-public-files.s3-eu-central-1.amazonaws.com/lit-fixtures/bundle-for-lit-tests.tar.zst",
+    "bundle_hash": "not deployed yet"
+}
+EXPECTED);
 
 // Clear bundle cache to ensure we test the download path
 array_map('unlink', glob("$worldPath/lit/cached-releases/*.tar"));
@@ -115,16 +116,19 @@ Next steps:
 
 After that, either:
 - Run "lit deploy" to deploy the current branch (main)
-- Run "lit checkout <branch>" to deploy a different branch
+- Run "lit checkout <branch|tag|commit>" to deploy something else
 EXPECTED, $output);
 
-// Bundle keys should be removed
-assert_lit_state_missing($projectPath, 'bundle_url');
-assert_lit_state_missing($projectPath, 'bundle_hash');
-
-// Git keys should exist
-assert_lit_state_value($projectPath, 'git_repository_url', 'https://github.com/SjorsO/lit.git');
-assert_lit_state_value($projectPath, 'git_branch', 'main');
+// The bundle keys were replaced with git keys
+assert_file_content("$projectPath/lit.json", <<<'EXPECTED'
+{
+    "git_repository_url": "https://github.com/SjorsO/lit.git",
+    "git_ref": "main",
+    "git_ref_type": "branch",
+    "git_commit_sha": "not deployed yet",
+    "git_release_caching_enabled": false
+}
+EXPECTED);
 
 // Deploy git repo again
 [$statusCode, $output] = lit('deploy');

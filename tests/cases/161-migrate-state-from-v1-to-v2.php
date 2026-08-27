@@ -35,11 +35,16 @@ Review and update these hooks:
 - "hooks/after-release.sh"
 EXPECTED, $output);
 
-// All v1 values survived the migration
-assert_lit_state_value($gitProjectPath, 'git_repository_url', 'https://github.com/SjorsO/lit.git');
-assert_lit_state_value($gitProjectPath, 'git_branch', 'production');
-assert_lit_state_value($gitProjectPath, 'git_commit', '0123456789abcdef0123456789abcdef01234567');
-assert_lit_state_value($gitProjectPath, 'git_release_caching_enabled', false);
+// All v1 values survived the migration, and the disable command set caching to false
+assert_file_content("$gitProjectPath/lit.json", <<<'EXPECTED'
+{
+    "git_repository_url": "https://github.com/SjorsO/lit.git",
+    "git_ref": "production",
+    "git_ref_type": "branch",
+    "git_commit_sha": "0123456789abcdef0123456789abcdef01234567",
+    "git_release_caching_enabled": false
+}
+EXPECTED);
 
 // The v1 state files are gone
 assert_file_missing("$gitProjectPath/git-repository-url");
@@ -75,8 +80,15 @@ Release caching for git is already disabled
 EXPECTED, $output);
 
 // A missing "git-commit" file falls back to the default
-assert_lit_state_value($bareProjectPath, 'git_commit', 'not deployed yet');
-assert_lit_state_value($bareProjectPath, 'git_release_caching_enabled', false);
+assert_file_content("$bareProjectPath/lit.json", <<<'EXPECTED'
+{
+    "git_repository_url": "https://github.com/SjorsO/lit.git",
+    "git_ref": "main",
+    "git_ref_type": "branch",
+    "git_commit_sha": "not deployed yet",
+    "git_release_caching_enabled": false
+}
+EXPECTED);
 assert_file_missing("$bareProjectPath/git-repository-url");
 assert_file_missing("$bareProjectPath/git-branch");
 
@@ -100,8 +112,11 @@ Migrated Lit v1 state files into "lit.json"
 Release caching is only available when deploying from git
 EXPECTED, $output);
 
-assert_lit_state_value($bundleProjectPath, 'bundle_url', 'https://example.com/releases/app.tar.gz');
-assert_lit_state_value($bundleProjectPath, 'bundle_hash', '95632a16d315752fc2c8e5b298546b389094a9d2');
-assert_lit_state_missing($bundleProjectPath, 'git_repository_url');
+assert_file_content("$bundleProjectPath/lit.json", <<<'EXPECTED'
+{
+    "bundle_url": "https://example.com/releases/app.tar.gz",
+    "bundle_hash": "95632a16d315752fc2c8e5b298546b389094a9d2"
+}
+EXPECTED);
 assert_file_missing("$bundleProjectPath/bundle-url");
 assert_file_missing("$bundleProjectPath/bundle-hash");

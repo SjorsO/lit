@@ -7,8 +7,9 @@ function migrate_state_from_v1_to_v2(string $projectBasePath): void
     if (file_exists("$projectBasePath/git-repository-url")) {
         $litState = [
             'git_repository_url' => get_file_value("$projectBasePath/git-repository-url"),
-            'git_branch' => file_exists("$projectBasePath/git-branch") ? get_file_value("$projectBasePath/git-branch") : '',
-            'git_commit' => file_exists("$projectBasePath/git-commit") ? get_file_value("$projectBasePath/git-commit") : 'not deployed yet',
+            'git_ref' => file_exists("$projectBasePath/git-branch") ? get_file_value("$projectBasePath/git-branch") : '',
+            'git_ref_type' => 'branch',
+            'git_commit_sha' => file_exists("$projectBasePath/git-commit") ? get_file_value("$projectBasePath/git-commit") : 'not deployed yet',
             'git_release_caching_enabled' => file_exists("$projectBasePath/git-release-caching-enabled"),
         ];
     } else {

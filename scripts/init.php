@@ -201,21 +201,21 @@ if ($sourceType === 'git') {
 
     write_lit_state($projectPath, [
         'git_repository_url' => $sourceUrl,
-        'git_branch' => $defaultBranch,
-        'git_commit' => 'not deployed yet',
+        'git_ref' => $defaultBranch,
+        'git_ref_type' => 'branch',
+        'git_commit_sha' => 'not deployed yet',
         'git_release_caching_enabled' => ($oldLitState['git_release_caching_enabled'] ?? false) === true,
     ]);
 
     out("Current branch set to \"$defaultBranch\"\n");
 } elseif ($sourceType === 'bundle') {
     if (($oldLitState['git_repository_url'] ?? '') !== '') {
-        $oldBranch = $oldLitState['git_branch'] ?? '';
+        $oldRefType = $oldLitState['git_ref_type'] ?? 'branch';
+        $oldRef = $oldLitState['git_ref'] ?? '';
 
-        if ($oldBranch === '') {
-            $oldBranch = 'no branch';
-        }
+        $oldRefLabel = $oldRef === '' ? 'branch: no branch' : "$oldRefType: $oldRef";
 
-        out("Changing from git URL: {$oldLitState['git_repository_url']} (branch: $oldBranch)\n");
+        out("Changing from git URL: {$oldLitState['git_repository_url']} ($oldRefLabel)\n");
 
         $switchedLitSourceType = true;
     } elseif (($oldLitState['bundle_url'] ?? '') !== '') {
@@ -320,7 +320,7 @@ if ($hasNextSteps) {
         out("\n");
         out("After that, either:\n");
         out("- Run \"lit deploy\" to deploy the current branch ($defaultBranch)\n");
-        out("- Run \"lit checkout <branch>\" to deploy a different branch\n");
+        out("- Run \"lit checkout <branch|tag|commit>\" to deploy something else\n");
     } elseif ($sourceType === 'bundle') {
         out("\n");
         out("After that, run \"lit deploy\" to download and deploy the bundle\n");
@@ -355,7 +355,7 @@ if ($hasNextSteps) {
 
     if ($sourceType === 'git') {
         out("Run \"lit deploy\" to deploy the current branch ($defaultBranch)\n");
-        out("Run \"lit checkout <branch>\" to deploy a different branch\n");
+        out("Run \"lit checkout <branch|tag|commit>\" to deploy something else\n");
     } elseif ($sourceType === 'bundle') {
         out("Run \"lit deploy\" to download and deploy the bundle\n");
     }

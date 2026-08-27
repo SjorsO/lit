@@ -59,7 +59,8 @@ $state->wasReleased = false;
 $state->newReleaseDirectory = '';
 $state->tempDirectoryPath = '';
 $state->stagingDirectoryPath = '';
-$state->currentBranch = '';
+$state->currentRef = '';
+$state->currentRefType = 'branch';
 $state->currentCommit = '';
 $state->newBundleHash = '';
 
@@ -85,12 +86,17 @@ register_cleanup(function (int $exitCode) use ($state, $projectBasePath, $source
         $shortCommit = substr($state->currentCommit, 0, 11);
         $result = null;
 
+        // "branch "main" (commit: abc123)", "tag "v1.0" (commit: abc123)", or "commit abc123"
+        $refDescription = $state->currentRefType === 'commit'
+            ? "commit $shortCommit"
+            : "{$state->currentRefType} \"{$state->currentRef}\" (commit: $shortCommit)";
+
         if ($state->wasReleased && $exitCode !== 0 && $sourceType === 'git') {
-            $result = "had errors, still deployed branch \"{$state->currentBranch}\" (commit: $shortCommit)";
+            $result = "had errors, still deployed $refDescription";
         } elseif ($state->wasReleased && $exitCode !== 0 && $sourceType === 'bundle') {
             $result = "had errors, still deployed bundle (hash: {$state->newBundleHash})";
         } elseif ($state->wasReleased && $sourceType === 'git') {
-            $result = "deployed branch \"{$state->currentBranch}\" (commit: $shortCommit)";
+            $result = "deployed $refDescription";
         } elseif ($state->wasReleased && $sourceType === 'bundle') {
             $result = "deployed bundle (hash: {$state->newBundleHash})";
         } elseif ($state->releaseDirectoryCreated) {
@@ -154,34 +160,36 @@ $litState = read_lit_state($projectBasePath);
 
 if ($sourceType === 'git') {
     $gitRepositoryUrl = $litState['git_repository_url'];
-    $state->currentBranch = $litState['git_branch'] ?? '';
-    $state->currentCommit = $litState['git_commit'] ?? 'not deployed yet';
+    $state->currentRef = $litState['git_ref'] ?? '';
+    $state->currentRefType = $litState['git_ref_type'] ?? 'branch';
+    $state->currentCommit = $litState['git_commit_sha'] ?? 'not deployed yet';
 
     // If we are deploying after a "lit checkout", then we already have the commit.
     if ($currentRemoteCommit === '') {
-        out("Reading branch \"{$state->currentBranch}\" of \"$gitRepositoryUrl\"... ");
+        if ($state->currentRefType === 'commit') {
+            // The ref is the commit, nothing to resolve
+            $currentRemoteCommit = $state->currentRef;
+        } else {
+            out("Reading {$state->currentRefType} \"{$state->currentRef}\" of \"$gitRepositoryUrl\"... ");
 
-        [$lsRemoteStatusCode, $lsRemoteOutput] = run_command_and_capture_stdout(['git', 'ls-remote', '--symref', $gitRepositoryUrl, $state->currentBranch]);
+            [$branchCommit, $tagCommit] = resolve_remote_ref($gitRepositoryUrl, $state->currentRef);
 
-        if ($lsRemoteStatusCode !== 0) {
-            lit_exit($lsRemoteStatusCode);
+            $currentRemoteCommit = $state->currentRefType === 'tag' ? $tagCommit : $branchCommit;
+
+            out("\n");
         }
-
-        foreach (explode("\n", $lsRemoteOutput) as $lsRemoteLine) {
-            if ($lsRemoteLine !== '' && ! str_starts_with($lsRemoteLine, 'ref: refs/heads/')) {
-                $currentRemoteCommit = explode("\t", $lsRemoteLine)[0];
-
-                break;
-            }
-        }
-
-        out("\n");
     }
 
     if ($state->currentCommit === $currentRemoteCommit) {
         $shortRemoteCommit = substr($currentRemoteCommit, 0, 11);
 
-        out("Latest commit of \"{$state->currentBranch}\" is already deployed ($shortRemoteCommit)\n");
+        if ($state->currentRefType === 'branch') {
+            out("Latest commit of \"{$state->currentRef}\" is already deployed ($shortRemoteCommit)\n");
+        } elseif ($state->currentRefType === 'tag') {
+            out("Tag \"{$state->currentRef}\" is already deployed ($shortRemoteCommit)\n");
+        } else {
+            out("Commit is already deployed ($shortRemoteCommit)\n");
+        }
 
         if ($isForcing) {
             out("Using \"--force\", redeploying...\n");
@@ -230,7 +238,7 @@ if ($sourceType === 'git') {
 
             out('Cloning repository... ');
 
-            $cloneStatusCode = run_command(['git', 'clone', '--branch', $state->currentBranch, '--depth', '100', '--single-branch', '--quiet', $gitRepositoryUrl, $state->tempDirectoryPath]);
+            $cloneStatusCode = clone_git_ref_into($gitRepositoryUrl, $state->currentRef, $state->currentRefType, $state->tempDirectoryPath);
 
             if ($cloneStatusCode !== 0) {
                 lit_exit($cloneStatusCode);
@@ -319,7 +327,7 @@ if ($sourceType === 'git') {
 
         out('Cloning repository... ');
 
-        $cloneStatusCode = run_command(['git', 'clone', '--branch', $state->currentBranch, '--depth', '100', '--single-branch', '--quiet', $gitRepositoryUrl, $state->newReleaseDirectory]);
+        $cloneStatusCode = clone_git_ref_into($gitRepositoryUrl, $state->currentRef, $state->currentRefType, $state->newReleaseDirectory);
 
         if ($cloneStatusCode !== 0) {
             lit_exit($cloneStatusCode);
@@ -573,7 +581,7 @@ run_command(['ln', is_macos() ? '-nsf' : '-nsfr', $state->newReleaseDirectory, $
 $state->wasReleased = true;
 
 if ($sourceType === 'git') {
-    update_lit_state($projectBasePath, 'git_commit', $state->currentCommit);
+    update_lit_state($projectBasePath, 'git_commit_sha', $state->currentCommit);
 } elseif ($sourceType === 'bundle') {
     update_lit_state($projectBasePath, 'bundle_hash', $state->newBundleHash);
 }

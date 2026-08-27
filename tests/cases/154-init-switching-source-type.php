@@ -65,12 +65,19 @@ Next steps:
 
 After that, either:
 - Run "lit deploy" to deploy the current branch (main)
-- Run "lit checkout <branch>" to deploy a different branch
+- Run "lit checkout <branch|tag|commit>" to deploy something else
 EXPECTED, $output);
 
-// Assert bundle keys were removed
-assert_lit_state_missing($projectPath, 'bundle_url');
-assert_lit_state_missing($projectPath, 'bundle_hash');
+// The bundle keys were replaced with git keys
+assert_file_content("$projectPath/lit.json", <<<'EXPECTED'
+{
+    "git_repository_url": "https://github.com/SjorsO/lit.git",
+    "git_ref": "main",
+    "git_ref_type": "branch",
+    "git_commit_sha": "not deployed yet",
+    "git_release_caching_enabled": false
+}
+EXPECTED);
 
 // Another git init (same source type)
 [$statusCode, $output] = lit('init', 'https://github.com/SjorsO/lit.git', '.');
@@ -86,11 +93,11 @@ Current branch set to "main"
 Finished initializing "my-app"
 
 Run "lit deploy" to deploy the current branch (main)
-Run "lit checkout <branch>" to deploy a different branch
+Run "lit checkout <branch|tag|commit>" to deploy something else
 EXPECTED, $output);
 
 // Empty the branch to test the "no branch" fallback
-set_lit_state_value($projectPath, 'git_branch', '');
+set_lit_state_value($projectPath, 'git_ref', '');
 
 // Switch back to bundle
 [$statusCode, $output] = lit('init', 'https://example.com/final-bundle.tar', '.');
@@ -112,11 +119,13 @@ Next steps:
 After that, run "lit deploy" to download and deploy the bundle
 EXPECTED, $output);
 
-// Assert git keys were removed
-assert_lit_state_missing($projectPath, 'git_repository_url');
-assert_lit_state_missing($projectPath, 'git_branch');
-assert_lit_state_missing($projectPath, 'git_commit');
-assert_lit_state_missing($projectPath, 'git_release_caching_enabled');
+// The git keys were replaced with bundle keys
+assert_file_content("$projectPath/lit.json", <<<'EXPECTED'
+{
+    "bundle_url": "https://example.com/final-bundle.tar",
+    "bundle_hash": "not deployed yet"
+}
+EXPECTED);
 
 // Delete a hook, then init again - should recreate it and show message
 unlink("$projectPath/hooks/before-release.sh");

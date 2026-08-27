@@ -5,7 +5,7 @@
 │                                                                              │
 │   init <url> [name]    Initialize a new Lit directory from git or a bundle   │
 │   deploy               Run a new deployment                                  │
-│   checkout <branch>    Git checkout the given branch and deploy it           │
+│   checkout <ref>       Checkout and deploy the given branch, tag, or commit  │
 │                                                                              │
 │ Other commands:                                                              │
 │                                                                              │

@@ -40,6 +40,106 @@ function update_lit_state(string $projectBasePath, string $key, string|bool $val
     write_lit_state($projectBasePath, $litState);
 }
 
+function resolve_remote_ref(string $gitRepositoryUrl, string $ref): array
+{
+    [$lsRemoteStatusCode, $lsRemoteOutput] = run_command_and_capture_stdout(['git', 'ls-remote', $gitRepositoryUrl, "refs/heads/$ref", "refs/tags/$ref*"]);
+
+    if ($lsRemoteStatusCode !== 0) {
+        lit_exit($lsRemoteStatusCode);
+    }
+
+    $branchCommit = '';
+    $tagCommit = '';
+    $peeledTagCommit = '';
+
+    foreach (explode("\n", $lsRemoteOutput) as $lsRemoteLine) {
+        if (! str_contains($lsRemoteLine, "\t")) {
+            continue;
+        }
+
+        [$commit, $refName] = explode("\t", $lsRemoteLine);
+
+        if ($refName === "refs/heads/$ref") {
+            $branchCommit = $commit;
+        } elseif ($refName === "refs/tags/$ref") {
+            $tagCommit = $commit;
+        } elseif ($refName === "refs/tags/$ref^{}") {
+            $peeledTagCommit = $commit;
+        }
+    }
+
+    if ($peeledTagCommit !== '') {
+        $tagCommit = $peeledTagCommit;
+    }
+
+    return [$branchCommit, $tagCommit];
+}
+
+function clone_git_ref_into(string $gitRepositoryUrl, string $ref, string $refType, string $directoryPath): int
+{
+    if ($refType === 'branch') {
+        return run_command(['git', 'clone', '--branch', $ref, '--depth', '100', '--single-branch', '--quiet', $gitRepositoryUrl, $directoryPath]);
+    }
+
+    $fetchRef = $refType === 'tag' ? "refs/tags/$ref" : $ref;
+
+    $initStatusCode = run_command(['git', 'init', '--quiet', $directoryPath]);
+
+    if ($initStatusCode !== 0) {
+        return $initStatusCode;
+    }
+
+    $fetchStatusCode = run_command(['git', '-C', $directoryPath, 'fetch', '--quiet', '--depth', '100', $gitRepositoryUrl, $fetchRef]);
+
+    if ($fetchStatusCode !== 0) {
+        return $fetchStatusCode;
+    }
+
+    return run_command(['git', '-C', $directoryPath, 'checkout', '--quiet', '--detach', 'FETCH_HEAD']);
+}
+
+function expand_short_commit(string $gitRepositoryUrl, string $litBasePath, string $shortCommit): array
+{
+    if (! is_dir("$litBasePath/cached-releases")) {
+        mkdir("$litBasePath/cached-releases", 0777, true);
+    }
+
+    $clonePath = "$litBasePath/cached-releases/wip_".uuid();
+
+    register_cleanup(function () use ($clonePath) {
+        if (is_dir($clonePath)) {
+            delete_directory($clonePath);
+        }
+    });
+
+    // "--filter=tree:0" skips downloading file contents
+    [$cloneStatusCode, $cloneOutput] = run_command_and_capture(['git', 'clone', '--quiet', '--bare', '--filter=tree:0', $gitRepositoryUrl, $clonePath]);
+
+    if ($cloneStatusCode !== 0) {
+        out("\n");
+        out(trim($cloneOutput)."\n");
+
+        lit_exit($cloneStatusCode);
+    }
+
+    // The "^{commit}" makes sure the hash is a commit, and peels tag objects
+    [$revParseStatusCode, $revParseOutput] = run_command_and_capture(['git', '-C', $clonePath, 'rev-parse', '--verify', "$shortCommit^{commit}"]);
+
+    delete_directory($clonePath);
+
+    if ($revParseStatusCode !== 0) {
+        return [
+            str_contains($revParseOutput, 'ambiguous') ? 'ambiguous' : 'not-found',
+            '',
+        ];
+    }
+
+    return [
+        'found',
+        trim($revParseOutput),
+    ];
+}
+
 function get_file_value(string $filePath): string
 {
     return trim(file_get_contents($filePath));

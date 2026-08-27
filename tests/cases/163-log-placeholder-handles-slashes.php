@@ -25,14 +25,14 @@ assert_same(1, $statusCode);
 $output = normalize_output($output);
 
 assert_same(<<<'EXPECTED'
-Switching to branch "feature/does-not-exist"...
-Branch "feature/does-not-exist" does not exist on remote
+Switching to "feature/does-not-exist"...
+"feature/does-not-exist" is not a branch, tag, or commit on the remote
 EXPECTED, $output);
 
 // The placeholder should be replaced with the result, slashes intact
 $logContent = file_get_contents("$projectPath/logs/lit.log");
 
-assert_string_contains($logContent, 'lit checkout feature/does-not-exist → failed (branch does not exist) (in ');
+assert_string_contains($logContent, 'lit checkout feature/does-not-exist → failed (ref does not exist) (in ');
 assert_string_not_contains($logContent, '(pending:');
 
 // Also verify "&" and "\" don't break the replacement
@@ -42,5 +42,5 @@ assert_same(1, $statusCode);
 
 $logContent = file_get_contents("$projectPath/logs/lit.log");
 
-assert_string_contains($logContent, 'lit checkout a&b\\c/d → failed (branch does not exist) (in ');
+assert_string_contains($logContent, 'lit checkout a&b\\c/d → failed (ref does not exist) (in ');
 assert_string_not_contains($logContent, '(pending:');

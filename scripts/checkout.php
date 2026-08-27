@@ -6,10 +6,10 @@
  * @var string[] $arguments
  */
 
-$newBranch = $arguments[1] ?? '';
+$newRef = $arguments[1] ?? '';
 
-if ($newBranch === '' || isset($arguments[2])) {
-    out("usage: lit checkout <branch>\n");
+if ($newRef === '' || isset($arguments[2])) {
+    out("usage: lit checkout <branch|tag|commit>\n");
 
     $GLOBALS['current_run_result'] = 'failed (invalid usage)';
 
@@ -19,7 +19,7 @@ if ($newBranch === '' || isset($arguments[2])) {
 $sourceType = get_source_type($projectBasePath);
 
 if ($sourceType !== 'git') {
-    out("Cannot change branches because you are not deploying from git\n");
+    out("Cannot checkout because you are not deploying from git\n");
 
     $GLOBALS['current_run_result'] = 'failed (not a git project)';
 
@@ -29,45 +29,80 @@ if ($sourceType !== 'git') {
 $litState = read_lit_state($projectBasePath);
 
 $gitRepositoryUrl = $litState['git_repository_url'];
-$currentBranch = $litState['git_branch'] ?? '';
+$currentRef = $litState['git_ref'] ?? '';
 
-if ($currentBranch === $newBranch) {
-    out("Current branch is already \"$newBranch\"\n");
+if ($currentRef === $newRef) {
+    out("\"$newRef\" is already checked out\n");
 
-    $GLOBALS['current_run_result'] = 'aborted, already on this branch';
+    $GLOBALS['current_run_result'] = 'aborted, already checked out';
 
     lit_exit(1);
 }
 
-out("Switching to branch \"$newBranch\"... ");
+out("Switching to \"$newRef\"... ");
 
-[$lsRemoteStatusCode, $remoteBranchInfo] = run_command_and_capture_stdout(['git', 'ls-remote', '--symref', $gitRepositoryUrl, $newBranch]);
-
-if ($lsRemoteStatusCode !== 0) {
-    lit_exit($lsRemoteStatusCode);
-}
+[$branchCommit, $tagCommit] = resolve_remote_ref($gitRepositoryUrl, $newRef);
 
 out("\n");
 
-if (trim($remoteBranchInfo) === '') {
-    out("Branch \"$newBranch\" does not exist on remote\n");
+// Same resolve order as "git checkout": branch first, then tag, then commit
+if ($branchCommit !== '') {
+    $newRefType = 'branch';
+    $currentRemoteCommit = $branchCommit;
 
-    $GLOBALS['current_run_result'] = 'failed (branch does not exist)';
+    if ($tagCommit !== '') {
+        out("Warning: \"$newRef\" is both a branch and a tag, using the branch\n");
+    }
+} elseif ($tagCommit !== '') {
+    $newRefType = 'tag';
+    $currentRemoteCommit = $tagCommit;
+} elseif (preg_match('/^[0-9a-f]{40}$/i', $newRef)) {
+    $newRef = strtolower($newRef);
+
+    $newRefType = 'commit';
+    $currentRemoteCommit = $newRef;
+} elseif (preg_match('/^[0-9a-f]{7,39}$/i', $newRef)) {
+    $newRef = strtolower($newRef);
+
+    out("Resolving short hash \"$newRef\"... ");
+
+    [$expandStatus, $fullCommit] = expand_short_commit($gitRepositoryUrl, $litBasePath, $newRef);
+
+    if ($expandStatus === 'ambiguous') {
+        out("\n");
+        out("Short hash \"$newRef\" is ambiguous on the remote, use more characters\n");
+
+        $GLOBALS['current_run_result'] = 'failed (ambiguous short hash)';
+
+        lit_exit(1);
+    }
+
+    if ($expandStatus === 'not-found') {
+        out("\n");
+        out("\"$newRef\" is not a branch, tag, or commit on the remote\n");
+
+        $GLOBALS['current_run_result'] = 'failed (ref does not exist)';
+
+        lit_exit(1);
+    }
+
+    out("($fullCommit)\n");
+
+    $newRef = $fullCommit;
+    $newRefType = 'commit';
+    $currentRemoteCommit = $fullCommit;
+} else {
+    out("\"$newRef\" is not a branch, tag, or commit on the remote\n");
+
+    $GLOBALS['current_run_result'] = 'failed (ref does not exist)';
 
     lit_exit(1);
 }
 
-$currentRemoteCommit = '';
+$litState['git_ref'] = $newRef;
+$litState['git_ref_type'] = $newRefType;
 
-foreach (explode("\n", $remoteBranchInfo) as $lsRemoteLine) {
-    if ($lsRemoteLine !== '' && ! str_starts_with($lsRemoteLine, 'ref: refs/heads/')) {
-        $currentRemoteCommit = explode("\t", $lsRemoteLine)[0];
-
-        break;
-    }
-}
-
-update_lit_state($projectBasePath, 'git_branch', $newBranch);
+write_lit_state($projectBasePath, $litState);
 
 $arguments = ['deploy', '--use-commit-from-checkout', $currentRemoteCommit];
 
