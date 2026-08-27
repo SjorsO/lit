@@ -1,0 +1,94 @@
+<?php
+
+require __DIR__.'/../test-helpers.php';
+
+// A deploy prints the last 5 commits.
+// The ">" arrow marks the commit being deployed.
+
+$worldPath = world_path();
+$caseDir = "$worldPath/case";
+
+$seedPath = "$caseDir/seed";
+$remotePath = "$caseDir/origin-repo.git";
+
+// "file://" makes git use the real transport, a plain path would ignore "--depth"
+$remoteUrl = "file://$remotePath";
+
+$gitCommand = ['git', '-c', 'user.email=lit@test', '-c', 'user.name=lit'];
+
+run_process(['git', 'init', '--quiet', '--initial-branch=main', $seedPath], $caseDir);
+
+$commits = [];
+$shortHashes = [];
+
+foreach (['one', 'two', 'three', 'four', 'five', 'six', 'seven'] as $message) {
+    file_put_contents("$seedPath/app.txt", "$message\n");
+    run_process(['git', 'add', 'app.txt'], $seedPath);
+    run_process([...$gitCommand, 'commit', '--quiet', '-m', $message], $seedPath);
+
+    [, $commit] = run_process(['git', 'rev-parse', 'HEAD'], $seedPath);
+
+    $commits[$message] = $commit;
+    $shortHashes[$message] = substr($commit, 0, 7);
+}
+
+run_process(['git', 'clone', '--quiet', '--bare', $seedPath, $remotePath], $caseDir);
+
+// Lit fetches commit SHAs, the remote must allow that (GitHub and GitLab do)
+run_process(['git', '-C', $remotePath, 'config', 'uploadpack.allowAnySHA1InWant', 'true'], $caseDir);
+
+chdir($caseDir);
+
+[$statusCode] = lit('init', $remoteUrl);
+
+assert_same(0, $statusCode);
+
+$projectPath = "$caseDir/origin-repo";
+
+neutralize_hooks($projectPath);
+file_put_contents("$projectPath/.env", "APP_KEY=test\n");
+
+chdir($projectPath);
+
+// Deploy the branch, the log shows the 5 newest commits
+[$statusCode, $output] = lit('deploy');
+
+assert_same(0, $statusCode);
+
+assert_string_contains($output, <<<EXPECTED
+> {$shortHashes['seven']} seven
+  {$shortHashes['six']} six
+  {$shortHashes['five']} five
+  {$shortHashes['four']} four
+  {$shortHashes['three']} three
+Creating a symlink to the storage directory
+EXPECTED);
+
+// Only 5 commits are shown
+assert_string_not_contains($output, "{$shortHashes['two']} two");
+assert_string_not_contains($output, "{$shortHashes['one']} one");
+
+// Checkout an old commit, the arrow points at that commit
+[$statusCode, $output] = lit('checkout', $commits['three']);
+
+assert_same(0, $statusCode);
+
+assert_string_contains($output, <<<EXPECTED
+> {$shortHashes['three']} three
+  {$shortHashes['two']} two
+  {$shortHashes['one']} one
+Creating a symlink to the storage directory
+EXPECTED);
+
+// The normalizer removes the commit lines, other tests stay stable
+$output = normalize_output($output);
+
+assert_same(<<<EXPECTED
+Switching to "HASH"...
+Creating "$projectPath/releases/2" for the new release...
+Cloning repository...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Releasing the new deployment "$projectPath/releases/2"
+Finished successfully (in X seconds)
+EXPECTED, $output);

@@ -30,6 +30,9 @@ file_put_contents("$projectPath/hooks/before-caching.sh", 'uuidgen > "$1/cache-m
 
 assert_same(0, $statusCode);
 
+// The commit log is printed after extracting
+assert_matches('/^> [a-f0-9]{7,} /m', $output);
+
 $output = normalize_output($output);
 
 assert_same(<<<EXPECTED
@@ -91,6 +94,9 @@ touch("$worldPath/timestamp-reference");
 [$statusCode, $output] = lit('checkout', 'main');
 
 assert_same(0, $statusCode);
+
+// The commit log is also printed when reusing a cached release
+assert_matches('/^> [a-f0-9]{7,} /m', $output);
 
 $output = normalize_output($output);
 

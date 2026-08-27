@@ -102,6 +102,22 @@ function clone_git_ref_into(string $gitRepositoryUrl, string $ref, string $refTy
     return run_command(['git', '-C', $directoryPath, 'checkout', '--quiet', '--detach', 'FETCH_HEAD']);
 }
 
+function print_recent_commits(string $repositoryPath): void
+{
+    [$logStatusCode, $logOutput] = run_command_and_capture(['git', '-C', $repositoryPath, '-c', 'core.abbrev=7', 'log', '--oneline', '--no-decorate', '-5']);
+
+    $logOutput = trim($logOutput);
+
+    // Skip silently, a caching hook may have removed the ".git" directory
+    if ($logStatusCode !== 0 || $logOutput === '') {
+        return;
+    }
+
+    foreach (explode("\n", $logOutput) as $index => $logLine) {
+        out(($index === 0 ? '> ' : '  ').$logLine."\n");
+    }
+}
+
 function expand_short_commit(string $gitRepositoryUrl, string $litBasePath, string $shortCommit): array
 {
     if (! is_dir("$litBasePath/cached-releases")) {

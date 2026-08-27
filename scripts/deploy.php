@@ -335,6 +335,8 @@ if ($sourceType === 'git') {
         }
 
         out("\n");
+
+        print_recent_commits($state->newReleaseDirectory);
     } else {
         out("Creating \"{$state->newReleaseDirectory}\" for the new release...\n");
 
@@ -357,6 +359,8 @@ if ($sourceType === 'git') {
         [$revParseStatusCode, $revParseOutput] = run_command_and_capture_stdout(['git', 'rev-parse', 'HEAD']);
 
         $state->currentCommit = trim($revParseOutput);
+
+        print_recent_commits($state->newReleaseDirectory);
     }
 } elseif ($sourceType === 'bundle') {
     $bundleUrl = $litState['bundle_url'];
