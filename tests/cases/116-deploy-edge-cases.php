@@ -37,12 +37,31 @@ assert_same(1, $statusCode);
 $output = normalize_output($output);
 
 assert_same(<<<EXPECTED
-The name of existing release directory "$projectPath/releases/not-a-number/" is not fully numeric, this should never happen
+The name of "$projectPath/releases/not-a-number" is not fully numeric, this should never happen
 Finished with errors (in X seconds)
 EXPECTED, $output);
 
 // Clean up invalid release directory
 rmdir("$projectPath/releases/not-a-number");
+
+// A stray file in the releases directory should also fail
+file_put_contents("$projectPath/releases/stray.txt", "should never be here\n");
+
+[$statusCode, $output] = lit('deploy');
+
+assert_same(1, $statusCode);
+
+$output = normalize_output($output);
+
+assert_same(<<<EXPECTED
+The name of "$projectPath/releases/stray.txt" is not fully numeric, this should never happen
+Finished with errors (in X seconds)
+EXPECTED, $output);
+
+// The stray file was not deleted
+assert_file_exists("$projectPath/releases/stray.txt");
+
+unlink("$projectPath/releases/stray.txt");
 
 // before-caching.sh exists but caching disabled should show warning
 file_put_contents("$projectPath/hooks/before-caching.sh", "# caching hook\n");

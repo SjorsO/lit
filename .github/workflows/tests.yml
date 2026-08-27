@@ -38,8 +38,7 @@ jobs:
       - name: Create bundle
         run: |
           tar --create --gzip \
-            --exclude="tests" \
-            --exclude="__old_v1" \
+            --exclude="tests" \            
             --exclude="CLAUDE.md" \
             --exclude="LICENSE.md" \
             --file ~/lit.tar.gz *
@@ -82,7 +81,7 @@ jobs:
 
           find . -maxdepth 1 ! -name .git ! -name . -exec rm -rf {} +
           find "$GITHUB_WORKSPACE" -maxdepth 1 ! -name .git ! -name . ! -path "$GITHUB_WORKSPACE" -exec cp -r {} . \;
-          rm -rf tests __old_v1 .github CLAUDE.md LICENSE.md .gitignore
+          rm -rf tests .github CLAUDE.md LICENSE.md .gitignore
           git add -A
 
           if [ -z "$(git status --porcelain)" ]; then

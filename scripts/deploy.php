@@ -136,11 +136,11 @@ register_cleanup(function (int $exitCode) use ($state, $projectBasePath, $source
     out("Finished $finishedWord (in $prettyRuntime)\n");
 });
 
-foreach (glob("$releasesDirectory/*") ?: [] as $releaseDirectoryPath) {
-    if (is_dir($releaseDirectoryPath) && ! preg_match('/^[0-9]+$/', basename($releaseDirectoryPath))) {
-        out("The name of existing release directory \"$releaseDirectoryPath/\" is not fully numeric, this should never happen\n");
+foreach (glob("$releasesDirectory/*") ?: [] as $releasePath) {
+    if (! preg_match('/^[0-9]+$/', basename($releasePath))) {
+        out("The name of \"$releasePath\" is not fully numeric, this should never happen\n");
 
-        $GLOBALS['current_run_result'] = 'failed, a release directory has an invalid name';
+        $GLOBALS['current_run_result'] = 'failed, the releases directory contains an invalid name';
 
         lit_exit(1);
     }
@@ -623,6 +623,10 @@ if (file_exists("$projectBasePath/hooks/before-release.sh")) {
 
 out("Releasing the new deployment \"{$state->newReleaseDirectory}\"\n");
 
+// Extracting a cached release can give the release directory an old timestamp.
+// Reset the timestamp, pruning uses it to determine the age of a release.
+touch($state->newReleaseDirectory);
+
 // Create a symlink to enable the release
 run_command(['ln', is_macos() ? '-nsf' : '-nsfr', $state->newReleaseDirectory, $currentDirectoryPath]);
 
@@ -644,18 +648,34 @@ if (file_exists("$projectBasePath/hooks/after-release.sh")) {
     out("Wanted to run \"$projectBasePath/hooks/after-release.sh\" but it does not exist\n");
 }
 
-// Keep the 6 most recent releases. We need to keep several old releases because multiple quick deployments
-// in a row could otherwise delete a release that a long-running job is still referencing.
+// Prune old releases: delete any release older than an hour, and keep at most the 6 most recent.
+//
+// We keep multiple recent releases because quick deployments in a row could otherwise delete a
+// release that a long-running job is still referencing.
 $releaseIds = array_map('basename', glob("$releasesDirectory/*") ?: []);
+
+// Sanity check, we should never delete something unexpected
+foreach ($releaseIds as $releaseId) {
+    if (! preg_match('/^[0-9]+$/', $releaseId)) {
+        throw new RuntimeException("Unexpected \"$releasesDirectory/$releaseId\", refusing to delete old releases");
+    }
+}
 
 rsort($releaseIds, SORT_NUMERIC);
 
-foreach (array_slice($releaseIds, 6) as $oldReleaseDirectory) {
-    out("Deleting old release directory \"$releasesDirectory/$oldReleaseDirectory\"... ");
+// Skip the first id, that is the release we just deployed
+foreach (array_slice($releaseIds, 1) as $index => $oldReleaseId) {
+    // The new release is not in the list, so ">= 5" means "beyond the 6 most recent"
+    $isBeyondSixMostRecent = $index >= 5;
+    $isOlderThanAnHour = filemtime("$releasesDirectory/$oldReleaseId") < time() - 60 * 60;
 
-    delete_directory("$releasesDirectory/$oldReleaseDirectory");
+    if ($isOlderThanAnHour || $isBeyondSixMostRecent) {
+        out("Deleting old release directory \"$releasesDirectory/$oldReleaseId\"... ");
 
-    out("\n");
+        delete_directory("$releasesDirectory/$oldReleaseId");
+
+        out("\n");
+    }
 }
 
 // Prune cached releases older than 7 days, and limit total cache size to 500MB
