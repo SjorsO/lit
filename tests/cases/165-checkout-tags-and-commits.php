@@ -37,6 +37,14 @@ run_process([...$gitCommand, 'commit', '--quiet', '-m', 'two'], $seedPath);
 run_process(['git', 'branch', 'v9'], $seedPath);
 run_process(['git', 'tag', 'v9', $commitOne], $seedPath);
 
+// A lightweight tag on the first commit ("ls-remote" shows no peeled "^{}" line for these)
+run_process(['git', 'tag', 'v0.9-light', $commitOne], $seedPath);
+
+// A branch named like the short hash of the first commit, pointing at the newest commit
+$branchNamedLikeHash = substr($commitOne, 0, 7);
+
+run_process(['git', 'branch', $branchNamedLikeHash, $commitTwo], $seedPath);
+
 run_process(['git', 'clone', '--quiet', '--bare', $seedPath, $remotePath], $caseDir);
 
 // Lit fetches commit SHAs, the remote must allow that (GitHub and GitLab do)
@@ -225,3 +233,63 @@ Switching to "deadbee"...
 Resolving short hash "deadbee"...
 "deadbee" is not a branch, tag, or commit on the remote
 EXPECTED, $output);
+
+// Checkout a lightweight tag - should deploy the first commit
+[$statusCode, $output] = lit('checkout', 'v0.9-light');
+
+assert_same(0, $statusCode);
+
+$output = normalize_output($output);
+
+assert_same(<<<EXPECTED
+Switching to "v0.9-light"...
+Creating "$projectPath/releases/6" for the new release...
+Cloning repository...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Releasing the new deployment "$projectPath/releases/6"
+Finished successfully (in X seconds)
+EXPECTED, $output);
+
+assert_file_content("$projectPath/releases/6/app.txt", 'one');
+
+assert_file_content("$projectPath/lit.json", <<<EXPECTED
+{
+    "git_repository_url": "$remoteUrl",
+    "git_ref": "v0.9-light",
+    "git_ref_type": "tag",
+    "git_commit_sha": "$commitOne",
+    "git_release_caching_enabled": false
+}
+EXPECTED);
+
+// Checkout a name that is both a branch and a commit hash - the branch
+// wins, same behavior as git. The branch points at "two", the hash at "one".
+[$statusCode, $output] = lit('checkout', $branchNamedLikeHash);
+
+assert_same(0, $statusCode);
+
+$output = normalize_output($output);
+
+assert_same(<<<EXPECTED
+Switching to "$branchNamedLikeHash"...
+Creating "$projectPath/releases/7" for the new release...
+Cloning repository...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Releasing the new deployment "$projectPath/releases/7"
+Deleting old release directory "$projectPath/releases/1"...
+Finished successfully (in X seconds)
+EXPECTED, $output);
+
+assert_file_content("$projectPath/releases/7/app.txt", 'two');
+
+assert_file_content("$projectPath/lit.json", <<<EXPECTED
+{
+    "git_repository_url": "$remoteUrl",
+    "git_ref": "$branchNamedLikeHash",
+    "git_ref_type": "branch",
+    "git_commit_sha": "$commitTwo",
+    "git_release_caching_enabled": false
+}
+EXPECTED);

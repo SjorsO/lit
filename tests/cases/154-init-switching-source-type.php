@@ -44,6 +44,9 @@ Finished initializing "my-app"
 Run "lit deploy" to download and deploy the bundle
 EXPECTED, $output);
 
+// Re-init never touches an existing ".env", the APP_KEY is kept
+assert_file_content("$projectPath/.env", 'APP_KEY=test');
+
 // Switch to git
 [$statusCode, $output] = lit('init', 'https://github.com/SjorsO/lit.git', '.');
 
@@ -134,6 +137,9 @@ unlink("$projectPath/hooks/before-release.sh");
 
 assert_same(0, $statusCode);
 assert_file_exists("$projectPath/hooks/before-release.sh");
+
+// The ".env" survived every re-init above, including the git one
+assert_file_content("$projectPath/.env", 'APP_KEY=test');
 
 assert_same(<<<'EXPECTED'
 Changing from bundle URL: https://example.com/final-bundle.tar
