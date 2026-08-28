@@ -229,21 +229,29 @@ if ($sourceType === 'git') {
     if ($cachingEnabled) {
         if (is_link("$projectBasePath/hooks/before-caching.sh")) {
             $beforeCachingHookPath = realpath("$projectBasePath/hooks/before-caching.sh");
-            $beforeCachingHookHash = sha1_file($beforeCachingHookPath);
+            $beforeCachingHookHash = substr(sha1_file($beforeCachingHookPath), 0, 12);
         } elseif (file_exists("$projectBasePath/hooks/before-caching.sh")) {
             $beforeCachingHookPath = "$projectBasePath/hooks/before-caching.sh";
-            $beforeCachingHookHash = sha1_file($beforeCachingHookPath);
+            $beforeCachingHookHash = substr(sha1_file($beforeCachingHookPath), 0, 12);
         } else {
             $beforeCachingHookPath = '';
             $beforeCachingHookHash = 'no-hook';
         }
 
+        // The ref is part of the cache key: two refs can point at the same commit
+        // but produce different clones, since ".git" records the ref (e.g. a branch
+        // head vs. a tag on the same commit).
+        $cacheCommit = substr($currentRemoteCommit, 0, 12);
+        $cacheRefHash = substr(sha1("{$state->currentRefType}:{$state->currentRef}"), 0, 12);
+
         $tarFilePath = '';
 
-        if (file_exists("$litBasePath/cached-releases/$currentRemoteCommit-$beforeCachingHookHash.tar")) {
-            $tarFilePath = "$litBasePath/cached-releases/$currentRemoteCommit-$beforeCachingHookHash.tar";
-        } elseif (glob("$litBasePath/cached-releases/$currentRemoteCommit-*.tar")) {
+        if (file_exists("$litBasePath/cached-releases/$cacheCommit-$cacheRefHash-$beforeCachingHookHash.tar")) {
+            $tarFilePath = "$litBasePath/cached-releases/$cacheCommit-$cacheRefHash-$beforeCachingHookHash.tar";
+        } elseif (glob("$litBasePath/cached-releases/$cacheCommit-$cacheRefHash-*.tar")) {
             out("Cached release found but hook changed, rebuilding...\n");
+        } elseif (glob("$litBasePath/cached-releases/$cacheCommit-*.tar")) {
+            out("Cached release found but for a different ref, rebuilding...\n");
         }
 
         if ($tarFilePath !== '') {
@@ -288,7 +296,7 @@ if ($sourceType === 'git') {
                 out("Wanted to run \"$projectBasePath/hooks/before-caching.sh\" but it does not exist\n");
             }
 
-            $state->stagingDirectoryPath = "$litBasePath/cached-releases/{$state->currentCommit}-$beforeCachingHookHash";
+            $state->stagingDirectoryPath = "$litBasePath/cached-releases/".substr($state->currentCommit, 0, 12)."-$cacheRefHash-$beforeCachingHookHash";
             $tarFilePath = "{$state->stagingDirectoryPath}.tar";
 
             delete_directory($state->stagingDirectoryPath);
