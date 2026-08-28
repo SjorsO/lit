@@ -264,7 +264,11 @@ if ($sourceType === 'git') {
         } else {
             $state->tempDirectoryPath = "$litBasePath/cached-releases/wip_".uuid();
 
-            mkdir($state->tempDirectoryPath, 0777, true);
+            if (! mkdir($state->tempDirectoryPath, 0777, true)) {
+                out("Failed to create \"{$state->tempDirectoryPath}\"\n");
+
+                lit_exit(1);
+            }
 
             out('Cloning repository... ');
 
@@ -276,7 +280,11 @@ if ($sourceType === 'git') {
 
             out("\n");
 
-            chdir($state->tempDirectoryPath);
+            if (! chdir($state->tempDirectoryPath)) {
+                out("Failed to enter \"{$state->tempDirectoryPath}\"\n");
+
+                lit_exit(1);
+            }
 
             [$revParseStatusCode, $revParseOutput] = run_command_and_capture_stdout(['git', 'rev-parse', 'HEAD']);
 
@@ -305,9 +313,17 @@ if ($sourceType === 'git') {
                 unlink($tarFilePath);
             }
 
-            chdir("$litBasePath/cached-releases");
+            if (! chdir("$litBasePath/cached-releases")) {
+                out("Failed to enter \"$litBasePath/cached-releases\"\n");
 
-            rename($state->tempDirectoryPath, $state->stagingDirectoryPath);
+                lit_exit(1);
+            }
+
+            if (! rename($state->tempDirectoryPath, $state->stagingDirectoryPath)) {
+                out("Failed to move the clone to \"{$state->stagingDirectoryPath}\"\n");
+
+                lit_exit(1);
+            }
 
             $zstdIsAvailable = trim((string) shell_exec('command -v zstd 2>/dev/null')) !== '';
 
@@ -331,11 +347,20 @@ if ($sourceType === 'git') {
         out("\n");
         out("Creating \"{$state->newReleaseDirectory}\" for the new release...\n");
 
-        mkdir($state->newReleaseDirectory);
+        if (! mkdir($state->newReleaseDirectory)) {
+            out("Failed to create \"{$state->newReleaseDirectory}\"\n");
+
+            lit_exit(1);
+        }
 
         $state->releaseDirectoryCreated = true;
 
-        chdir($state->newReleaseDirectory);
+        // Never extract into the wrong directory
+        if (! chdir($state->newReleaseDirectory)) {
+            out("Failed to enter \"{$state->newReleaseDirectory}\"\n");
+
+            lit_exit(1);
+        }
 
         out('Extracting release... ');
 
@@ -351,11 +376,19 @@ if ($sourceType === 'git') {
     } else {
         out("Creating \"{$state->newReleaseDirectory}\" for the new release...\n");
 
-        mkdir($state->newReleaseDirectory);
+        if (! mkdir($state->newReleaseDirectory)) {
+            out("Failed to create \"{$state->newReleaseDirectory}\"\n");
+
+            lit_exit(1);
+        }
 
         $state->releaseDirectoryCreated = true;
 
-        chdir($state->newReleaseDirectory);
+        if (! chdir($state->newReleaseDirectory)) {
+            out("Failed to enter \"{$state->newReleaseDirectory}\"\n");
+
+            lit_exit(1);
+        }
 
         out('Cloning repository... ');
 
@@ -390,8 +423,10 @@ if ($sourceType === 'git') {
     $bundleHashUrl = "$bundleUrl.hash";
     $remoteBundleHashFromHashFile = '';
 
-    if (! is_dir("$litBasePath/cached-releases")) {
-        mkdir("$litBasePath/cached-releases", 0777, true);
+    if (! is_dir("$litBasePath/cached-releases") && ! mkdir("$litBasePath/cached-releases", 0777, true)) {
+        out("Failed to create \"$litBasePath/cached-releases\"\n");
+
+        lit_exit(1);
     }
 
     // A cached bundle is already the exact deployed bundle, no need to check the remote
@@ -459,7 +494,11 @@ if ($sourceType === 'git') {
     if ($cachedBundlePath !== '') {
         out("Using cached bundle (hash: $cachedBundleHash)\n");
 
-        copy($cachedBundlePath, $tempBundlePath);
+        if (! copy($cachedBundlePath, $tempBundlePath)) {
+            out("Failed to copy the cached bundle to \"$tempBundlePath\"\n");
+
+            lit_exit(1);
+        }
 
         touch($cachedBundlePath);
 
@@ -520,7 +559,11 @@ if ($sourceType === 'git') {
         if (! file_exists("$litBasePath/cached-releases/{$state->newBundleHash}.tar")) {
             out("Adding bundle to cache ($litBasePath/cached-releases/{$state->newBundleHash}.tar)\n");
 
-            copy($tempBundlePath, "$litBasePath/cached-releases/{$state->newBundleHash}.tar");
+            if (! copy($tempBundlePath, "$litBasePath/cached-releases/{$state->newBundleHash}.tar")) {
+                out("Failed to add the bundle to the cache\n");
+
+                lit_exit(1);
+            }
         } else {
             out("Bundle exists in cache, but using the downloaded bundle instead\n");
 
@@ -546,13 +589,26 @@ if ($sourceType === 'git') {
 
     out("Creating \"{$state->newReleaseDirectory}\" for the new release...\n");
 
-    mkdir($state->newReleaseDirectory);
+    if (! mkdir($state->newReleaseDirectory)) {
+        out("Failed to create \"{$state->newReleaseDirectory}\"\n");
+
+        lit_exit(1);
+    }
 
     $state->releaseDirectoryCreated = true;
 
-    chdir($state->newReleaseDirectory);
+    // Never extract into the wrong directory
+    if (! chdir($state->newReleaseDirectory)) {
+        out("Failed to enter \"{$state->newReleaseDirectory}\"\n");
 
-    rename($tempBundlePath, "{$state->newReleaseDirectory}/lit-bundle.tar");
+        lit_exit(1);
+    }
+
+    if (! rename($tempBundlePath, "{$state->newReleaseDirectory}/lit-bundle.tar")) {
+        out("Failed to move the bundle into \"{$state->newReleaseDirectory}\"\n");
+
+        lit_exit(1);
+    }
 
     out('Extracting bundle... ');
 
@@ -602,21 +658,31 @@ if ($sourceType === 'git') {
 }
 
 // Laravel needs this directory, make sure it exists even if it was excluded from the bundle.
-if (! is_dir("{$state->newReleaseDirectory}/bootstrap/cache")) {
-    mkdir("{$state->newReleaseDirectory}/bootstrap/cache", 0777, true);
+if (! is_dir("{$state->newReleaseDirectory}/bootstrap/cache") && ! mkdir("{$state->newReleaseDirectory}/bootstrap/cache", 0777, true)) {
+    out("Failed to create \"{$state->newReleaseDirectory}/bootstrap/cache\"\n");
+
+    lit_exit(1);
 }
 
 out("Creating a symlink to the storage directory\n");
 
 delete_directory("{$state->newReleaseDirectory}/storage");
 
-run_command(['ln', is_macos() ? '-nsf' : '-nsfr', $realStorageDirectoryPath, "{$state->newReleaseDirectory}/storage"]);
+$lnStatusCode = run_command(['ln', is_macos() ? '-nsf' : '-nsfr', $realStorageDirectoryPath, "{$state->newReleaseDirectory}/storage"]);
+
+if ($lnStatusCode !== 0) {
+    lit_exit($lnStatusCode);
+}
 
 out("Creating a symlink to the .env file\n");
 
 delete_file("{$state->newReleaseDirectory}/.env");
 
-run_command(['ln', is_macos() ? '-nsf' : '-nsfr', $realEnvFilePath, "{$state->newReleaseDirectory}/.env"]);
+$lnStatusCode = run_command(['ln', is_macos() ? '-nsf' : '-nsfr', $realEnvFilePath, "{$state->newReleaseDirectory}/.env"]);
+
+if ($lnStatusCode !== 0) {
+    lit_exit($lnStatusCode);
+}
 
 if (! $cachingEnabled && file_exists("$projectBasePath/hooks/before-caching.sh")) {
     out("Hook \"hooks/before-caching.sh\" exists but will not be used because release caching is disabled\n");
@@ -639,7 +705,12 @@ out("Releasing the new deployment \"{$state->newReleaseDirectory}\"\n");
 touch($state->newReleaseDirectory);
 
 // Create a symlink to enable the release
-run_command(['ln', is_macos() ? '-nsf' : '-nsfr', $state->newReleaseDirectory, $currentDirectoryPath]);
+$lnStatusCode = run_command(['ln', is_macos() ? '-nsf' : '-nsfr', $state->newReleaseDirectory, $currentDirectoryPath]);
+
+// The release never went live when the symlink failed, exit before marking it released
+if ($lnStatusCode !== 0) {
+    lit_exit($lnStatusCode);
+}
 
 $state->wasReleased = true;
 
