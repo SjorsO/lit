@@ -285,7 +285,6 @@ Cloning repository...
 Creating a symlink to the storage directory
 Creating a symlink to the .env file
 Releasing the new deployment "$projectPath/releases/7"
-Deleting old release directory "$projectPath/releases/1"...
 Finished successfully (in X seconds)
 EXPECTED, $output);
 

@@ -643,6 +643,11 @@ run_command(['ln', is_macos() ? '-nsf' : '-nsfr', $state->newReleaseDirectory, $
 
 $state->wasReleased = true;
 
+// Touch the previous release to start the 1-hour grace timer.
+if ($previousReleaseDirectory !== '' && is_dir($previousReleaseDirectory)) {
+    touch($previousReleaseDirectory);
+}
+
 if ($sourceType === 'git') {
     update_lit_state($projectBasePath, 'git_commit_sha', $state->currentCommit);
 } elseif ($sourceType === 'bundle') {
@@ -662,10 +667,7 @@ if (file_exists("$projectBasePath/hooks/after-release.sh")) {
     out("Wanted to run \"$projectBasePath/hooks/after-release.sh\" but it does not exist\n");
 }
 
-// Prune old releases: delete any release older than an hour, and keep at most the 6 most recent.
-//
-// We keep multiple recent releases because quick deployments in a row could otherwise delete a
-// release that a long-running job is still referencing.
+
 $releaseIds = array_map('basename', glob("$releasesDirectory/*") ?: []);
 
 // Sanity check, we should never delete something unexpected
@@ -678,12 +680,12 @@ foreach ($releaseIds as $releaseId) {
 rsort($releaseIds, SORT_NUMERIC);
 
 // Skip the first id, that is the release we just deployed
-foreach (array_slice($releaseIds, 1) as $index => $oldReleaseId) {
-    // The new release is not in the list, so ">= 5" means "beyond the 6 most recent"
-    $isBeyondSixMostRecent = $index >= 5;
-    $isOlderThanAnHour = filemtime("$releasesDirectory/$oldReleaseId") < time() - 60 * 60;
-
-    if ($isOlderThanAnHour || $isBeyondSixMostRecent) {
+foreach (array_slice($releaseIds, 1) as $oldReleaseId) {
+    // Prune old releases: delete any release replaced more than an hour ago.
+    //
+    // We give old releases an hour grace time because a long-running job could still be referencing the
+    // old release. Deleting the release while the job is still running causes errors.
+    if (filemtime("$releasesDirectory/$oldReleaseId") < time() - 60 * 60) {
         out("Deleting old release directory \"$releasesDirectory/$oldReleaseId\"... ");
 
         delete_directory("$releasesDirectory/$oldReleaseId");

@@ -2,7 +2,8 @@
 
 require __DIR__.'/../test-helpers.php';
 
-// Test that deploy cleans up old releases, keeping only the 6 newest
+// Test that deploy keeps every release replaced less than an hour ago,
+// no matter how many there are. There is no cap on the release count.
 
 [$statusCode] = lit('init', 'https://github.com/SjorsO/lit.git');
 
@@ -15,7 +16,7 @@ neutralize_hooks($projectPath);
 
 chdir($projectPath);
 
-// Seed 6 dummy release directories as if prior deploys had run
+// Seed 6 fresh dummy release directories as if prior deploys just ran
 foreach ([1, 2, 3, 4, 5, 6] as $releaseId) {
     mkdir("$projectPath/releases/$releaseId");
     touch("$projectPath/releases/$releaseId/marker");
@@ -23,7 +24,7 @@ foreach ([1, 2, 3, 4, 5, 6] as $releaseId) {
 
 run_process(['ln', '-snf', "$projectPath/releases/6", "$projectPath/current"], $projectPath);
 
-// Deploy should create release 7 and delete release 1 (oldest beyond the 6 kept)
+// Deploy creates release 7, all fresh releases survive
 [$statusCode, $output] = lit('deploy');
 
 assert_same(0, $statusCode);
@@ -37,21 +38,12 @@ Cloning repository...
 Creating a symlink to the storage directory
 Creating a symlink to the .env file
 Releasing the new deployment "$projectPath/releases/7"
-Deleting old release directory "$projectPath/releases/1"...
 Finished successfully (in X seconds)
 EXPECTED, $output);
 
-assert_file_missing("$projectPath/releases/1");
-assert_directory_exists("$projectPath/releases/2");
-assert_directory_exists("$projectPath/releases/3");
-assert_directory_exists("$projectPath/releases/4");
-assert_directory_exists("$projectPath/releases/5");
-assert_directory_exists("$projectPath/releases/6");
-assert_directory_exists("$projectPath/releases/7");
-
 assert_string_contains(readlink("$projectPath/current"), 'releases/7');
 
-// Another deploy should create release 8 and delete release 2
+// Another deploy creates release 8, still nothing gets deleted
 [$statusCode, $output] = lit('deploy', '--force');
 
 assert_same(0, $statusCode);
@@ -67,18 +59,14 @@ Cloning repository...
 Creating a symlink to the storage directory
 Creating a symlink to the .env file
 Releasing the new deployment "$projectPath/releases/8"
-Deleting old release directory "$projectPath/releases/2"...
 Finished successfully (in X seconds)
 EXPECTED, $output);
 
-assert_file_missing("$projectPath/releases/1");
-assert_file_missing("$projectPath/releases/2");
-assert_directory_exists("$projectPath/releases/3");
-assert_directory_exists("$projectPath/releases/4");
-assert_directory_exists("$projectPath/releases/5");
-assert_directory_exists("$projectPath/releases/6");
-assert_directory_exists("$projectPath/releases/7");
-assert_directory_exists("$projectPath/releases/8");
+foreach ([1, 2, 3, 4, 5, 6, 7, 8] as $releaseId) {
+    assert_directory_exists("$projectPath/releases/$releaseId");
+}
+
+assert_string_contains(readlink("$projectPath/current"), 'releases/8');
 
 // Delete all releases and deploy again, the numbering should restart at 1
 // (the current symlink still exists, pointing at nothing)
