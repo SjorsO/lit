@@ -41,7 +41,12 @@ if ($previousReleaseDirectoryPath === '' && ($notIfFirstRelease ?? false)) {
     lit_exit(0);
 }
 
-if (! file_exists("$projectBasePath/.env")) {
+// Projects previously deployed with Deployer have a "shared" directory.
+$realEnvFilePath = file_exists("$projectBasePath/shared/.env")
+    ? "$projectBasePath/shared/.env"
+    : "$projectBasePath/.env";
+
+if (! file_exists($realEnvFilePath)) {
     out("Unable to $actionLabel, no .env file found\n");
 
     lit_exit(1);
@@ -49,7 +54,7 @@ if (! file_exists("$projectBasePath/.env")) {
 
 $appUrl = '';
 
-foreach (file("$projectBasePath/.env") as $envLine) {
+foreach (file($realEnvFilePath) as $envLine) {
     $envLine = trim(str_replace("\r", '', $envLine));
 
     if (str_starts_with($envLine, 'APP_URL=')) {

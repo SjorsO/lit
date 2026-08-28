@@ -125,3 +125,17 @@ unlink("$projectPath/.env");
 
 assert_same(1, $statusCode);
 assert_same('Unable to flush OPcache, no .env file found', $output);
+
+// A Deployer-style project keeps its .env in the "shared" directory
+mkdir("$projectPath/shared");
+
+file_put_contents("$projectPath/shared/.env", "APP_URL=https://shared-env.com\n");
+
+[$statusCode, $output] = lit('flush-opcache');
+
+assert_same(0, $statusCode);
+
+assert_same(<<<'EXPECTED'
+Calling "https://shared-env.com" to flush OPcache.
+OPcache flushed successfully (simulated).
+EXPECTED, $output);
