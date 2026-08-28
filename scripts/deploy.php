@@ -122,7 +122,7 @@ register_cleanup(function (int $exitCode) use ($state, $projectBasePath, $source
 
     if ($exitCode !== 0) {
         if (file_exists("$projectBasePath/hooks/on-failure.sh")) {
-            if (run_hook("$projectBasePath/hooks/on-failure.sh", [$projectBasePath, $state->wasReleased ? 'true' : 'false']) !== 0) {
+            if (run_command(['bash', '-e', "$projectBasePath/hooks/on-failure.sh", $projectBasePath, $state->wasReleased ? 'true' : 'false']) !== 0) {
                 out("The on-failure hook failed\n");
             }
         } else {
@@ -287,7 +287,7 @@ if ($sourceType === 'git') {
 
                 out("Running \"$projectBaseName/hooks/before-caching.sh\"...\n");
 
-                $hookStatusCode = run_hook($beforeCachingHookPath, [$state->tempDirectoryPath, $projectBasePath, $litBasePath]);
+                $hookStatusCode = run_command(['bash', '-e', $beforeCachingHookPath, $state->tempDirectoryPath, $projectBasePath, $litBasePath]);
 
                 if ($hookStatusCode !== 0) {
                     lit_exit($hookStatusCode);
@@ -623,7 +623,7 @@ if (! $cachingEnabled && file_exists("$projectBasePath/hooks/before-caching.sh")
 }
 
 if (file_exists("$projectBasePath/hooks/before-release.sh")) {
-    $hookStatusCode = run_hook("$projectBasePath/hooks/before-release.sh", [$projectBasePath, $state->newReleaseDirectory, $litBasePath, $previousReleaseDirectory]);
+    $hookStatusCode = run_command(['bash', '-e', "$projectBasePath/hooks/before-release.sh", $projectBasePath, $state->newReleaseDirectory, $litBasePath, $previousReleaseDirectory]);
 
     if ($hookStatusCode !== 0) {
         lit_exit($hookStatusCode);
@@ -658,7 +658,7 @@ if ($sourceType === 'git') {
 update_lit_state($projectBasePath, 'deployed_dotenv_hash', sha1_file($realEnvFilePath));
 
 if (file_exists("$projectBasePath/hooks/after-release.sh")) {
-    $hookStatusCode = run_hook("$projectBasePath/hooks/after-release.sh", [$projectBasePath, $state->newReleaseDirectory, $litBasePath, $previousReleaseDirectory]);
+    $hookStatusCode = run_command(['bash', '-e', "$projectBasePath/hooks/after-release.sh", $projectBasePath, $state->newReleaseDirectory, $litBasePath, $previousReleaseDirectory]);
 
     if ($hookStatusCode !== 0) {
         lit_exit($hookStatusCode);

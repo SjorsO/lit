@@ -91,6 +91,11 @@ foreach ([2 => 130, 15 => 143] as $signal => $expectedStatusCode) {
         exit(1);
     }
 
+    // The signal notice was printed on its own line
+    $expectedNotice = $signal === 2 ? '(interrupt received)' : '(terminate signal received)';
+
+    assert_string_contains($output, "\n$expectedNotice\n");
+
     // The release was already released, it must be kept
     assert_string_not_contains($output, 'Deleting new but unreleased release directory');
     assert_string_contains($output, 'Warning: The new deployment was still released!');

@@ -2,8 +2,8 @@
 
 require __DIR__.'/scripts/helpers.php';
 
-if (! extension_loaded('pcntl')) {
-    echo "Lit requires the pcntl PHP extension\n";
+if (! extension_loaded('pcntl') || ! extension_loaded('posix')) {
+    echo "Lit requires the pcntl and posix PHP extensions\n";
 
     lit_exit(1);
 }
@@ -18,6 +18,7 @@ $GLOBALS['lit_exit_code'] = 0;
 $GLOBALS['lit_output_log_path'] = null;
 $GLOBALS['current_child_process'] = null;
 $GLOBALS['current_run_result'] = '';
+$GLOBALS['is_terminating'] = false;
 
 register_shutdown_function(function () {
     foreach (array_reverse($GLOBALS['cleanup_stack']) as $closure) {
@@ -29,9 +30,22 @@ pcntl_async_signals(true);
 
 foreach ([SIGINT, SIGTERM, SIGHUP] as $signal) {
     pcntl_signal($signal, function (int $signal) {
-        if ($GLOBALS['current_child_process']) {
-            proc_terminate($GLOBALS['current_child_process'], SIGTERM);
+        // Ignore repeated signals while already stopping
+        if ($GLOBALS['is_terminating']) {
+            return;
         }
+
+        $GLOBALS['is_terminating'] = true;
+
+        $signalName = match ($signal) {
+            SIGINT => 'interrupt',
+            SIGTERM => 'terminate signal',
+            SIGHUP => 'hangup signal',
+        };
+
+        out("\n($signalName received)\n");
+
+        terminate_current_child_process_tree();
 
         lit_exit(128 + $signal);
     }, restart_syscalls: false);

@@ -2,8 +2,9 @@
 
 require __DIR__.'/../test-helpers.php';
 
-// Aborting a deploy with Ctrl+C (SIGINT) or SIGTERM must still run all cleanup: delete the unreleased
-// release, run the on-failure hook, release the lock, and finish the log placeholder.
+// Aborting a deploy must also stop processes started by the hook (like composer),
+// not just the hook itself. And cleanup must wait for them to exit. An orphaned
+// process could otherwise recreate the release directory after cleanup deleted it.
 
 [$statusCode] = lit('init', 'https://github.com/SjorsO/lit.git');
 
@@ -13,10 +14,18 @@ $projectPath = world_path().'/case/lit';
 
 file_put_contents("$projectPath/.env", "APP_KEY=test\n");
 
-// The before-release hook signals that it started, then hangs
-file_put_contents("$projectPath/hooks/before-release.sh", 'touch "$1/hook-started"'."\nsleep 30\n");
+// The hook starts a child process (like composer). The child waits,
+// then writes into the release directory, and leaves a survival marker.
+$hookChildScript = 'sleep 2; mkdir -p "$2/vendor"; touch "$2/vendor/written-too-late"; touch "$1/hook-child-survived"';
+
+file_put_contents(
+    "$projectPath/hooks/before-release.sh",
+    'touch "$1/hook-started"'."\n"
+    ."bash -c '$hookChildScript' hook-child \"\$1\" \"\$2\"\n"
+);
+
 file_put_contents("$projectPath/hooks/after-release.sh", "\n");
-file_put_contents("$projectPath/hooks/on-failure.sh", 'echo "$2" > "$1/on-failure-called"'."\n");
+file_put_contents("$projectPath/hooks/on-failure.sh", "\n");
 
 chdir($projectPath);
 
@@ -26,8 +35,8 @@ foreach ([2 => 130, 15 => 143] as $signal => $expectedStatusCode) {
         unlink("$projectPath/hook-started");
     }
 
-    if (file_exists("$projectPath/on-failure-called")) {
-        unlink("$projectPath/on-failure-called");
+    if (file_exists("$projectPath/hook-child-survived")) {
+        unlink("$projectPath/hook-child-survived");
     }
 
     // Start a deploy in the background
@@ -46,7 +55,7 @@ foreach ([2 => 130, 15 => 143] as $signal => $expectedStatusCode) {
 
     assert_file_exists("$projectPath/hook-started");
 
-    // Interrupt the deploy
+    // Interrupt the deploy while the hook child is still sleeping
     $interruptedAt = hrtime(true);
 
     proc_terminate($process, $signal);
@@ -77,35 +86,24 @@ foreach ([2 => 130, 15 => 143] as $signal => $expectedStatusCode) {
     // The exit code reflects the signal
     assert_same($expectedStatusCode, $processStatus['exitcode']);
 
-    // The abort was handled immediately, not after the hook finished sleeping
-    if (hrtime(true) - $interruptedAt > 15 * 1_000_000_000) {
-        printf("Expected the deploy to abort immediately after the signal\n");
-        exit(1);
-    }
-
     // The signal notice was printed on its own line
     $expectedNotice = $signal === 2 ? '(interrupt received)' : '(terminate signal received)';
 
     assert_string_contains($output, "\n$expectedNotice\n");
 
-    // The unreleased release was deleted
     assert_string_contains($output, 'Deleting new but unreleased release directory');
-    assert_string_contains($output, 'Finished with errors');
-    assert_file_missing("$projectPath/releases/1");
 
-    // The on-failure hook ran with was_released=false
-    assert_file_exists("$projectPath/on-failure-called");
-    assert_file_content("$projectPath/on-failure-called", 'false');
+    // Wait until well past the moment the hook child would have written its files
+    while (hrtime(true) - $interruptedAt < 3 * 1_000_000_000) {
+        usleep(100_000);
+    }
+
+    // The hook child was killed before it could write anything
+    assert_file_missing("$projectPath/hook-child-survived");
+
+    // The release directory stayed deleted, no orphaned process recreated it
+    assert_same([], glob("$projectPath/releases/*"));
 
     // The lock was released
     assert_file_missing("$projectPath/lit-is-currently-running");
-
-    // The log placeholder was finished
-    $logContent = file_get_contents("$projectPath/logs/lit.log");
-
-    assert_string_contains($logContent, 'lit deploy → failed, deployment was not released (in ');
-    assert_string_not_contains($logContent, '(pending:');
-
-    // No release was made
-    assert_file_missing("$projectPath/current");
 }

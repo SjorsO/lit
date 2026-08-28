@@ -304,22 +304,11 @@ function wait_for_readable_pipes(array $pipes): void
 }
 
 // Streams stdout and stderr of the command through out(), returns the status code
-function run_command(array $command, ?string $stdinContent = null, ?string $currentDirectory = null): int
+function run_command(array $command, ?string $currentDirectory = null): int
 {
-    $descriptors = [1 => ['pipe', 'w'], 2 => ['redirect', 1]];
-
-    if ($stdinContent !== null) {
-        $descriptors[0] = ['pipe', 'r'];
-    }
-
-    $process = proc_open($command, $descriptors, $pipes, $currentDirectory);
+    $process = proc_open($command, [1 => ['pipe', 'w'], 2 => ['redirect', 1]], $pipes, $currentDirectory);
 
     $GLOBALS['current_child_process'] = $process;
-
-    if ($stdinContent !== null) {
-        fwrite($pipes[0], $stdinContent);
-        fclose($pipes[0]);
-    }
 
     stream_set_blocking($pipes[1], false);
 
@@ -394,12 +383,138 @@ function run_command_and_capture_stdout(array $command): array
     return [proc_close($process), $stdout];
 }
 
-// Hooks are run by piping them into bash, this has been proven to work reliably.
-// The -e ensures hooks fail properly. Symlinked hooks work because
-// file_get_contents follows symlinks.
-function run_hook(string $hookPath, array $hookArguments): int
+function list_all_processes(): ?array
 {
-    return run_command(['bash', '-se', '--', ...$hookArguments], file_get_contents($hookPath));
+    // Include "lstart" to prevent accidentally killing a reused pid.
+    $psOutput = (string) shell_exec('ps -A -o pid=,ppid=,lstart= 2>/dev/null');
+
+    $processes = [];
+
+    foreach (explode("\n", $psOutput) as $psLine) {
+        if (preg_match('/^\s*(\d+)\s+(\d+)\s+(\S.*\S)\s*$/', $psLine, $matches)) {
+            $processes[(int) $matches[1]] = [
+                'parent_pid' => (int) $matches[2],
+                'started_at' => $matches[3],
+            ];
+        }
+    }
+
+    // A good snapshot always contains this process itself
+    if (! isset($processes[getmypid()])) {
+        return null;
+    }
+
+    return $processes;
+}
+
+function get_descendant_processes(int $parentPid, array $allProcesses): array
+{
+    $childPidsByParentPid = [];
+
+    foreach ($allProcesses as $pid => $processInfo) {
+        $childPidsByParentPid[$processInfo['parent_pid']][] = $pid;
+    }
+
+    $descendants = [];
+    $queue = [$parentPid];
+
+    while ($queue !== []) {
+        foreach ($childPidsByParentPid[array_shift($queue)] ?? [] as $childPid) {
+            // The isset also protects against pid loops in broken "ps" output
+            if ($childPid === $parentPid || isset($descendants[$childPid])) {
+                continue;
+            }
+
+            $descendants[$childPid] = $allProcesses[$childPid]['started_at'];
+
+            $queue[] = $childPid;
+        }
+    }
+
+    return $descendants;
+}
+
+function send_signal_to_verified_process(int $pid, string $startedAt, int $signal, array $currentProcesses): void
+{
+    if ($pid <= 1 || $pid === getmypid()) {
+        return;
+    }
+
+    if (($currentProcesses[$pid]['started_at'] ?? '') !== $startedAt) {
+        return;
+    }
+
+    posix_kill($pid, $signal);
+}
+
+function terminate_current_child_process_tree(): void
+{
+    $process = $GLOBALS['current_child_process'];
+
+    if (! $process) {
+        return;
+    }
+
+    // The child itself is only signaled through the process resource. That is
+    // always safe: its pid can't be reused while the resource stays open.
+    $childPid = proc_get_status($process)['pid'];
+
+    // Remember the tree before killing anything, killing the child orphans
+    // its descendants and they would no longer be findable
+    $descendants = get_descendant_processes($childPid, list_all_processes() ?? []);
+
+    proc_terminate($process, SIGTERM);
+
+    $terminatedPids = [];
+    $forceKillAt = current_time_in_ms() + 10_000;
+    $giveUpAt = $forceKillAt + 5_000;
+
+    while (true) {
+        $childIsRunning = proc_get_status($process)['running'];
+        $currentProcesses = list_all_processes();
+
+        if ($currentProcesses !== null) {
+            // Forget descendants that died
+            $descendants = array_filter(
+                $descendants,
+                fn (string $startedAt, int $pid) => ($currentProcesses[$pid]['started_at'] ?? '') === $startedAt,
+                ARRAY_FILTER_USE_BOTH,
+            );
+        }
+
+        if (! $childIsRunning && $descendants === []) {
+            break;
+        }
+
+        $useForceKill = current_time_in_ms() >= $forceKillAt;
+
+        // Force kill processes that ignore the SIGTERM
+        if ($useForceKill) {
+            proc_terminate($process, SIGKILL);
+        }
+
+        if ($currentProcesses !== null) {
+            foreach ($descendants as $pid => $startedAt) {
+                if ($useForceKill) {
+                    send_signal_to_verified_process($pid, $startedAt, SIGKILL, $currentProcesses);
+                } elseif (! isset($terminatedPids[$pid])) {
+                    $terminatedPids[$pid] = true;
+
+                    send_signal_to_verified_process($pid, $startedAt, SIGTERM, $currentProcesses);
+                }
+            }
+        }
+
+        if (current_time_in_ms() >= $giveUpAt) {
+            break;
+        }
+
+        usleep(100_000);
+    }
+
+    proc_close($process);
+
+    $GLOBALS['current_child_process'] = null;
 }
 
 function acquire_lit_log_lock(string $projectBasePath): void
