@@ -14,13 +14,15 @@ $arguments = array_slice($argv, 1);
 $command = $arguments[0] ?? '';
 
 $GLOBALS['cleanup_stack'] = [];
-$GLOBALS['lit_exit_code'] = 0;
+$GLOBALS['lit_exit_code'] = 1;
 $GLOBALS['lit_output_log_path'] = null;
 $GLOBALS['current_child_process'] = null;
 $GLOBALS['current_run_result'] = '';
 $GLOBALS['is_terminating'] = false;
 
 register_shutdown_function(function () {
+    terminate_current_child_process_tree();
+
     foreach (array_reverse($GLOBALS['cleanup_stack']) as $closure) {
         $closure($GLOBALS['lit_exit_code']);
     }
@@ -30,12 +32,13 @@ pcntl_async_signals(true);
 
 foreach ([SIGINT, SIGTERM, SIGHUP] as $signal) {
     pcntl_signal($signal, function (int $signal) {
-        // Ignore repeated signals while already stopping
         if ($GLOBALS['is_terminating']) {
             return;
         }
 
         $GLOBALS['is_terminating'] = true;
+
+        $GLOBALS['lit_exit_code'] = 128 + $signal;
 
         $signalName = match ($signal) {
             SIGINT => 'interrupt',
@@ -167,3 +170,5 @@ if ($command === 'deploy') {
 
     lit_exit(1);
 }
+
+lit_exit(0);
