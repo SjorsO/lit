@@ -6,6 +6,11 @@
  * @var string[] $arguments
  */
 
+require_once __DIR__.'/deploy/cleanup.php';
+require_once __DIR__.'/deploy/git-source.php';
+require_once __DIR__.'/deploy/bundle-source.php';
+require_once __DIR__.'/deploy/prune.php';
+
 $firstOption = $arguments[1] ?? '';
 $secondOption = $arguments[2] ?? '';
 
@@ -44,8 +49,12 @@ $releasesDirectory = "$projectBasePath/releases";
 $currentDirectoryPath = "$projectBasePath/current";
 
 // Projects previously deployed with Deployer have a "shared" directory.
-$realStorageDirectoryPath = is_dir("$projectBasePath/shared/storage") ? "$projectBasePath/shared/storage" : "$projectBasePath/storage";
-$realEnvFilePath = file_exists("$projectBasePath/shared/.env") ? "$projectBasePath/shared/.env" : "$projectBasePath/.env";
+$realStorageDirectoryPath = is_dir("$projectBasePath/shared/storage")
+    ? "$projectBasePath/shared/storage"
+    : "$projectBasePath/storage";
+$realEnvFilePath = file_exists("$projectBasePath/shared/.env")
+    ? "$projectBasePath/shared/.env"
+    : "$projectBasePath/.env";
 
 if (! file_exists($realEnvFilePath) || filesize($realEnvFilePath) === 0) {
     touch($realEnvFilePath);
@@ -57,87 +66,23 @@ if (! file_exists($realEnvFilePath) || filesize($realEnvFilePath) === 0) {
     lit_exit(1);
 }
 
-$state = new stdClass;
-$state->releaseDirectoryCreated = false;
-$state->wasReleased = false;
-$state->newReleaseDirectory = '';
-$state->tempDirectoryPath = '';
-$state->stagingDirectoryPath = '';
-$state->currentRef = '';
-$state->currentRefType = 'branch';
-$state->currentCommit = '';
-$state->newBundleHash = '';
+$state = (object) [
+    'releaseDirectoryCreated' => false,
+    'wasReleased' => false,
+    'newReleaseDirectory' => '',
+    'tempDirectoryPath' => '',
+    'stagingDirectoryPath' => '',
+    'currentRef' => '',
+    'currentRefType' => 'branch',
+    'currentCommit' => '',
+    'newBundleHash' => '',
+    'cachingEnabled' => false,
+    'isForcing' => $isForcing,
+    'isRedeploying' => $isRedeploying,
+    'currentRemoteCommit' => $currentRemoteCommit,
+];
 
-register_cleanup(function (int $exitCode) use ($state, $projectBasePath, $sourceType, $startedAt) {
-    chdir($projectBasePath);
-
-    if ($state->releaseDirectoryCreated && ! $state->wasReleased) {
-        out("Deleting new but unreleased release directory \"{$state->newReleaseDirectory}\"\n");
-
-        delete_directory($state->newReleaseDirectory);
-    }
-
-    // Clean up temp directories from cache building if they still exist
-    if ($state->tempDirectoryPath !== '' && is_dir($state->tempDirectoryPath)) {
-        delete_directory($state->tempDirectoryPath);
-    }
-
-    if ($state->stagingDirectoryPath !== '' && is_dir($state->stagingDirectoryPath)) {
-        delete_directory($state->stagingDirectoryPath);
-    }
-
-    // An abort between download and extraction leaves the bundle behind
-    delete_file("$projectBasePath/bundle-for-current-deployment.tar");
-
-    if ($GLOBALS['current_run_result'] === '') {
-        $shortCommit = substr($state->currentCommit, 0, 11);
-        $result = null;
-
-        // "branch "main" (commit: abc123)", "tag "v1.0" (commit: abc123)", or "commit abc123"
-        $refDescription = $state->currentRefType === 'commit'
-            ? "commit $shortCommit"
-            : "{$state->currentRefType} \"{$state->currentRef}\" (commit: $shortCommit)";
-
-        if ($state->wasReleased && $exitCode !== 0 && $sourceType === 'git') {
-            $result = "had errors, still deployed $refDescription";
-        } elseif ($state->wasReleased && $exitCode !== 0 && $sourceType === 'bundle') {
-            $result = "had errors, still deployed bundle (hash: {$state->newBundleHash})";
-        } elseif ($state->wasReleased && $sourceType === 'git') {
-            $result = "deployed $refDescription";
-        } elseif ($state->wasReleased && $sourceType === 'bundle') {
-            $result = "deployed bundle (hash: {$state->newBundleHash})";
-        } elseif ($state->releaseDirectoryCreated) {
-            $result = 'failed, deployment was not released';
-        } elseif ($exitCode !== 0) {
-            $result = 'failed';
-        }
-
-        if ($result !== null) {
-            $GLOBALS['current_run_result'] = $result;
-        }
-    }
-
-    if ($state->wasReleased && $exitCode !== 0) {
-        out(">\n");
-        out("> Warning: The new deployment was still released!\n");
-        out(">\n");
-    }
-
-    if ($exitCode !== 0) {
-        if (file_exists("$projectBasePath/hooks/on-failure.sh")) {
-            if (run_command(['bash', '-e', "$projectBasePath/hooks/on-failure.sh", $projectBasePath, $state->wasReleased ? 'true' : 'false']) !== 0) {
-                out("The on-failure hook failed\n");
-            }
-        } else {
-            out("Wanted to run \"$projectBasePath/hooks/on-failure.sh\" but it does not exist\n");
-        }
-    }
-
-    $prettyRuntime = pretty_runtime(current_time_in_ms() - $startedAt);
-    $finishedWord = $exitCode !== 0 ? 'with errors' : 'successfully';
-
-    out("Finished $finishedWord (in $prettyRuntime)\n");
-});
+register_deploy_cleanup($state, $projectBasePath, $sourceType, $startedAt);
 
 foreach (glob("$releasesDirectory/*") ?: [] as $releasePath) {
     if (! preg_match('/^[0-9]+$/', basename($releasePath))) {
@@ -165,513 +110,23 @@ if (is_link($currentDirectoryPath)) {
 
 $litState = read_lit_state($projectBasePath);
 
-if ($sourceType === 'git') {
-    $gitRepositoryUrl = $litState['git_repository_url'];
-    $state->currentRef = $litState['git_ref'] ?? '';
-    $state->currentRefType = $litState['git_ref_type'] ?? 'branch';
-    $state->currentCommit = $litState['git_commit_sha'] ?? 'not deployed yet';
-
-    // Remember the old commit, the commit log draws an arrow from it
-    $previousCommit = $litState['git_commit_sha'] ?? '';
-
-    // A redeploy pins the exact commit, even when the ref is a branch or tag
-    if ($isRedeploying) {
-        $state->currentRef = $currentRemoteCommit;
-        $state->currentRefType = 'commit';
-    }
-
-    // If we are deploying after a "lit checkout", then we already have the commit.
-    if ($currentRemoteCommit === '') {
-        if ($state->currentRefType === 'commit') {
-            // The ref is the commit, nothing to resolve
-            $currentRemoteCommit = $state->currentRef;
-        } else {
-            out("Reading {$state->currentRefType} \"{$state->currentRef}\" of \"$gitRepositoryUrl\"... ");
-
-            [$branchCommit, $tagCommit] = resolve_remote_ref($gitRepositoryUrl, $state->currentRef);
-
-            $currentRemoteCommit = $state->currentRefType === 'tag' ? $tagCommit : $branchCommit;
-
-            out("\n");
-
-            // Stop right away, deploying an empty commit would fail later at the clone
-            if ($currentRemoteCommit === '') {
-                out(ucfirst($state->currentRefType)." \"{$state->currentRef}\" does not exist on the remote\n");
-
-                $GLOBALS['current_run_result'] = "failed (the {$state->currentRefType} does not exist on the remote)";
-
-                lit_exit(1);
-            }
-        }
-    }
-
-    if (! $isRedeploying && $state->currentCommit === $currentRemoteCommit) {
-        $shortRemoteCommit = substr($currentRemoteCommit, 0, 11);
-
-        if ($state->currentRefType === 'branch') {
-            out("Latest commit of \"{$state->currentRef}\" is already deployed ($shortRemoteCommit)\n");
-        } elseif ($state->currentRefType === 'tag') {
-            out("Tag \"{$state->currentRef}\" is already deployed ($shortRemoteCommit)\n");
-        } else {
-            out("Commit is already deployed ($shortRemoteCommit)\n");
-        }
-
-        if ($isForcing) {
-            out("Using \"--force\", redeploying...\n");
-        } else {
-            out("Run \"lit deploy --force\" to redeploy\n");
-
-            $GLOBALS['current_run_result'] = 'aborted, this commit is already deployed';
-
-            lit_exit(0);
-        }
-    }
-
-    $cachingEnabled = ($litState['git_release_caching_enabled'] ?? false) === true;
-
-    if ($cachingEnabled) {
-        if (is_link("$projectBasePath/hooks/before-caching.sh")) {
-            $beforeCachingHookPath = realpath("$projectBasePath/hooks/before-caching.sh");
-            $beforeCachingHookHash = substr(sha1_file($beforeCachingHookPath), 0, 12);
-        } elseif (file_exists("$projectBasePath/hooks/before-caching.sh")) {
-            $beforeCachingHookPath = "$projectBasePath/hooks/before-caching.sh";
-            $beforeCachingHookHash = substr(sha1_file($beforeCachingHookPath), 0, 12);
-        } else {
-            $beforeCachingHookPath = '';
-            $beforeCachingHookHash = 'no-hook';
-        }
-
-        // The ref is part of the cache key: two refs can point at the same commit
-        // but produce different clones, since ".git" records the ref (e.g. a branch
-        // head vs. a tag on the same commit).
-        $cacheCommit = substr($currentRemoteCommit, 0, 12);
-        $cacheRefHash = substr(sha1("{$state->currentRefType}:{$state->currentRef}"), 0, 12);
-
-        $tarFilePath = '';
-
-        if (file_exists("$litBasePath/cached-releases/$cacheCommit-$cacheRefHash-$beforeCachingHookHash.tar")) {
-            $tarFilePath = "$litBasePath/cached-releases/$cacheCommit-$cacheRefHash-$beforeCachingHookHash.tar";
-        } elseif (glob("$litBasePath/cached-releases/$cacheCommit-$cacheRefHash-*.tar")) {
-            out("Cached release found but hook changed, rebuilding...\n");
-        } elseif (glob("$litBasePath/cached-releases/$cacheCommit-*.tar")) {
-            out("Cached release found but for a different ref, rebuilding...\n");
-        }
-
-        if ($tarFilePath !== '') {
-            out('Reusing deployment from cache');
-
-            // Update timestamp so this cache entry isn't pruned
-            touch($tarFilePath);
-
-            $state->currentCommit = $currentRemoteCommit;
-        } else {
-            $state->tempDirectoryPath = "$litBasePath/cached-releases/wip_".uuid();
-
-            if (! mkdir($state->tempDirectoryPath, 0777, true)) {
-                out("Failed to create \"{$state->tempDirectoryPath}\"\n");
-
-                lit_exit(1);
-            }
-
-            out('Cloning repository... ');
-
-            $cloneStatusCode = clone_git_ref_into($gitRepositoryUrl, $state->currentRef, $state->currentRefType, $state->tempDirectoryPath);
-
-            if ($cloneStatusCode !== 0) {
-                lit_exit($cloneStatusCode);
-            }
-
-            out("\n");
-
-            if (! chdir($state->tempDirectoryPath)) {
-                out("Failed to enter \"{$state->tempDirectoryPath}\"\n");
-
-                lit_exit(1);
-            }
-
-            [$revParseStatusCode, $revParseOutput] = run_command_and_capture_stdout(['git', 'rev-parse', 'HEAD']);
-
-            $state->currentCommit = trim($revParseOutput);
-
-            if ($beforeCachingHookPath !== '') {
-                $projectBaseName = basename($projectBasePath);
-
-                out("Running \"$projectBaseName/hooks/before-caching.sh\"...\n");
-
-                $hookStatusCode = run_command(['bash', '-e', $beforeCachingHookPath, $state->tempDirectoryPath, $projectBasePath, $litBasePath]);
-
-                if ($hookStatusCode !== 0) {
-                    lit_exit($hookStatusCode);
-                }
-            } else {
-                out("Wanted to run \"$projectBasePath/hooks/before-caching.sh\" but it does not exist\n");
-            }
-
-            $state->stagingDirectoryPath = "$litBasePath/cached-releases/".substr($state->currentCommit, 0, 12)."-$cacheRefHash-$beforeCachingHookHash";
-            $tarFilePath = "{$state->stagingDirectoryPath}.tar";
-
-            delete_directory($state->stagingDirectoryPath);
-
-            if (file_exists($tarFilePath)) {
-                unlink($tarFilePath);
-            }
-
-            if (! chdir("$litBasePath/cached-releases")) {
-                out("Failed to enter \"$litBasePath/cached-releases\"\n");
-
-                lit_exit(1);
-            }
-
-            if (! rename($state->tempDirectoryPath, $state->stagingDirectoryPath)) {
-                out("Failed to move the clone to \"{$state->stagingDirectoryPath}\"\n");
-
-                lit_exit(1);
-            }
-
-            $zstdIsAvailable = trim((string) shell_exec('command -v zstd 2>/dev/null')) !== '';
-
-            if ($zstdIsAvailable) {
-                out('Caching release... ');
-
-                $tarStatusCode = run_command(['tar', '--use-compress-program', 'zstd -T0 -3', '-cf', $tarFilePath, basename($state->stagingDirectoryPath)]);
-            } else {
-                out('Caching release... (tip: install "zstd" for faster caching)');
-
-                $tarStatusCode = run_command(['tar', '-czf', $tarFilePath, basename($state->stagingDirectoryPath)]);
-            }
-
-            if ($tarStatusCode !== 0) {
-                lit_exit($tarStatusCode);
-            }
-
-            delete_directory($state->stagingDirectoryPath);
-        }
-
-        out("\n");
-        out("Creating \"{$state->newReleaseDirectory}\" for the new release...\n");
-
-        if (! mkdir($state->newReleaseDirectory)) {
-            out("Failed to create \"{$state->newReleaseDirectory}\"\n");
-
-            lit_exit(1);
-        }
-
-        $state->releaseDirectoryCreated = true;
-
-        // Never extract into the wrong directory
-        if (! chdir($state->newReleaseDirectory)) {
-            out("Failed to enter \"{$state->newReleaseDirectory}\"\n");
-
-            lit_exit(1);
-        }
-
-        out('Extracting release... ');
-
-        $tarStatusCode = run_command(['tar', '--strip-components=1', '--extract', '--file', $tarFilePath]);
-
-        if ($tarStatusCode !== 0) {
-            lit_exit($tarStatusCode);
-        }
-
-        out("\n");
-
-        print_recent_commits($state->newReleaseDirectory, $previousCommit);
-    } else {
-        out("Creating \"{$state->newReleaseDirectory}\" for the new release...\n");
-
-        if (! mkdir($state->newReleaseDirectory)) {
-            out("Failed to create \"{$state->newReleaseDirectory}\"\n");
-
-            lit_exit(1);
-        }
-
-        $state->releaseDirectoryCreated = true;
-
-        if (! chdir($state->newReleaseDirectory)) {
-            out("Failed to enter \"{$state->newReleaseDirectory}\"\n");
-
-            lit_exit(1);
-        }
-
-        out('Cloning repository... ');
-
-        $cloneStatusCode = clone_git_ref_into($gitRepositoryUrl, $state->currentRef, $state->currentRefType, $state->newReleaseDirectory);
-
-        if ($cloneStatusCode !== 0) {
-            lit_exit($cloneStatusCode);
-        }
-
-        out("\n");
-
-        [$revParseStatusCode, $revParseOutput] = run_command_and_capture_stdout(['git', 'rev-parse', 'HEAD']);
-
-        $state->currentCommit = trim($revParseOutput);
-
-        print_recent_commits($state->newReleaseDirectory, $previousCommit);
-    }
-} elseif ($sourceType === 'bundle') {
-    $bundleUrl = $litState['bundle_url'];
-    $currentBundleHash = $litState['bundle_hash'] ?? 'not deployed yet';
-
-    $cachingEnabled = false;
-
-    // This key is only for git deployments, it should never exist unless the project
-    // was incorrectly converted from git to a bundle.
-    if (array_key_exists('git_release_caching_enabled', $litState)) {
-        unset($litState['git_release_caching_enabled']);
-
-        write_lit_state($projectBasePath, $litState);
-    }
-
-    $bundleHashUrl = "$bundleUrl.hash";
-    $remoteBundleHashFromHashFile = '';
-
-    if (! is_dir("$litBasePath/cached-releases") && ! mkdir("$litBasePath/cached-releases", 0777, true)) {
-        out("Failed to create \"$litBasePath/cached-releases\"\n");
-
-        lit_exit(1);
-    }
-
-    // A cached bundle is already the exact deployed bundle, no need to check the remote
-    $redeployBundleIsCached = $isRedeploying && file_exists("$litBasePath/cached-releases/$currentBundleHash.tar");
-
-    if (! $redeployBundleIsCached) {
-        // To avoid downloading the full bundle, download just a file containing the bundle hash.
-        out("Checking bundle version from \"$bundleHashUrl\"... ");
-
-        [$curlStatusCode, $curlResult] = run_command_and_capture(['curl', '--fail', '--silent', '--show-error', '--location', '--write-out', "\n__CURL_TIME__:%{time_total}", $bundleHashUrl]);
-
-        $curlTime = '0';
-        $curlOutputLines = [];
-
-        foreach (explode("\n", $curlResult) as $curlLine) {
-            if (str_starts_with($curlLine, '__CURL_TIME__:')) {
-                $curlTime = substr($curlLine, strlen('__CURL_TIME__:'));
-            } else {
-                $curlOutputLines[] = $curlLine;
-            }
-        }
-
-        $curlOutput = trim(implode("\n", $curlOutputLines));
-
-        out(sprintf("(in %.2f seconds)\n", (float) $curlTime));
-
-        if ($curlStatusCode === 0) {
-            $remoteBundleHashFromHashFile = preg_replace('/\s+/', '', $curlOutput);
-
-            if (! preg_match('/^[a-fA-F0-9]{40}$/', $remoteBundleHashFromHashFile)) {
-                out("Warning: \"$bundleHashUrl\" does not contain a valid SHA1 hash\n");
-                out("Hash file contents: $curlOutput\n");
-
-                $remoteBundleHashFromHashFile = '';
-            } elseif ($isRedeploying && $currentBundleHash !== $remoteBundleHashFromHashFile) {
-                out("The remote bundle (hash: $remoteBundleHashFromHashFile) does not match the deployed bundle (hash: $currentBundleHash)\n");
-                out("Cannot redeploy the exact same bundle\n");
-
-                $GLOBALS['current_run_result'] = 'failed (the remote bundle has changed)';
-
-                lit_exit(1);
-            } elseif (! $isRedeploying && ! $isForcing && $currentBundleHash === $remoteBundleHashFromHashFile) {
-                out("Bundle is already deployed (hash: $remoteBundleHashFromHashFile)\n");
-                out("Run \"lit deploy --force\" to redeploy\n");
-
-                $GLOBALS['current_run_result'] = 'aborted, same bundle is already deployed';
-
-                lit_exit(0);
-            }
-        } else {
-            out("Warning: $curlOutput\n");
-        }
-    }
-
-    $tempBundlePath = "$projectBasePath/bundle-for-current-deployment.tar";
-
-    // Try to find bundle in cache, a redeploy looks for the deployed hash
-    $cachedBundleHash = $isRedeploying ? $currentBundleHash : $remoteBundleHashFromHashFile;
-    $cachedBundlePath = '';
-
-    if ($cachedBundleHash !== '' && file_exists("$litBasePath/cached-releases/$cachedBundleHash.tar")) {
-        $cachedBundlePath = "$litBasePath/cached-releases/$cachedBundleHash.tar";
-    }
-
-    if ($cachedBundlePath !== '') {
-        out("Using cached bundle (hash: $cachedBundleHash)\n");
-
-        if (! copy($cachedBundlePath, $tempBundlePath)) {
-            out("Failed to copy the cached bundle to \"$tempBundlePath\"\n");
-
-            lit_exit(1);
-        }
-
-        touch($cachedBundlePath);
-
-        $state->newBundleHash = $cachedBundleHash;
-    } else {
-        out("Downloading bundle from \"$bundleUrl\"... ");
-
-        delete_file($tempBundlePath);
-
-        [$curlStatusCode, $curlResult] = run_command_and_capture(['curl', '--fail', '--silent', '--show-error', '--location', '--write-out', "\n__CURL_TIME__:%{time_total}", $bundleUrl, '-o', $tempBundlePath]);
-
-        $curlTime = '0';
-        $curlOutputLines = [];
-
-        foreach (explode("\n", $curlResult) as $curlLine) {
-            if (str_starts_with($curlLine, '__CURL_TIME__:')) {
-                $curlTime = substr($curlLine, strlen('__CURL_TIME__:'));
-            } else {
-                $curlOutputLines[] = $curlLine;
-            }
-        }
-
-        if ($curlStatusCode !== 0) {
-            out("\n");
-            out("Failed to download bundle from \"$bundleUrl\"\n");
-            out(trim(implode("\n", $curlOutputLines))."\n");
-
-            $GLOBALS['current_run_result'] = 'failed to download bundle';
-
-            delete_file($tempBundlePath);
-
-            lit_exit(1);
-        }
-
-        $bundleSize = human_file_size(filesize($tempBundlePath));
-
-        out(sprintf("($bundleSize in %.2f seconds)\n", (float) $curlTime));
-
-        $state->newBundleHash = sha1_file($tempBundlePath);
-
-        // A redeploy must get the exact deployed bundle back
-        if ($isRedeploying && $state->newBundleHash !== $currentBundleHash) {
-            out("The downloaded bundle (hash: {$state->newBundleHash}) does not match the deployed bundle (hash: $currentBundleHash)\n");
-            out("Cannot redeploy the exact same bundle\n");
-
-            $GLOBALS['current_run_result'] = 'failed (the remote bundle has changed)';
-
-            delete_file($tempBundlePath);
-
-            lit_exit(1);
-        }
-
-        if ($remoteBundleHashFromHashFile !== '' && $remoteBundleHashFromHashFile !== $state->newBundleHash) {
-            out("Warning: the hash from \"$bundleHashUrl\" does not match the actual hash from \"$bundleUrl\"\n");
-            out("Warning: actual bundle hash \"{$state->newBundleHash}\", hash from hash file \"$remoteBundleHashFromHashFile\"\n");
-        }
-
-        if (! file_exists("$litBasePath/cached-releases/{$state->newBundleHash}.tar")) {
-            out("Adding bundle to cache ($litBasePath/cached-releases/{$state->newBundleHash}.tar)\n");
-
-            if (! copy($tempBundlePath, "$litBasePath/cached-releases/{$state->newBundleHash}.tar")) {
-                out("Failed to add the bundle to the cache\n");
-
-                lit_exit(1);
-            }
-        } else {
-            out("Bundle exists in cache, but using the downloaded bundle instead\n");
-
-            touch("$litBasePath/cached-releases/{$state->newBundleHash}.tar");
-        }
-    }
-
-    if (! $isRedeploying && $currentBundleHash === $state->newBundleHash) {
-        out("Bundle is already deployed (hash: {$state->newBundleHash})\n");
-
-        if ($isForcing) {
-            out("Using \"--force\", redeploying...\n");
-        } else {
-            delete_file($tempBundlePath);
-
-            out("Run \"lit deploy --force\" to redeploy\n");
-
-            $GLOBALS['current_run_result'] = 'aborted, same bundle is already deployed';
-
-            lit_exit(0);
-        }
-    }
-
-    out("Creating \"{$state->newReleaseDirectory}\" for the new release...\n");
-
-    if (! mkdir($state->newReleaseDirectory)) {
-        out("Failed to create \"{$state->newReleaseDirectory}\"\n");
-
-        lit_exit(1);
-    }
-
-    $state->releaseDirectoryCreated = true;
-
-    // Never extract into the wrong directory
-    if (! chdir($state->newReleaseDirectory)) {
-        out("Failed to enter \"{$state->newReleaseDirectory}\"\n");
-
-        lit_exit(1);
-    }
-
-    if (! rename($tempBundlePath, "{$state->newReleaseDirectory}/lit-bundle.tar")) {
-        out("Failed to move the bundle into \"{$state->newReleaseDirectory}\"\n");
-
-        lit_exit(1);
-    }
-
-    out('Extracting bundle... ');
-
-    // We use "--strip-components=1" so we can use "--exclude-from={file}" when making the bundle, this
-    // is the only reliable way to exclude files when making a tar. We don't want to make bundles using
-    // "--exclude="node_modules" flags, because those apply to every file/directory with that name, which
-    // for example makes it impossible to exclude node_modules in the root of your project, but include
-    // the node_modules from your frontend/ directory.
-    //
-    // The "--warning" flag prevents warnings when the bundle was made on MacOS but extracted on Linux.
-    $tarCommand = ['tar', '--strip-components=1', '--extract'];
-
-    if (! is_macos()) {
-        $tarCommand[] = '--warning=no-unknown-keyword';
-    }
-
-    $tarCommand[] = '--file';
-    $tarCommand[] = "{$state->newReleaseDirectory}/lit-bundle.tar";
-
-    $tarStatusCode = run_command($tarCommand);
-
-    if ($tarStatusCode !== 0) {
-        lit_exit($tarStatusCode);
-    }
-
-    unlink("{$state->newReleaseDirectory}/lit-bundle.tar");
-
-    out("\n");
-
-    // Assuming "config/filesystems.php" is always present. if this file is in the root, then the bundle
-    // wasn't made with "--strip-components" in mind.
-    if (file_exists("{$state->newReleaseDirectory}/filesystems.php")) {
-        out("\n");
-        out("Error: Incorrect bundle structure.\n");
-        out("All entries in the bundle must be in a top-level directory.\n");
-        out("\n");
-        out("Run \"tar -tf {bundle}\" to check. Entries should look like:\n");
-        out("  ./config/filesystems.php       (good)\n");
-        out("  my-app/config/filesystems.php  (good)\n");
-        out("  config/filesystems.php         (bad - missing top-level directory)\n");
-        out("\n");
-        out("See: https://github.com/SjorsO/lit?tab=readme-ov-file#deploying-a-bundle\n");
-        out("\n");
-
-        lit_exit(1);
-    }
-}
+match ($sourceType) {
+    'git' => prepare_git_release($state, $litState, $projectBasePath, $litBasePath),
+    'bundle' => prepare_bundle_release($state, $litState, $projectBasePath, $litBasePath),
+};
 
 // Laravel needs this directory, make sure it exists even if it was excluded from the bundle.
-if (! is_dir("{$state->newReleaseDirectory}/bootstrap/cache") && ! mkdir("{$state->newReleaseDirectory}/bootstrap/cache", 0777, true)) {
-    out("Failed to create \"{$state->newReleaseDirectory}/bootstrap/cache\"\n");
+if (! is_dir("$state->newReleaseDirectory/bootstrap/cache") && ! mkdir("$state->newReleaseDirectory/bootstrap/cache", 0777, true)) {
+    out("Failed to create \"$state->newReleaseDirectory/bootstrap/cache\"\n");
 
     lit_exit(1);
 }
 
 out("Creating a symlink to the storage directory\n");
 
-delete_directory("{$state->newReleaseDirectory}/storage");
+delete_directory("$state->newReleaseDirectory/storage");
 
-$lnStatusCode = run_command(['ln', is_macos() ? '-nsf' : '-nsfr', $realStorageDirectoryPath, "{$state->newReleaseDirectory}/storage"]);
+$lnStatusCode = run_command(['ln', is_macos() ? '-nsf' : '-nsfr', $realStorageDirectoryPath, "$state->newReleaseDirectory/storage"]);
 
 if ($lnStatusCode !== 0) {
     lit_exit($lnStatusCode);
@@ -679,15 +134,15 @@ if ($lnStatusCode !== 0) {
 
 out("Creating a symlink to the .env file\n");
 
-delete_file("{$state->newReleaseDirectory}/.env");
+delete_file("$state->newReleaseDirectory/.env");
 
-$lnStatusCode = run_command(['ln', is_macos() ? '-nsf' : '-nsfr', $realEnvFilePath, "{$state->newReleaseDirectory}/.env"]);
+$lnStatusCode = run_command(['ln', is_macos() ? '-nsf' : '-nsfr', $realEnvFilePath, "$state->newReleaseDirectory/.env"]);
 
 if ($lnStatusCode !== 0) {
     lit_exit($lnStatusCode);
 }
 
-if (! $cachingEnabled && file_exists("$projectBasePath/hooks/before-caching.sh")) {
+if (! $state->cachingEnabled && file_exists("$projectBasePath/hooks/before-caching.sh")) {
     out("Hook \"hooks/before-caching.sh\" exists but will not be used because release caching is disabled\n");
 }
 
@@ -701,7 +156,7 @@ if (file_exists("$projectBasePath/hooks/before-release.sh")) {
     out("Wanted to run \"$projectBasePath/hooks/before-release.sh\" but it does not exist\n");
 }
 
-out("Releasing the new deployment \"{$state->newReleaseDirectory}\"\n");
+out("Releasing the new deployment \"$state->newReleaseDirectory\"\n");
 
 // Extracting a cached release can give the release directory an old timestamp.
 // Reset the timestamp, pruning uses it to determine the age of a release.
@@ -722,11 +177,10 @@ if ($previousReleaseDirectory !== '' && is_dir($previousReleaseDirectory)) {
     touch($previousReleaseDirectory);
 }
 
-if ($sourceType === 'git') {
-    update_lit_state($projectBasePath, 'git_commit_sha', $state->currentCommit);
-} elseif ($sourceType === 'bundle') {
-    update_lit_state($projectBasePath, 'bundle_hash', $state->newBundleHash);
-}
+match ($sourceType) {
+    'git' => update_lit_state($projectBasePath, 'git_commit_sha', $state->currentCommit),
+    'bundle' => update_lit_state($projectBasePath, 'bundle_hash', $state->newBundleHash),
+};
 
 // Remember which .env this release went live with
 update_lit_state($projectBasePath, 'deployed_dotenv_hash', sha1_file($realEnvFilePath));
@@ -741,61 +195,6 @@ if (file_exists("$projectBasePath/hooks/after-release.sh")) {
     out("Wanted to run \"$projectBasePath/hooks/after-release.sh\" but it does not exist\n");
 }
 
+prune_old_releases($releasesDirectory);
 
-$releaseIds = array_map('basename', glob("$releasesDirectory/*") ?: []);
-
-// Sanity check, we should never delete something unexpected
-foreach ($releaseIds as $releaseId) {
-    if (! preg_match('/^[0-9]+$/', $releaseId)) {
-        throw new RuntimeException("Unexpected \"$releasesDirectory/$releaseId\", refusing to delete old releases");
-    }
-}
-
-rsort($releaseIds, SORT_NUMERIC);
-
-// Skip the first id, that is the release we just deployed
-foreach (array_slice($releaseIds, 1) as $oldReleaseId) {
-    // Prune old releases: delete any release replaced more than an hour ago.
-    //
-    // We give old releases an hour grace time because a long-running job could still be referencing the
-    // old release. Deleting the release while the job is still running causes errors.
-    if (filemtime("$releasesDirectory/$oldReleaseId") < time() - 60 * 60) {
-        out("Deleting old release directory \"$releasesDirectory/$oldReleaseId\"... ");
-
-        delete_directory("$releasesDirectory/$oldReleaseId");
-
-        out("\n");
-    }
-}
-
-// Prune cached releases older than 7 days, and limit total cache size to 500MB
-if (is_dir("$litBasePath/cached-releases")) {
-    foreach (glob("$litBasePath/cached-releases/*.tar") ?: [] as $cachedFilePath) {
-        if (filemtime($cachedFilePath) < time() - 7 * 24 * 60 * 60) {
-            delete_file($cachedFilePath);
-        }
-    }
-
-    $maxCacheBytes = 500 * 1024 * 1024;
-
-    while (true) {
-        clearstatcache();
-
-        $totalCacheBytes = array_sum(array_map(fn ($filePath) => is_file($filePath) ? filesize($filePath) : 0, glob("$litBasePath/cached-releases/*") ?: []));
-
-        if ($totalCacheBytes <= $maxCacheBytes) {
-            break;
-        }
-
-        $tarFiles = glob("$litBasePath/cached-releases/*.tar") ?: [];
-
-        // Always keep at least 1 cache file
-        if (count($tarFiles) <= 1) {
-            break;
-        }
-
-        usort($tarFiles, fn ($fileA, $fileB) => filemtime($fileA) <=> filemtime($fileB));
-
-        delete_file($tarFiles[0]);
-    }
-}
+prune_cached_releases($litBasePath);

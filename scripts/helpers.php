@@ -190,6 +190,28 @@ function expand_short_commit(string $gitRepositoryUrl, string $litBasePath, stri
     ];
 }
 
+// Runs curl and splits the transfer time off the output.
+// Returns [statusCode, output, seconds]
+function run_curl_and_capture(array $arguments): array
+{
+    $writeOut = "\n__CURL_TIME__:%{time_total}";
+
+    [$statusCode, $result] = run_command_and_capture(['curl', '--fail', '--silent', '--show-error', '--location', '--write-out', $writeOut, ...$arguments]);
+
+    $seconds = '0';
+    $outputLines = [];
+
+    foreach (explode("\n", $result) as $line) {
+        if (str_starts_with($line, '__CURL_TIME__:')) {
+            $seconds = substr($line, strlen('__CURL_TIME__:'));
+        } else {
+            $outputLines[] = $line;
+        }
+    }
+
+    return [$statusCode, trim(implode("\n", $outputLines)), (float) $seconds];
+}
+
 function get_file_value(string $filePath): string
 {
     return trim(file_get_contents($filePath));
