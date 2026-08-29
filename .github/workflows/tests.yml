@@ -3,21 +3,30 @@ name: Tests
 on:
   push:
     branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   Tests:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
 
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
         php-version: ['8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+        include:
+          - os: macos-latest
+            php-version: '8.5'
 
     steps:
       - uses: actions/checkout@v5
 
-      # PHP is not available by default on the MacOS runner
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -27,8 +36,10 @@ jobs:
         run: php tests/run-tests.php
 
   Create-Release-Bundle:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
 
@@ -38,15 +49,13 @@ jobs:
       - name: Create bundle
         run: |
           tar --create --gzip \
-            --exclude="tests" \            
-            --exclude="CLAUDE.md" \
+            --exclude="tests" \
             --exclude="LICENSE.md" \
             --file ~/lit.tar.gz *
 
       - name: Create release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          gh release delete latest --yes || true
+          gh release delete latest --yes --cleanup-tag || true
           gh release create latest ~/lit.tar.gz \
             --title "Latest" \
             --notes "Latest build from main branch (commit ${{ github.sha }})" \
@@ -55,9 +64,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   Push-Release-Branch:
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
 
@@ -81,7 +91,7 @@ jobs:
 
           find . -maxdepth 1 ! -name .git ! -name . -exec rm -rf {} +
           find "$GITHUB_WORKSPACE" -maxdepth 1 ! -name .git ! -name . ! -path "$GITHUB_WORKSPACE" -exec cp -r {} . \;
-          rm -rf tests .github CLAUDE.md LICENSE.md .gitignore
+          rm -rf tests .github LICENSE.md .gitignore
           git add -A
 
           if [ -z "$(git status --porcelain)" ]; then
