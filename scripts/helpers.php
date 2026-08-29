@@ -519,8 +519,7 @@ function terminate_current_child_process_tree(): void
 
 function acquire_lit_log_lock(string $projectBasePath): void
 {
-    // The mkdir warns with "File exists" when another lit process holds the lock,
-    // that is the expected contention case, silence only that warning
+    // If the lock is already taken, then mkdir errors with "File exists", silence that warning
     set_error_handler(fn (int $errorNumber, string $errorMessage) => str_contains($errorMessage, 'File exists'));
 
     for ($attempts = 0; $attempts < 10; $attempts++) {
@@ -532,6 +531,9 @@ function acquire_lit_log_lock(string $projectBasePath): void
 
         usleep(100_000);
     }
+
+    // If we couldn't acquire the lock, it must have been stale, so delete it.
+    rmdir("$projectBasePath/lit-log-lock");
 
     restore_error_handler();
 }

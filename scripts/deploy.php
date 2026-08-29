@@ -86,6 +86,9 @@ register_cleanup(function (int $exitCode) use ($state, $projectBasePath, $source
         delete_directory($state->stagingDirectoryPath);
     }
 
+    // An abort between download and extraction leaves the bundle behind
+    delete_file("$projectBasePath/bundle-for-current-deployment.tar");
+
     if ($GLOBALS['current_run_result'] === '') {
         $shortCommit = substr($state->currentCommit, 0, 11);
         $result = null;

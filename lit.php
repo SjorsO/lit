@@ -21,6 +21,8 @@ $GLOBALS['current_run_result'] = '';
 $GLOBALS['is_terminating'] = false;
 
 register_shutdown_function(function () {
+    $GLOBALS['is_terminating'] = true;
+
     terminate_current_child_process_tree();
 
     foreach (array_reverse($GLOBALS['cleanup_stack']) as $closure) {
@@ -84,13 +86,6 @@ if (! is_dir("$projectBasePath/storage") && ! is_dir("$projectBasePath/shared/st
     lit_exit(1);
 }
 
-// Apps still on Lit v1 have separate state files instead of a "lit.json"
-if (! file_exists("$projectBasePath/lit.json")) {
-    require_once "$litBasePath/scripts/migrate-state-from-v1-to-v2.php";
-
-    migrate_state_from_v1_to_v2($projectBasePath);
-}
-
 // The releases directory might not exist when moving an application between servers
 if (! is_dir("$projectBasePath/releases")) {
     mkdir("$projectBasePath/releases");
@@ -113,6 +108,9 @@ $startTime = current_time_in_ms();
 $commandLine = rtrim('lit '.implode(' ', $arguments));
 $pid = getmypid();
 
+// Block signals until the cleanup below is registered
+pcntl_sigprocmask(SIG_BLOCK, [SIGINT, SIGTERM, SIGHUP], $previousSignalMask);
+
 acquire_lit_log_lock($projectBasePath);
 file_put_contents("$projectBasePath/logs/lit.log", '['.get_human_timestamp()."] $commandLine (pending:$pid)\n", FILE_APPEND);
 release_lit_log_lock($projectBasePath);
@@ -122,7 +120,15 @@ file_put_contents("$projectBasePath/logs/lit-output.log", '['.get_human_timestam
 // From this point on, everything written with out() also goes to lit-output.log
 $GLOBALS['lit_output_log_path'] = "$projectBasePath/logs/lit-output.log";
 
-if (is_dir($lockDirectoryPath)) {
+// mkdir is atomic, it errors with "File exists" if the directory already exists. Ignore only that error.
+set_error_handler(fn (int $errorNumber, string $errorMessage) => str_contains($errorMessage, 'File exists'));
+
+// Ensure we can't run multiple commands at the same time.
+$lockAcquired = mkdir($lockDirectoryPath);
+
+restore_error_handler();
+
+if (! $lockAcquired) {
     out("Another Lit command is currently running for this project, aborting...\n");
     out("If this is wrong, manually run:\n");
     out("    rmdir \"$lockDirectoryPath\"\n");
@@ -132,9 +138,6 @@ if (is_dir($lockDirectoryPath)) {
     lit_exit(1);
 }
 
-// Ensure we can't run multiple commands at the same time.
-mkdir($lockDirectoryPath);
-
 register_cleanup(function () use ($projectBasePath, $lockDirectoryPath, $pid, $startTime) {
     replace_log_placeholder($projectBasePath, $pid, $GLOBALS['current_run_result'], current_time_in_ms() - $startTime);
 
@@ -142,6 +145,15 @@ register_cleanup(function () use ($projectBasePath, $lockDirectoryPath, $pid, $s
         rmdir($lockDirectoryPath);
     }
 });
+
+pcntl_sigprocmask(SIG_SETMASK, $previousSignalMask);
+
+// Apps still on Lit v1 have separate state files instead of a "lit.json"
+if (! file_exists("$projectBasePath/lit.json")) {
+    require_once "$litBasePath/scripts/migrate-state-from-v1-to-v2.php";
+
+    migrate_state_from_v1_to_v2($projectBasePath);
+}
 
 if ($command === 'deploy') {
     putenv('__lit_allow_flush_opcache_without_lock=true');
