@@ -3,6 +3,9 @@
 // Deletes old releases, the release we just deployed is always kept
 function prune_old_releases(string $releasesDirectory): void
 {
+    // PHP < 8.3 does not clear the stat cache on touch(), filemtime() would return stale timestamps
+    clearstatcache();
+
     $releaseIds = array_map('basename', glob("$releasesDirectory/*") ?: []);
 
     // Sanity check, we should never delete something unexpected
@@ -36,6 +39,9 @@ function prune_cached_releases(string $litBasePath): void
     if (! is_dir("$litBasePath/cached-releases")) {
         return;
     }
+
+    // PHP < 8.3 does not clear the stat cache on touch(), filemtime() would return stale timestamps
+    clearstatcache();
 
     foreach (glob("$litBasePath/cached-releases/*.tar") ?: [] as $cachedFilePath) {
         if (filemtime($cachedFilePath) < time() - 7 * 24 * 60 * 60) {
