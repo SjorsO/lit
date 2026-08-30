@@ -5,6 +5,13 @@ function register_deploy_cleanup(stdClass $state, string $projectBasePath, strin
     register_cleanup(function (int $exitCode) use ($state, $projectBasePath, $sourceType, $startedAt) {
         chdir($projectBasePath);
 
+        // Ensure we never delete a live release, even in the most unlikely scenarios
+        if ($state->releaseDirectoryCreated && ! $state->wasReleased && release_is_live($projectBasePath, $state->newReleaseDirectory)) {
+            out("The new release is already live, keeping \"$state->newReleaseDirectory\"\n");
+
+            $state->wasReleased = true;
+        }
+
         if ($state->releaseDirectoryCreated && ! $state->wasReleased) {
             out("Deleting new but unreleased release directory \"$state->newReleaseDirectory\"\n");
 
@@ -21,6 +28,12 @@ function register_deploy_cleanup(stdClass $state, string $projectBasePath, strin
 
         // This might still exist depending on how we aborted
         delete_file("$projectBasePath/bundle-for-current-deployment.tar");
+
+        foreach (glob("$projectBasePath/current-*") ?: [] as $temporarySymlinkPath) {
+            if (is_link($temporarySymlinkPath) && preg_match('/^current-[0-9a-f-]{36}$/', basename($temporarySymlinkPath))) {
+                delete_file($temporarySymlinkPath);
+            }
+        }
 
         if ($GLOBALS['current_run_result'] === '') {
             $shortCommit = substr($state->currentCommit, 0, 11);

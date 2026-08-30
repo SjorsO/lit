@@ -162,28 +162,35 @@ out("Releasing the new deployment \"$state->newReleaseDirectory\"\n");
 // Reset the timestamp, pruning uses it to determine the age of a release.
 touch($state->newReleaseDirectory);
 
-// Create a symlink to enable the release
-$lnStatusCode = run_command(['ln', is_macos() ? '-nsf' : '-nsfr', $state->newReleaseDirectory, $currentDirectoryPath]);
+pcntl_sigprocmask(SIG_BLOCK, [SIGINT, SIGTERM, SIGHUP], $signalMaskBeforeRelease);
 
-// The release never went live when the symlink failed, exit before marking it released
-if ($lnStatusCode !== 0) {
-    lit_exit($lnStatusCode);
+$wasReleased = atomically_replace_symlink('releases/'.basename($state->newReleaseDirectory), $currentDirectoryPath);
+
+if ($wasReleased) {
+    $state->wasReleased = true;
+
+    // Touch the previous release to start the 1-hour grace timer.
+    if ($previousReleaseDirectory !== '' && is_dir($previousReleaseDirectory)) {
+        touch($previousReleaseDirectory);
+    }
+
+    match ($sourceType) {
+        'git' => update_lit_state($projectBasePath, 'git_commit_sha', $state->currentCommit),
+        'bundle' => update_lit_state($projectBasePath, 'bundle_hash', $state->newBundleHash),
+    };
+
+    // Remember which .env this release went live with
+    update_lit_state($projectBasePath, 'deployed_dotenv_hash', sha1_file($realEnvFilePath));
 }
 
-$state->wasReleased = true;
+// A pending signal is delivered here, after the release is fully recorded
+pcntl_sigprocmask(SIG_SETMASK, $signalMaskBeforeRelease);
 
-// Touch the previous release to start the 1-hour grace timer.
-if ($previousReleaseDirectory !== '' && is_dir($previousReleaseDirectory)) {
-    touch($previousReleaseDirectory);
+if (! $wasReleased) {
+    out("Failed to point \"$currentDirectoryPath\" at \"$state->newReleaseDirectory\"\n");
+
+    lit_exit(1);
 }
-
-match ($sourceType) {
-    'git' => update_lit_state($projectBasePath, 'git_commit_sha', $state->currentCommit),
-    'bundle' => update_lit_state($projectBasePath, 'bundle_hash', $state->newBundleHash),
-};
-
-// Remember which .env this release went live with
-update_lit_state($projectBasePath, 'deployed_dotenv_hash', sha1_file($realEnvFilePath));
 
 if (file_exists("$projectBasePath/hooks/after-release.sh")) {
     $hookStatusCode = run_command(['bash', '-e', "$projectBasePath/hooks/after-release.sh", $projectBasePath, $state->newReleaseDirectory, $litBasePath, $previousReleaseDirectory]);

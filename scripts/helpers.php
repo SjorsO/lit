@@ -40,6 +40,35 @@ function update_lit_state(string $projectBasePath, string $key, string|bool $val
     write_lit_state($projectBasePath, $litState);
 }
 
+function atomically_replace_symlink(string $target, string $symlinkPath): bool
+{
+    $temporarySymlinkPath = $symlinkPath.'-'.uuid();
+
+    if (! symlink($target, $temporarySymlinkPath)) {
+        return false;
+    }
+
+    // rename() is atomic
+    if (! rename($temporarySymlinkPath, $symlinkPath)) {
+        delete_file($temporarySymlinkPath);
+
+        return false;
+    }
+
+    return true;
+}
+
+function release_is_live(string $projectBasePath, string $releaseDirectory): bool
+{
+    $currentDirectoryPath = "$projectBasePath/current";
+
+    if (! is_link($currentDirectoryPath)) {
+        return false;
+    }
+
+    return "$projectBasePath/releases/".basename(readlink($currentDirectoryPath)) === $releaseDirectory;
+}
+
 function resolve_remote_ref(string $gitRepositoryUrl, string $ref): array
 {
     [$lsRemoteStatusCode, $lsRemoteOutput] = run_command_and_capture_stdout(['git', 'ls-remote', $gitRepositoryUrl, "refs/heads/$ref", "refs/tags/$ref*"]);
