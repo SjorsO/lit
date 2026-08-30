@@ -46,7 +46,7 @@ function lit_environment(array $extraEnvironment = []): array
 
 function lit_state(string $projectPath): array
 {
-    return json_decode(file_get_contents("$projectPath/lit.json"), associative: true) ?: [];
+    return json_decode(file_get_contents("$projectPath/lit.json"), associative: true, flags: JSON_THROW_ON_ERROR) ?: [];
 }
 
 function set_lit_state_value(string $projectPath, string $key, string|bool $value): void
@@ -55,7 +55,7 @@ function set_lit_state_value(string $projectPath, string $key, string|bool $valu
 
     $litState[$key] = $value;
 
-    file_put_contents("$projectPath/lit.json", json_encode($litState, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
+    file_put_contents("$projectPath/lit.json", json_encode($litState, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)."\n");
 }
 
 function assert_lit_state_value(string $projectPath, string $key, string|bool $expected): void

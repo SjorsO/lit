@@ -21,14 +21,14 @@ function read_lit_state(string $projectBasePath): array
         return [];
     }
 
-    $litState = json_decode(file_get_contents("$projectBasePath/lit.json"), associative: true);
+    $litState = json_decode(file_get_contents("$projectBasePath/lit.json"), associative: true, flags: JSON_THROW_ON_ERROR);
 
     return is_array($litState) ? $litState : [];
 }
 
 function write_lit_state(string $projectBasePath, array $litState): void
 {
-    file_put_contents("$projectBasePath/lit.json", json_encode($litState, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
+    file_put_contents("$projectBasePath/lit.json", json_encode($litState, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)."\n");
 }
 
 function update_lit_state(string $projectBasePath, string $key, string|bool $value): void
