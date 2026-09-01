@@ -41,10 +41,11 @@ if ($previousReleaseDirectoryPath === '' && ($notIfFirstRelease ?? false)) {
     lit_exit(0);
 }
 
-// Projects previously deployed with Deployer have a "shared" directory.
-$realEnvFilePath = file_exists("$projectBasePath/shared/.env")
-    ? "$projectBasePath/shared/.env"
-    : "$projectBasePath/.env";
+$realEnvFilePath = "$projectBasePath/.env";
+
+if (! file_exists($realEnvFilePath) && file_exists("$projectBasePath/shared/.env")) {
+    $realEnvFilePath = "$projectBasePath/shared/.env";
+}
 
 if (! file_exists($realEnvFilePath)) {
     out("Unable to $actionLabel, no .env file found\n");

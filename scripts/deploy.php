@@ -52,9 +52,12 @@ $currentDirectoryPath = "$projectBasePath/current";
 $realStorageDirectoryPath = is_dir("$projectBasePath/shared/storage")
     ? "$projectBasePath/shared/storage"
     : "$projectBasePath/storage";
-$realEnvFilePath = file_exists("$projectBasePath/shared/.env")
-    ? "$projectBasePath/shared/.env"
-    : "$projectBasePath/.env";
+
+$realEnvFilePath = "$projectBasePath/.env";
+
+if (! file_exists($realEnvFilePath) && file_exists("$projectBasePath/shared/.env")) {
+    $realEnvFilePath = "$projectBasePath/shared/.env";
+}
 
 if (! file_exists($realEnvFilePath) || filesize($realEnvFilePath) === 0) {
     touch($realEnvFilePath);
