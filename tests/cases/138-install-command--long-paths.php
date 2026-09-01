@@ -22,7 +22,7 @@ file_put_contents($fakeRcFile, "# fake bashrc\n");
 chdir($worldPath);
 
 // Test 1: Install with "no" to the alias prompt
-[$statusCode, $output] = lit_with_input('n', ['HOME' => $homePath], 'help');
+[$statusCode, $output] = lit_with_input('n', ['SHELL' => '/bin/bash', 'HOME' => $homePath], 'help');
 
 assert_same(0, $statusCode);
 
@@ -58,7 +58,7 @@ unlink("$worldPath/lit/data/installation-id");
 
 file_put_contents($fakeRcFile, "# fresh bashrc\n");
 
-[$statusCode, $output] = lit_with_input('y', ['HOME' => $homePath], 'help');
+[$statusCode, $output] = lit_with_input('y', ['SHELL' => '/bin/bash', 'HOME' => $homePath], 'help');
 
 assert_same(0, $statusCode);
 
@@ -90,7 +90,7 @@ EXPECTED, $output);
 assert_same(<<<EXPECTED
 # fresh bashrc
 
-alias lit="php $worldPath/lit/lit.php"
+alias lit="php '$worldPath/lit/lit.php'"
 
 EXPECTED, file_get_contents($fakeRcFile));
 
@@ -99,7 +99,7 @@ unlink("$worldPath/lit/data/installation-id");
 
 mkdir("$worldPath/empty-home");
 
-[$statusCode, $output] = lit_with_input('', ['HOME' => "$worldPath/empty-home"], 'help');
+[$statusCode, $output] = lit_with_input('', ['SHELL' => '/bin/bash', 'HOME' => "$worldPath/empty-home"], 'help');
 
 assert_same(0, $statusCode);
 

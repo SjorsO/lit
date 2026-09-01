@@ -17,7 +17,7 @@ file_put_contents($fakeRcFile, "# fake bashrc\n");
 chdir($worldPath);
 
 // Test 1: Install with "no" to the alias prompt
-[$statusCode, $output] = lit_with_input('n', ['HOME' => $worldPath], 'help');
+[$statusCode, $output] = lit_with_input('n', ['SHELL' => '/bin/bash', 'HOME' => $worldPath], 'help');
 
 // Should succeed (the install runs instead of the command)
 assert_same(0, $statusCode);
@@ -58,7 +58,7 @@ unlink("$worldPath/lit/data/installation-id");
 
 file_put_contents($fakeRcFile, "# fresh bashrc\n");
 
-[$statusCode, $output] = lit_with_input('y', ['HOME' => $worldPath], 'help');
+[$statusCode, $output] = lit_with_input('y', ['SHELL' => '/bin/bash', 'HOME' => $worldPath], 'help');
 
 assert_same(0, $statusCode);
 
@@ -90,12 +90,12 @@ EXPECTED, $output);
 assert_same(<<<EXPECTED
 # fresh bashrc
 
-alias lit="php $worldPath/lit/lit.php"
+alias lit="php '$worldPath/lit/lit.php'"
 
 EXPECTED, file_get_contents($fakeRcFile));
 
 // Test 3: Running again with an existing installation-id should not run the installer
-[$statusCode, $output] = lit_with_input('', ['HOME' => $worldPath], 'help');
+[$statusCode, $output] = lit_with_input('', ['SHELL' => '/bin/bash', 'HOME' => $worldPath], 'help');
 
 assert_same(0, $statusCode);
 assert_output_is_help_text($output);
@@ -103,7 +103,7 @@ assert_output_is_help_text($output);
 // Test 4: If the alias already exists, install silently and run the command
 unlink("$worldPath/lit/data/installation-id");
 
-[$statusCode, $output] = lit_with_input('', ['HOME' => $worldPath], 'help');
+[$statusCode, $output] = lit_with_input('', ['SHELL' => '/bin/bash', 'HOME' => $worldPath], 'help');
 
 assert_same(0, $statusCode);
 assert_output_is_help_text($output);
@@ -114,12 +114,12 @@ unlink("$worldPath/lit/data/installation-id");
 
 file_put_contents($fakeRcFile, "# fresh bashrc\n");
 
-[$statusCode] = lit_with_input('q', ['HOME' => $worldPath], 'help');
+[$statusCode] = lit_with_input('q', ['SHELL' => '/bin/bash', 'HOME' => $worldPath], 'help');
 
 assert_same(130, $statusCode);
 assert_file_missing("$worldPath/lit/data/installation-id");
 
-[$statusCode] = lit_with_input("\e", ['HOME' => $worldPath], 'help');
+[$statusCode] = lit_with_input("\e", ['SHELL' => '/bin/bash', 'HOME' => $worldPath], 'help');
 
 assert_same(130, $statusCode);
 assert_file_missing("$worldPath/lit/data/installation-id");

@@ -12,25 +12,29 @@ if (! is_dir("$litBasePath/data")) {
 
 $homeDirectory = getenv('HOME') ?: '';
 
+if (basename(getenv('SHELL') ?: '') === 'zsh') {
+    $aliasFileCandidates = ['.zshrc', '.zprofile', '.profile'];
+} else {
+    $aliasFileCandidates = ['.bashrc', '.bash_profile', '.profile'];
+
+    // A ".bash_aliases" only works when ".bashrc" sources it
+    if (str_contains((string) @file_get_contents("$homeDirectory/.bashrc"), '.bash_aliases')) {
+        array_unshift($aliasFileCandidates, '.bash_aliases');
+    }
+}
+
 $aliasFile = '';
 
-foreach ([
-    "$homeDirectory/.bash_aliases",
-    "$homeDirectory/.zsh_aliases",
-    "$homeDirectory/.zshrc",
-    "$homeDirectory/.bashrc",
-    "$homeDirectory/.bash_profile",
-    "$homeDirectory/.profile",
-] as $aliasFileCandidate) {
-    if (is_file($aliasFileCandidate)) {
-        $aliasFile = $aliasFileCandidate;
+foreach ($aliasFileCandidates as $aliasFileCandidate) {
+    if (is_file("$homeDirectory/$aliasFileCandidate")) {
+        $aliasFile = "$homeDirectory/$aliasFileCandidate";
 
         break;
     }
 }
 
 // The alias already exists, install silently and keep running lit
-if ($aliasFile !== '' && str_contains(file_get_contents($aliasFile), 'lit.php')) {
+if ($aliasFile !== '' && str_contains((string) @file_get_contents($aliasFile), 'lit.php')) {
     file_put_contents("$litBasePath/data/installation-id", time().':'.uuid()."\n");
 
     return;
@@ -138,14 +142,33 @@ function boxed_line(string $line = ''): string
     // Color codes and multibyte characters have no extra width
     $lineWidth = strlen(preg_replace(['/\e\[[0-9;]*m/', '/[\x80-\xBF]/'], '', $line));
 
-    return '│'.$line.str_repeat(' ', 72 - $lineWidth).'│';
+    return '│'.$line.str_repeat(' ', max(0, 72 - $lineWidth)).'│';
 }
 
-$aliasCommand = "alias lit=\"php $litBasePath/lit.php\"";
+function path_needs_quotes(string $path): bool
+{
+    return ! preg_match('#^[A-Za-z0-9_@%+=:,./~-]+$#', $path);
+}
 
-// Only used for printing, the real paths are used everywhere else
+function alias_command(string $scriptPath): string
+{
+    $aliasBody = "php '".str_replace("'", "'\\''", $scriptPath)."'";
+
+    // Escape what the outer double quotes would expand before the alias is even stored
+    return 'alias lit="'.addcslashes($aliasBody, '$`"\\').'"';
+}
+
+$litScriptPath = "$litBasePath/lit.php";
+
+$aliasCommand = alias_command($litScriptPath);
+
 $displayedAliasFile = pretty_path($aliasFile);
-$displayedAliasCommand = 'alias lit="php '.pretty_path("$litBasePath/lit.php").'"';
+
+$prettyScriptPath = pretty_path($litScriptPath);
+
+$displayedAliasCommand = path_needs_quotes($prettyScriptPath)
+    ? $aliasCommand
+    : "alias lit=\"php $prettyScriptPath\"";
 
 // Long paths can make lines too wide for the box
 $outputFitsInBox = strlen("    $displayedAliasFile") <= 72 && strlen("    $displayedAliasCommand") <= 72;
@@ -185,9 +208,20 @@ if ($aliasFile === '') {
     $menuAnswer = yes_no_menu();
 
     if ($menuAnswer === 'y') {
-        $fileContents = rtrim(file_get_contents($aliasFile));
+        $fileContents = (string) @file_get_contents($aliasFile);
 
-        file_put_contents($aliasFile, "$fileContents\n\n$aliasCommand\n");
+        $separator = "\n\n";
+
+        if ($fileContents === '' || str_ends_with($fileContents, "\n\n")) {
+            $separator = '';
+        } elseif (str_ends_with($fileContents, "\n")) {
+            $separator = "\n";
+        }
+
+        // Appending leaves the rest of the config alone when the write fails
+        if (@file_put_contents($aliasFile, "$separator$aliasCommand\n", FILE_APPEND | LOCK_EX) === false) {
+            $menuAnswer = 'failed';
+        }
     }
 }
 
@@ -201,6 +235,15 @@ if ($menuAnswer === 'y') {
 
 if ($menuAnswer === 'n') {
     echo boxed_line("  Not adding alias.")."\n";
+    echo boxed_line()."\n";
+}
+
+if ($menuAnswer === 'failed') {
+    echo boxed_line("  ✗ Unable to write to \"$displayedAliasFile\".")."\n";
+    echo boxed_line()."\n";
+    echo boxed_line("  You can add the following alias manually:")."\n";
+    echo boxed_line()."\n";
+    echo boxed_line("    $displayedAliasCommand")."\n";
     echo boxed_line()."\n";
 }
 
