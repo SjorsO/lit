@@ -301,14 +301,65 @@ function human_file_size(int $bytes): string
     return sprintf('%.1f%s', ceil($size * 10) / 10, $units[$unitIndex]);
 }
 
-// Write to stdout, and to the lit-output.log once logging has started
+// Writes to the lit-output.log first (once logging has started), then to stdout.
+// A failing stdout write must never lose a log line. And it must be handled here:
+// a failing echo makes PHP bail out fatally, abandoning the cleanup halfway.
 function out(string $text): void
 {
-    echo $text;
+    if ($text === '') {
+        return;
+    }
 
     if ($GLOBALS['lit_output_log_path'] ?? null) {
         file_put_contents($GLOBALS['lit_output_log_path'], $text, FILE_APPEND);
     }
+
+    if ($GLOBALS['stdout_is_gone'] ?? false) {
+        return;
+    }
+
+    $failedAttempts = 0;
+
+    // Unlike echo, fwrite() reports a dead stdout instead of killing the script
+    while ($text !== '') {
+        $writtenBytes = @fwrite(STDOUT, $text);
+
+        // A signal can interrupt a write, so only a second failure means stdout is gone
+        if ($writtenBytes === false || $writtenBytes === 0) {
+            if (++$failedAttempts >= 2) {
+                handle_gone_stdout();
+
+                return;
+            }
+
+            continue;
+        }
+
+        $failedAttempts = 0;
+
+        // A write can be interrupted halfway, write the remaining bytes
+        $text = substr($text, $writtenBytes);
+    }
+}
+
+function handle_gone_stdout(): void
+{
+    $GLOBALS['stdout_is_gone'] = true;
+
+    out("(stdout is gone, only writing to this log from here)\n");
+
+    if ($GLOBALS['is_terminating'] ?? false) {
+        return;
+    }
+
+    $GLOBALS['is_terminating'] = true;
+
+    // 141 = 128 + SIGPIPE, the usual exit code for a broken pipe
+    $GLOBALS['lit_exit_code'] = 141;
+
+    terminate_current_child_process_tree();
+
+    lit_exit(141);
 }
 
 function lit_exit(int $statusCode): void

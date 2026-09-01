@@ -19,14 +19,20 @@ $GLOBALS['lit_output_log_path'] = null;
 $GLOBALS['current_child_process'] = null;
 $GLOBALS['current_run_result'] = '';
 $GLOBALS['is_terminating'] = false;
+$GLOBALS['stdout_is_gone'] = false;
 
 register_shutdown_function(function () {
     $GLOBALS['is_terminating'] = true;
 
     terminate_current_child_process_tree();
 
+    // A failing cleanup step must never skip the steps after it
     foreach (array_reverse($GLOBALS['cleanup_stack']) as $closure) {
-        $closure($GLOBALS['lit_exit_code']);
+        try {
+            $closure($GLOBALS['lit_exit_code']);
+        } catch (Throwable $throwable) {
+            out('A cleanup step failed: '.$throwable->getMessage()."\n");
+        }
     }
 });
 

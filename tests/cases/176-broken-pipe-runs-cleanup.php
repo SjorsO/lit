@@ -73,8 +73,8 @@ assert_same(false, $processStatus['running']);
 
 proc_close($process);
 
-// A failed stdout write makes PHP bail out with exit code 255
-assert_same(255, $processStatus['exitcode']);
+// A dead stdout aborts the deploy with 141 (128 + SIGPIPE)
+assert_same(141, $processStatus['exitcode']);
 
 // The abort was handled promptly, not after the hook finished all its ticks
 if (hrtime(true) - $disconnectedAt > 15 * 1_000_000_000) {
