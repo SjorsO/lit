@@ -1,19 +1,17 @@
 ╭──────────────────────────────────────────────────────────────────────────────╮
 │ usage: lit <command>                                                         │
 │                                                                              │
-│ Common Lit commands:                                                         │
+│   lit deploy                          Run a new deployment                   │
+│   lit redeploy                        Redeploy the exact same commit         │
+│   lit checkout <branch|tag|commit>    Switch ref and deploy                  │
 │                                                                              │
-│   init <url> [name]    Initialize a new Lit directory from git or a bundle   │
-│   deploy               Run a new deployment                                  │
-│   redeploy             Deploy the exact same commit or bundle again          │
-│   checkout <ref>       Checkout and deploy the given branch, tag, or commit  │
+│   lit init <url> [name]               Initialize a new Lit directory         │
 │                                                                              │
-│ Other commands:                                                              │
+│   lit enable-git-release-caching      For faster deploys of the same commit  │
+│   lit disable-git-release-caching     Disable git release caching            │
 │                                                                              │
-│   flush-opcache                  Flush PHP-FPM OPcache                       │
-│   opcache-status [--json]        Show PHP-FPM OPcache status                 │
-│   enable-git-release-caching     For faster deployments of the same commit   │
-│   disable-git-release-caching    Disable git release caching                 │
+│   lit flush-opcache                   Flush PHP-FPM OPcache                  │
+│   lit opcache-status [--json]         Show PHP-FPM OPcache status            │
 │                                                                              │
 │ For more info, visit: https://github.com/SjorsO/lit                          │
 ╰──────────────────────────────────────────────────────────────────────────────╯

@@ -346,7 +346,7 @@ function handle_gone_stdout(): void
 {
     $GLOBALS['stdout_is_gone'] = true;
 
-    out("(stdout is gone, only writing to this log from here)\n");
+    out("(stdout is gone)\n");
 
     if ($GLOBALS['is_terminating'] ?? false) {
         return;

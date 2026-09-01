@@ -91,7 +91,7 @@ $outputLogContent = file_get_contents("$projectPath/logs/lit-output.log");
 assert_string_contains($outputLogContent, '(interrupt received)');
 
 // Everything after the dead pipe kept being logged
-assert_string_contains($outputLogContent, '(stdout is gone, only writing to this log from here)');
+assert_string_contains($outputLogContent, '(stdout is gone)');
 assert_string_contains($outputLogContent, 'Deleting new but unreleased release directory');
 assert_string_contains($outputLogContent, 'Finished with errors (in ');
 
@@ -131,7 +131,7 @@ assert_same(130, interrupt_deploy_then_break_pipe($projectPath, "$projectPath/ca
 $outputLogContent = file_get_contents("$projectPath/logs/lit-output.log");
 
 assert_string_contains($outputLogContent, '(interrupt received)');
-assert_string_contains($outputLogContent, '(stdout is gone, only writing to this log from here)');
+assert_string_contains($outputLogContent, '(stdout is gone)');
 assert_string_contains($outputLogContent, 'Finished with errors (in ');
 
 // The temporary clone is gone, and so is the lock
