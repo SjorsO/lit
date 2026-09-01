@@ -25,7 +25,7 @@ symlink(world_path().'/case/gone/before-caching.sh', "$projectPath/hooks/before-
 
 assert_symlink("$projectPath/hooks/before-caching.sh");
 
-// Deploy should warn about the broken symlink but still work
+// Deploy should treat the broken symlink as a missing hook
 [$statusCode, $output] = lit('deploy');
 
 assert_same(0, $statusCode);
@@ -34,7 +34,6 @@ $output = normalize_output($output);
 
 assert_same(<<<EXPECTED
 Reading branch "main" of "https://github.com/SjorsO/lit.git"...
-Hook "hooks/before-caching.sh" is a broken symlink, ignoring it
 Cloning repository...
 Wanted to run "$projectPath/hooks/before-caching.sh" but it does not exist
 Caching release...
