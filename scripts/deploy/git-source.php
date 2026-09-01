@@ -134,10 +134,7 @@ function prepare_git_release_from_cache(stdClass $state, string $gitRepositoryUr
 {
     $cacheLock = acquire_cache_lock($litBasePath, isExclusive: false);
 
-    if (is_link("$projectBasePath/hooks/before-caching.sh")) {
-        $beforeCachingHookPath = realpath("$projectBasePath/hooks/before-caching.sh");
-        $beforeCachingHookHash = substr(sha1_file($beforeCachingHookPath), 0, 12);
-    } elseif (file_exists("$projectBasePath/hooks/before-caching.sh")) {
+    if (file_exists("$projectBasePath/hooks/before-caching.sh")) {
         $beforeCachingHookPath = "$projectBasePath/hooks/before-caching.sh";
         $beforeCachingHookHash = substr(sha1_file($beforeCachingHookPath), 0, 12);
     } else {
