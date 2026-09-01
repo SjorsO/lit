@@ -22,8 +22,8 @@ function register_deploy_cleanup(stdClass $state, string $projectBasePath, strin
             delete_directory($state->tempDirectoryPath);
         }
 
-        if ($state->stagingDirectoryPath !== '' && is_dir($state->stagingDirectoryPath)) {
-            delete_directory($state->stagingDirectoryPath);
+        if ($state->tempCacheFilePath !== '') {
+            delete_file($state->tempCacheFilePath);
         }
 
         // This might still exist depending on how we aborted

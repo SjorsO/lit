@@ -40,6 +40,15 @@ function prune_cached_releases(string $litBasePath): void
         return;
     }
 
+    // Never delete a cache file another project is still using.
+    $cacheLock = acquire_cache_lock($litBasePath, isExclusive: true);
+
+    if ($cacheLock === null) {
+        out("Another project is using the release cache, skipping the cache cleanup\n");
+
+        return;
+    }
+
     // PHP < 8.3 does not clear the stat cache on touch(), filemtime() would return stale timestamps
     clearstatcache();
 
@@ -71,4 +80,6 @@ function prune_cached_releases(string $litBasePath): void
 
         delete_file($tarFiles[0]);
     }
+
+    release_cache_lock($cacheLock);
 }

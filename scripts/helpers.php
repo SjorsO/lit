@@ -568,6 +568,36 @@ function terminate_current_child_process_tree(): void
     $GLOBALS['current_child_process'] = null;
 }
 
+// $isExclusive = true: obtain the lock, block everyone else, immediately return null if lock is busy
+// $isExclusive = false: wait until the lock can be obtained, read-only, shared with others
+function acquire_cache_lock(string $litBasePath, bool $isExclusive)
+{
+    $lockFile = @fopen("$litBasePath/data/cached-releases-lock", 'c');
+
+    if ($lockFile === false) {
+        return null;
+    }
+
+    if (! flock($lockFile, $isExclusive ? (LOCK_EX | LOCK_NB) : LOCK_SH)) {
+        fclose($lockFile);
+
+        return null;
+    }
+
+    return $lockFile;
+}
+
+function release_cache_lock($lockFile): void
+{
+    if ($lockFile === null) {
+        return;
+    }
+
+    flock($lockFile, LOCK_UN);
+
+    fclose($lockFile);
+}
+
 function acquire_lit_log_lock(string $projectBasePath): void
 {
     // If the lock is already taken, then mkdir errors with "File exists", silence that warning

@@ -132,6 +132,8 @@ function prepare_git_release_without_cache(stdClass $state, string $gitRepositor
 // Builds a cached tar (or reuses one), then extracts it into the new release directory
 function prepare_git_release_from_cache(stdClass $state, string $gitRepositoryUrl, string $projectBasePath, string $litBasePath, string $previousCommit): void
 {
+    $cacheLock = acquire_cache_lock($litBasePath, isExclusive: false);
+
     if (is_link("$projectBasePath/hooks/before-caching.sh")) {
         $beforeCachingHookPath = realpath("$projectBasePath/hooks/before-caching.sh");
         $beforeCachingHookHash = substr(sha1_file($beforeCachingHookPath), 0, 12);
@@ -192,6 +194,8 @@ function prepare_git_release_from_cache(stdClass $state, string $gitRepositoryUr
 
     $tarStatusCode = run_command(['tar', '--strip-components=1', '--extract', '--file', $tarFilePath]);
 
+    release_cache_lock($cacheLock);
+
     if ($tarStatusCode !== 0) {
         lit_exit($tarStatusCode);
     }
@@ -244,23 +248,12 @@ function build_cached_release(stdClass $state, string $gitRepositoryUrl, string 
         out("Wanted to run \"$projectBasePath/hooks/before-caching.sh\" but it does not exist\n");
     }
 
-    $state->stagingDirectoryPath = "$litBasePath/cached-releases/".substr($state->currentCommit, 0, 12)."-$cacheRefHash-$beforeCachingHookHash";
-    $tarFilePath = "$state->stagingDirectoryPath.tar";
+    $tarFilePath = "$litBasePath/cached-releases/".substr($state->currentCommit, 0, 12)."-$cacheRefHash-$beforeCachingHookHash.tar";
 
-    delete_directory($state->stagingDirectoryPath);
-
-    if (file_exists($tarFilePath)) {
-        unlink($tarFilePath);
-    }
+    $state->tempCacheFilePath = "$state->tempDirectoryPath.building";
 
     if (! chdir("$litBasePath/cached-releases")) {
         out("Failed to enter \"$litBasePath/cached-releases\"\n");
-
-        lit_exit(1);
-    }
-
-    if (! rename($state->tempDirectoryPath, $state->stagingDirectoryPath)) {
-        out("Failed to move the clone to \"$state->stagingDirectoryPath\"\n");
 
         lit_exit(1);
     }
@@ -270,18 +263,29 @@ function build_cached_release(stdClass $state, string $gitRepositoryUrl, string 
     if ($zstdIsAvailable) {
         out('Caching release... ');
 
-        $tarStatusCode = run_command(['tar', '--use-compress-program', 'zstd -T0 -3', '-cf', $tarFilePath, basename($state->stagingDirectoryPath)]);
+        $tarStatusCode = run_command(['tar', '--use-compress-program', 'zstd -T0 -3', '-cf', $state->tempCacheFilePath, basename($state->tempDirectoryPath)]);
     } else {
         out('Caching release... (tip: install "zstd" for faster caching)');
 
-        $tarStatusCode = run_command(['tar', '-czf', $tarFilePath, basename($state->stagingDirectoryPath)]);
+        $tarStatusCode = run_command(['tar', '-czf', $state->tempCacheFilePath, basename($state->tempDirectoryPath)]);
     }
 
     if ($tarStatusCode !== 0) {
         lit_exit($tarStatusCode);
     }
 
-    delete_directory($state->stagingDirectoryPath);
+    // rename() is atomic
+    if (! rename($state->tempCacheFilePath, $tarFilePath)) {
+        out("Failed to move the cached release to \"$tarFilePath\"\n");
+
+        lit_exit(1);
+    }
+
+    $state->tempCacheFilePath = '';
+
+    delete_directory($state->tempDirectoryPath);
+
+    $state->tempDirectoryPath = '';
 
     return $tarFilePath;
 }

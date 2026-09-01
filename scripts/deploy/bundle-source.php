@@ -104,12 +104,23 @@ function read_remote_bundle_hash(stdClass $state, string $bundleHashUrl, string 
 // Puts the bundle at $tempBundlePath, from the cache when possible
 function fetch_bundle(stdClass $state, string $bundleUrl, string $bundleHashUrl, string $litBasePath, string $tempBundlePath, string $currentBundleHash, string $remoteBundleHashFromHashFile): void
 {
+    $cacheLock = acquire_cache_lock($litBasePath, isExclusive: false);
+
     // Try to find bundle in cache, a redeploy looks for the deployed hash
     $cachedBundleHash = $state->isRedeploying ? $currentBundleHash : $remoteBundleHashFromHashFile;
     $cachedBundlePath = '';
 
     if ($cachedBundleHash !== '' && file_exists("$litBasePath/cached-releases/$cachedBundleHash.tar")) {
         $cachedBundlePath = "$litBasePath/cached-releases/$cachedBundleHash.tar";
+    }
+
+    // Cached files contain their hash in the file name. Double check this hash.
+    if ($cachedBundlePath !== '' && sha1_file($cachedBundlePath) !== $cachedBundleHash) {
+        out("The cached bundle (hash: $cachedBundleHash) is corrupt, deleting it\n");
+
+        delete_file($cachedBundlePath);
+
+        $cachedBundlePath = '';
     }
 
     if ($cachedBundlePath !== '') {
@@ -122,6 +133,8 @@ function fetch_bundle(stdClass $state, string $bundleUrl, string $bundleHashUrl,
         }
 
         touch($cachedBundlePath);
+
+        release_cache_lock($cacheLock);
 
         $state->newBundleHash = $cachedBundleHash;
 
@@ -172,16 +185,23 @@ function fetch_bundle(stdClass $state, string $bundleUrl, string $bundleHashUrl,
     if (! file_exists("$litBasePath/cached-releases/$state->newBundleHash.tar")) {
         out("Adding bundle to cache ($litBasePath/cached-releases/$state->newBundleHash.tar)\n");
 
-        if (! copy($tempBundlePath, "$litBasePath/cached-releases/$state->newBundleHash.tar")) {
+        // Copy to a unique file first, then use an atomic "rename()"
+        $state->tempCacheFilePath = "$litBasePath/cached-releases/wip_".uuid().'.building';
+
+        if (! copy($tempBundlePath, $state->tempCacheFilePath) || ! rename($state->tempCacheFilePath, "$litBasePath/cached-releases/$state->newBundleHash.tar")) {
             out("Failed to add the bundle to the cache\n");
 
             lit_exit(1);
         }
+
+        $state->tempCacheFilePath = '';
     } else {
         out("Bundle exists in cache, but using the downloaded bundle instead\n");
 
         touch("$litBasePath/cached-releases/$state->newBundleHash.tar");
     }
+
+    release_cache_lock($cacheLock);
 }
 
 // Creates the release directory and unpacks the bundle into it
