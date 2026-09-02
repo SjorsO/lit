@@ -167,7 +167,7 @@ if ($menuAnswer === 'failed') {
     echo boxed_line()."\n";
 }
 
-echo boxed_line("  Setup complete. Rerun your command to continue.")."\n";
+echo boxed_line("  Setup complete.")."\n";
 echo "╰────────────────────────────────────────────────────────────────────────╯\n";
 echo "\n";
 

@@ -46,7 +46,7 @@ assert_same(<<<EXPECTED
 ╭────────────────────────────────────────────────────────────────────────╮
   Not adding alias.
 
-  Setup complete. Rerun your command to continue.
+  Setup complete.
 ╰────────────────────────────────────────────────────────────────────────╯
 EXPECTED, $output);
 
@@ -82,7 +82,7 @@ assert_same(<<<EXPECTED
 ╭────────────────────────────────────────────────────────────────────────╮
   ✓ Alias added. Restart your shell to start using it.
 
-  Setup complete. Rerun your command to continue.
+  Setup complete.
 ╰────────────────────────────────────────────────────────────────────────╯
 EXPECTED, $output);
 
@@ -116,7 +116,7 @@ assert_same(<<<EXPECTED
 ╰────────────────────────────────────────────────────────────────────────╯
 
 ╭────────────────────────────────────────────────────────────────────────╮
-  Setup complete. Rerun your command to continue.
+  Setup complete.
 ╰────────────────────────────────────────────────────────────────────────╯
 EXPECTED, $output);
 
