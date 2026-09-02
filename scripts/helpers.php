@@ -409,7 +409,8 @@ function register_cleanup(callable $cleanup): void
 // not echo. A Ctrl+C exits through the cleanup, which restores the terminal
 function enable_raw_terminal(): void
 {
-    if (! posix_isatty(STDIN)) {
+    // 0 instead of STDIN, casting the stream warns on PHP 8.2 and older
+    if (! posix_isatty(0)) {
         return;
     }
 
@@ -427,7 +428,7 @@ function enable_raw_terminal(): void
 
 function restore_terminal(): void
 {
-    if (! posix_isatty(STDIN)) {
+    if (! posix_isatty(0)) {
         return;
     }
 
