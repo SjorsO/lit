@@ -5,7 +5,7 @@
 </p>
 
 # Lit
-Lit is a CLI for deploying Laravel.
+Lit is a CLI for zero-downtime Laravel deployments on a VPS.
 
 Highlights:
 - Run `lit deploy` for a fully automated zero downtime deployment
@@ -42,7 +42,7 @@ For git deployments:
 For bundle deployments:
 - `lit init <bundle download url> [name]` initializes a new Lit directory
 - `lit deploy` downloads the bundle and deploys it
-- `lit redeploy` deploys the exact same bundle again
+- `lit redeploy` redeploys the exact same bundle
 
 Other commands:
 - `lit flush-opcache` flushes PHP-FPM OPcache
