@@ -33,8 +33,10 @@ if ($hadDeployKey) {
 
     if (yes_no_menu() === 'n') {
         out("\n");
-        out("Keeping the existing deploy key:\n");
-        out(read_public_deploy_key($projectBasePath)."\n");
+        out("Keeping the existing deploy key\n");
+        out("\n");
+
+        print_deploy_key($projectBasePath);
 
         $GLOBALS['current_run_result'] = 'aborted, kept the existing deploy key';
 

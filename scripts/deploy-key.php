@@ -79,17 +79,34 @@ function read_public_deploy_key(string $projectBasePath): string
     return trim(file_get_contents("$deployKeyPath.pub"));
 }
 
+// Prints the title and the key, ready to paste into the deploy key form
+function print_deploy_key(string $projectBasePath): void
+{
+    // A public key line is "type key comment", the comment makes a good title
+    $publicKeyParts = explode(' ', read_public_deploy_key($projectBasePath), 3);
+
+    out("Title:\n");
+    out("\n");
+    out('    '.($publicKeyParts[2] ?? 'Lit deploy key')."\n");
+    out("\n");
+    out("Deploy key:\n");
+    out("\n");
+    out('    '.$publicKeyParts[0].' '.($publicKeyParts[1] ?? '')."\n");
+}
+
 function print_deploy_key_instructions(string $projectBasePath, string $gitRepositoryUrl): void
 {
     $githubRepository = github_repository($gitRepositoryUrl);
 
     if ($githubRepository !== '') {
-        out("Add this public key as a deploy key on GitHub:\n");
-        out("https://github.com/$githubRepository/settings/keys/new\n");
+        out("Add this deploy key on GitHub:\n");
+        out("\n");
+        out("    https://github.com/$githubRepository/settings/keys/new\n");
     } else {
-        out("Add this public key as a deploy key to the repository:\n");
+        out("Add this deploy key to the repository:\n");
     }
 
     out("\n");
-    out(read_public_deploy_key($projectBasePath)."\n");
+
+    print_deploy_key($projectBasePath);
 }

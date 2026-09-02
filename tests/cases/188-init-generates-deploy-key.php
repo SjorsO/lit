@@ -67,7 +67,15 @@ function normalize_deploy_key_output(string $output): string
 {
     $output = normalize_output($output);
 
-    return preg_replace('/^ssh-ed25519 \S+ Lit deploy key for (\S+) on .*$/m', 'ssh-ed25519 PUBKEY Lit deploy key for $1 on HOST', $output);
+    $output = preg_replace('/^    ssh-ed25519 \S+$/m', '    ssh-ed25519 PUBKEY', $output);
+
+    return preg_replace('/^    Lit deploy key for (\S+) on .*$/m', '    Lit deploy key for $1 on HOST', $output);
+}
+
+// The output shows the key without its comment
+function public_key_without_comment(string $publicKeyFile): string
+{
+    return implode(' ', array_slice(explode(' ', trim(file_get_contents($publicKeyFile))), 0, 2));
 }
 
 chdir($caseDir);
@@ -90,9 +98,15 @@ Generate a deploy key?
 
 Generated a deploy key: "origin-repo/deploy-key"
 
-Add this public key as a deploy key to the repository:
+Add this deploy key to the repository:
 
-ssh-ed25519 PUBKEY Lit deploy key for origin-repo on HOST
+Title:
+
+    Lit deploy key for origin-repo on HOST
+
+Deploy key:
+
+    ssh-ed25519 PUBKEY
 
   Press enter to try again once you have added the key         q to quit
 
@@ -104,9 +118,15 @@ and the repository exists.
 
 The deploy key "origin-repo/deploy-key" has no access to the repository
 
-Add this public key as a deploy key to the repository:
+Add this deploy key to the repository:
 
-ssh-ed25519 PUBKEY Lit deploy key for origin-repo on HOST
+Title:
+
+    Lit deploy key for origin-repo on HOST
+
+Deploy key:
+
+    ssh-ed25519 PUBKEY
 
   Press enter to try again once you have added the key         q to quit
 
@@ -139,7 +159,7 @@ assert_file_exists("$projectPath/lit.json");
 assert_same(0600, fileperms("$projectPath/deploy-key") & 0777);
 
 // The public key file matches the key that was shown
-assert_string_contains($output, trim(file_get_contents("$projectPath/deploy-key.pub")));
+assert_string_contains($output, '    '.public_key_without_comment("$projectPath/deploy-key.pub"));
 
 // The first attempt ran without a key, every attempt after that used the deploy key
 // (the last call is the ".env.example" lookup)
@@ -218,9 +238,15 @@ Generate a deploy key?
 
 Generated a deploy key: "third/deploy-key"
 
-Add this public key as a deploy key to the repository:
+Add this deploy key to the repository:
 
-ssh-ed25519 PUBKEY Lit deploy key for third on HOST
+Title:
+
+    Lit deploy key for third on HOST
+
+Deploy key:
+
+    ssh-ed25519 PUBKEY
 
   Press enter to try again once you have added the key         q to quit
 
