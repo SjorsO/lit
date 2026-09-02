@@ -55,7 +55,12 @@ function directory_is_not_empty(string $path): bool
         return true;
     }
 
-    return is_dir($path) && count(scandir($path)) > 2;
+    if (! is_dir($path)) {
+        return false;
+    }
+
+    // A deploy key left behind by an earlier "lit init" does not count
+    return array_diff(scandir($path), ['.', '..', 'deploy-key', 'deploy-key.pub']) !== [];
 }
 
 function create_env_from_git_env_example(string $projectPath, string $sourceUrl): bool
@@ -66,7 +71,7 @@ function create_env_from_git_env_example(string $projectPath, string $sourceUrl)
 
     // "--filter=blob:none" skips downloading file contents, "--no-cone" then
     // fetches only the ".env.example" blob instead of every file in the root
-    [$cloneStatusCode] = run_command_and_capture(['git', 'clone', '--quiet', '--no-checkout', '--depth', '1', '--filter=blob:none', $sourceUrl, $clonePath]);
+    [$cloneStatusCode] = run_command_and_capture(git_command(['clone', '--quiet', '--no-checkout', '--depth', '1', '--filter=blob:none', $sourceUrl, $clonePath]));
 
     if ($cloneStatusCode === 0) {
         run_command_and_capture(['git', 'sparse-checkout', 'set', '--no-cone', '.env.example'], $clonePath);
@@ -97,6 +102,68 @@ function create_env_from_git_env_example(string $projectPath, string $sourceUrl)
     delete_directory($clonePath);
 
     return $createdEnvFile;
+}
+
+// Runs when reading the repository failed. Sets up a deploy key when that can fix
+// the error. Returns true when init should read the repository again
+function offer_deploy_key(string $projectPath, string $sourceUrl, string $customProjectName, string $gitError): bool
+{
+    $githubRepository = github_repository($sourceUrl);
+
+    // A deploy key only works over ssh
+    if (! is_ssh_git_url($sourceUrl)) {
+        if ($githubRepository !== '') {
+            out("Tip: with the SSH URL, Lit can set up a deploy key for you:\n");
+            out(rtrim("  lit init git@github.com:$githubRepository.git $customProjectName")."\n");
+        }
+
+        return false;
+    }
+
+    if (! is_git_access_error($gitError)) {
+        return false;
+    }
+
+    $prettyDeployKeyPath = basename($projectPath).'/deploy-key';
+
+    if (is_file("$projectPath/deploy-key")) {
+        out("The deploy key \"$prettyDeployKeyPath\" has no access to the repository.\n");
+    } else {
+        out('Generate a deploy key'.($githubRepository !== '' ? ' for GitHub' : '')."?\n");
+        out("\n");
+
+        if (yes_no_menu() === 'n') {
+            return false;
+        }
+
+        out("\n");
+
+        // The project directory is normally created after reading the repository
+        if (! is_dir($projectPath)) {
+            mkdir($projectPath, 0777, true);
+        }
+
+        generate_deploy_key($projectPath);
+    }
+
+    out("\n");
+
+    print_deploy_key_instructions($projectPath, $sourceUrl);
+
+    out("\n");
+
+    if (! wait_for_enter('Press enter to try again once you have added the key')) {
+        $initCommand = rtrim("lit init $sourceUrl $customProjectName");
+
+        out("\n");
+        out("Run \"$initCommand\" again once you have added the key\n");
+
+        lit_exit(130);
+    }
+
+    out("\n");
+
+    return true;
 }
 
 $initInCurrentDirectory = false;
@@ -139,6 +206,9 @@ if (! $initInCurrentDirectory) {
     $projectPath = "$projectBasePath/$projectName";
 }
 
+// Git commands use the deploy key of the project (if it has one)
+$GLOBALS['deploy_key_path'] = "$projectPath/deploy-key";
+
 // Check if the directory already exists and is not empty
 if (directory_is_not_empty($projectPath)) {
     if (is_laravel_project($projectPath)) {
@@ -155,12 +225,24 @@ if (directory_is_not_empty($projectPath)) {
 $defaultBranch = '';
 
 if ($sourceType === 'git') {
-    out("Reading \"$sourceUrl\"... ");
+    // Reading fails without access, a deploy key can fix that, then try again
+    while (true) {
+        out("Reading \"$sourceUrl\"... ");
 
-    [$lsRemoteStatusCode, $defaultBranchInfo] = run_command_and_capture_stdout(['git', 'ls-remote', '--symref', $sourceUrl, 'HEAD']);
+        [$lsRemoteStatusCode, $defaultBranchInfo, $lsRemoteError] = run_command_and_capture_stdout(git_command(['ls-remote', '--symref', $sourceUrl, 'HEAD']), streamStderr: false);
 
-    if ($lsRemoteStatusCode !== 0) {
-        lit_exit($lsRemoteStatusCode);
+        if ($lsRemoteStatusCode === 0) {
+            break;
+        }
+
+        out("\n");
+        out("\n");
+        out(rtrim($lsRemoteError)."\n");
+        out("\n");
+
+        if (! offer_deploy_key($projectPath, $sourceUrl, $customProjectName, $lsRemoteError)) {
+            lit_exit($lsRemoteStatusCode);
+        }
     }
 
     foreach (explode("\n", $defaultBranchInfo) as $lsRemoteLine) {
@@ -172,6 +254,12 @@ if ($sourceType === 'git') {
     }
 
     out("Done!\n");
+
+    // Warnings from a successful read, like a new host key that ssh remembered
+    if (trim($lsRemoteError) !== '') {
+        out(rtrim($lsRemoteError)."\n");
+    }
+
     out("\n");
 }
 
@@ -340,7 +428,13 @@ if ($hasNextSteps) {
             out("- Directories: current/, hooks/, releases/, storage/\n");
         }
 
-        out("- Files: .env, lit.json\n");
+        $filesToKeep = '.env, lit.json';
+
+        if (is_file("$projectPath/deploy-key")) {
+            $filesToKeep .= ', deploy-key, deploy-key.pub';
+        }
+
+        out("- Files: $filesToKeep\n");
 
         if (glob("$projectPath/database/*.sqlite")) {
             out("\n");

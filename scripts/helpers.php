@@ -40,6 +40,26 @@ function update_lit_state(string $projectBasePath, string $key, string|bool $val
     write_lit_state($projectBasePath, $litState);
 }
 
+// Builds a git command. A project with a deploy key makes git use that key for ssh.
+// Only Lit's own git commands get the key, hooks keep the default ssh setup
+function git_command(array $arguments): array
+{
+    $deployKeyPath = $GLOBALS['deploy_key_path'] ?? '';
+
+    if ($deployKeyPath === '' || ! is_file($deployKeyPath)) {
+        return ['git', ...$arguments];
+    }
+
+    // ssh refuses a key that others can read
+    if ((fileperms($deployKeyPath) & 0077) !== 0) {
+        @chmod($deployKeyPath, 0600);
+    }
+
+    $quotedDeployKeyPath = "'".str_replace("'", "'\\''", $deployKeyPath)."'";
+
+    return ['git', '-c', "core.sshCommand=ssh -i $quotedDeployKeyPath -o IdentitiesOnly=yes", ...$arguments];
+}
+
 function atomically_replace_symlink(string $target, string $symlinkPath): bool
 {
     $temporarySymlinkPath = $symlinkPath.'-'.uuid();
@@ -71,15 +91,26 @@ function release_is_live(string $projectBasePath, string $releaseDirectory): boo
 
 function resolve_remote_ref(string $gitRepositoryUrl, string $ref): array
 {
-    [$lsRemoteStatusCode, $lsRemoteOutput] = run_command_and_capture_stdout(['git', 'ls-remote', $gitRepositoryUrl, "refs/heads/$ref", "refs/tags/$ref*"]);
+    [$lsRemoteStatusCode, $lsRemoteOutput, $lsRemoteError] = run_command_and_capture_stdout(git_command(['ls-remote', $gitRepositoryUrl, "refs/heads/$ref", "refs/tags/$ref*"]), streamStderr: false);
 
     if ($lsRemoteStatusCode !== 0) {
+        out("\n");
+        out("\n");
+        out(rtrim($lsRemoteError)."\n");
+        out("\n");
         out("Reading the remote repository failed\n");
+
+        // An access error over ssh usually means the project has no deploy key yet
+        if (is_ssh_git_url($gitRepositoryUrl) && is_git_access_error($lsRemoteError) && ! is_file($GLOBALS['deploy_key_path'] ?? '')) {
+            out("Tip: run \"lit generate-deploy-key\" to set up a deploy key\n");
+        }
 
         $GLOBALS['current_run_result'] = 'failed (reading the remote repository failed)';
 
         lit_exit($lsRemoteStatusCode);
     }
+
+    out($lsRemoteError);
 
     $branchCommit = '';
     $tagCommit = '';
@@ -111,7 +142,7 @@ function resolve_remote_ref(string $gitRepositoryUrl, string $ref): array
 function clone_git_ref_into(string $gitRepositoryUrl, string $ref, string $refType, string $directoryPath): int
 {
     if ($refType === 'branch') {
-        return run_command(['git', 'clone', '--branch', $ref, '--depth', '100', '--single-branch', '--quiet', $gitRepositoryUrl, $directoryPath]);
+        return run_command(git_command(['clone', '--branch', $ref, '--depth', '100', '--single-branch', '--quiet', $gitRepositoryUrl, $directoryPath]));
     }
 
     $fetchRef = $refType === 'tag' ? "refs/tags/$ref" : $ref;
@@ -122,7 +153,7 @@ function clone_git_ref_into(string $gitRepositoryUrl, string $ref, string $refTy
         return $initStatusCode;
     }
 
-    $fetchStatusCode = run_command(['git', '-C', $directoryPath, 'fetch', '--quiet', '--depth', '100', $gitRepositoryUrl, $fetchRef]);
+    $fetchStatusCode = run_command(git_command(['-C', $directoryPath, 'fetch', '--quiet', '--depth', '100', $gitRepositoryUrl, $fetchRef]));
 
     if ($fetchStatusCode !== 0) {
         return $fetchStatusCode;
@@ -192,7 +223,7 @@ function expand_short_commit(string $gitRepositoryUrl, string $litBasePath, stri
     });
 
     // "--filter=tree:0" skips downloading file contents
-    [$cloneStatusCode, $cloneOutput] = run_command_and_capture(['git', 'clone', '--quiet', '--bare', '--filter=tree:0', $gitRepositoryUrl, $clonePath]);
+    [$cloneStatusCode, $cloneOutput] = run_command_and_capture(git_command(['clone', '--quiet', '--bare', '--filter=tree:0', $gitRepositoryUrl, $clonePath]));
 
     if ($cloneStatusCode !== 0) {
         out("\n");
@@ -374,6 +405,161 @@ function register_cleanup(callable $cleanup): void
     $GLOBALS['cleanup_stack'][] = $cleanup;
 }
 
+// Prompts read single keys, so the terminal must not wait for enter and must
+// not echo. A Ctrl+C exits through the cleanup, which restores the terminal
+function enable_raw_terminal(): void
+{
+    // 0 instead of STDIN, casting the stream warns on PHP 8.2 and older
+    if (! posix_isatty(0)) {
+        return;
+    }
+
+    if (! isset($GLOBALS['saved_terminal_settings'])) {
+        $GLOBALS['saved_terminal_settings'] = trim((string) shell_exec('stty -g'));
+
+        register_cleanup(fn () => restore_terminal());
+    }
+
+    shell_exec('stty -icanon -echo');
+
+    // Hide the cursor
+    fwrite(STDERR, "\033[?25l");
+}
+
+function restore_terminal(): void
+{
+    if (! posix_isatty(0)) {
+        return;
+    }
+
+    $savedSettings = $GLOBALS['saved_terminal_settings'] ?? '';
+
+    shell_exec($savedSettings !== '' ? 'stty '.escapeshellarg($savedSettings) : 'stty icanon echo');
+
+    // Show the cursor
+    fwrite(STDERR, "\033[?25h");
+}
+
+// Reads one key. Returns "enter", "escape", "left", "right", "eof", or the character itself
+function read_key(): string
+{
+    $key = fread(STDIN, 1);
+
+    // Ctrl+D also counts as the end of the input
+    if ($key === '' || $key === false || $key === "\x04") {
+        return 'eof';
+    }
+
+    if ($key === "\n" || $key === "\r") {
+        return 'enter';
+    }
+
+    if ($key !== "\e") {
+        return $key;
+    }
+
+    $read = [STDIN];
+    $write = null;
+    $except = null;
+
+    // A lone escape has no bytes after it, arrow keys do
+    if (stream_select($read, $write, $except, 0, 50_000) === 0) {
+        return 'escape';
+    }
+
+    return match (fread(STDIN, 2)) {
+        '[C' => 'right',
+        '[D' => 'left',
+        default => 'unknown',
+    };
+}
+
+// Draws a yes/no menu, returns "y" or "n". Exits on q, escape, or a closed stdin
+function yes_no_menu(): string
+{
+    enable_raw_terminal();
+
+    $current = 0;
+    $firstDraw = true;
+
+    while (true) {
+        // Redraws jump back up to the menu line
+        if (! $firstDraw) {
+            fwrite(STDERR, "\033[1A");
+        }
+
+        $firstDraw = false;
+
+        fwrite(STDERR, "\r\033[K");
+
+        // Padded so the dim hint ends at column 72, the width of the boxes Lit draws
+        $hint = str_repeat(' ', 32)."\033[2m←/→ + enter to select\033[0m";
+
+        if ($current === 0) {
+            fwrite(STDERR, "  \033[32m(●) Yes\033[0m    ( ) No$hint\n");
+        } else {
+            fwrite(STDERR, "  ( ) Yes    \033[32m(●) No\033[0m$hint\n");
+        }
+
+        $key = read_key();
+
+        if ($key === 'eof' || $key === 'escape' || $key === 'q' || $key === 'Q') {
+            lit_exit(130);
+        }
+
+        if ($key === 'left' || $key === 'right') {
+            $current = ($current + 1) % 2;
+        } elseif ($key === 'enter') {
+            $answer = $current === 0 ? 'y' : 'n';
+
+            break;
+        } elseif ($key === 'y' || $key === 'Y') {
+            $answer = 'y';
+
+            break;
+        } elseif ($key === 'n' || $key === 'N') {
+            $answer = 'n';
+
+            break;
+        }
+    }
+
+    restore_terminal();
+
+    return $answer;
+}
+
+// Shows the prompt and waits for enter. Returns false on q, escape, or a closed stdin
+function wait_for_enter(string $prompt): bool
+{
+    enable_raw_terminal();
+
+    $hint = 'q to quit';
+
+    // Padded so the dim hint ends at column 72, like the yes/no menu
+    fwrite(STDERR, str_pad("  $prompt", 72 - strlen($hint))."\033[2m$hint\033[0m\n");
+
+    while (true) {
+        $key = read_key();
+
+        if ($key === 'eof' || $key === 'escape' || $key === 'q' || $key === 'Q') {
+            $pressedEnter = false;
+
+            break;
+        }
+
+        if ($key === 'enter') {
+            $pressedEnter = true;
+
+            break;
+        }
+    }
+
+    restore_terminal();
+
+    return $pressedEnter;
+}
+
 function delete_directory(string $directoryPath): void
 {
     run_command_and_capture(['rm', '-rf', $directoryPath]);
@@ -451,8 +637,8 @@ function run_command_and_capture(array $command, ?string $currentDirectory = nul
     return [proc_close($process), $output];
 }
 
-// Returns [statusCode, stdout], stderr is streamed through out()
-function run_command_and_capture_stdout(array $command): array
+// Returns [statusCode, stdout, stderr]. By default stderr is also streamed through out()
+function run_command_and_capture_stdout(array $command, bool $streamStderr = true): array
 {
     $process = proc_open($command, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
 
@@ -462,6 +648,7 @@ function run_command_and_capture_stdout(array $command): array
     stream_set_blocking($pipes[2], false);
 
     $stdout = '';
+    $stderr = '';
 
     while (! feof($pipes[1]) || ! feof($pipes[2])) {
         $readablePipes = array_filter([$pipes[1], $pipes[2]], fn ($pipe) => ! feof($pipe));
@@ -474,7 +661,13 @@ function run_command_and_capture_stdout(array $command): array
 
         $stdout .= stream_get_contents($pipes[1]) ?: '';
 
-        out(stream_get_contents($pipes[2]) ?: '');
+        $stderrChunk = stream_get_contents($pipes[2]) ?: '';
+
+        $stderr .= $stderrChunk;
+
+        if ($streamStderr) {
+            out($stderrChunk);
+        }
     }
 
     fclose($pipes[1]);
@@ -482,7 +675,7 @@ function run_command_and_capture_stdout(array $command): array
 
     $GLOBALS['current_child_process'] = null;
 
-    return [proc_close($process), $stdout];
+    return [proc_close($process), $stdout, $stderr];
 }
 
 function list_all_processes(): ?array

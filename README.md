@@ -38,6 +38,7 @@ For git deployments:
 - `lit redeploy` deploys the exact same commit again
 - `lit enable-git-release-caching` for faster deployments of the same commit
 - `lit disable-git-release-caching` disables git release caching
+- `lit generate-deploy-key` generates (or replaces) the SSH deploy key of the project
 
 For bundle deployments:
 - `lit init <bundle download url> [name]` initializes a new Lit directory
@@ -54,6 +55,14 @@ To switch between git and bundle deployments, run `lit init <url>` in your exist
 To deploy a Laravel project with Lit, run `lit init <git repository url>`.
 Lit will tell you to fill in your `.env` file and review the `before-release.sh` and `after-release.sh` hooks.
 When you're done, run `lit deploy` to deploy the project.
+
+## Deploy keys
+The first time you run `lit init`, if Lit can't reach the repository over SSH, it offers to generate a deploy key for you.
+The key is saved in the project as `deploy-key` and `deploy-key.pub`.
+
+Whenever those files are present, Lit uses them when cloning and fetching your repository.
+
+To replace the deploy key, run `lit generate-deploy-key`.
 
 ## Setting up Lit in an existing project
 If your application is already deployed, you can add Lit using `lit init`.
