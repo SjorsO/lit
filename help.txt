@@ -6,6 +6,7 @@
 │   lit checkout <branch|tag|commit>    Switch ref and deploy                  │
 │                                                                              │
 │   lit init <url> [name]               Initialize a new Lit directory         │
+│   lit generate-deploy-key             Generate an SSH deploy key             │
 │                                                                              │
 │   lit enable-git-release-caching      For faster deploys of the same commit  │
 │   lit disable-git-release-caching     Disable git release caching            │
