@@ -23,6 +23,10 @@ assert_string_not_contains($output, 'Done!');
 assert_string_not_contains($output, 'Finished initializing');
 assert_string_not_contains($output, 'Next steps:');
 
+// A GitHub https url can't use a deploy key, so Lit shows the ssh url instead
+assert_string_contains($output, "Tip: with the SSH URL, Lit can set up a deploy key for you:\n  lit init git@github.com:SjorsO/this-repo-does-not-exist-12345.git");
+assert_string_not_contains($output, 'Generate a deploy key');
+
 // Nothing is created, not even the project directory
 assert_file_missing("$worldPath/case/this-repo-does-not-exist-12345");
 
@@ -42,6 +46,9 @@ chdir($projectPath);
 
 assert_same(128, $statusCode);
 assert_string_not_contains($output, 'Changing from git repository URL');
+
+// The tip keeps the project name argument
+assert_string_contains($output, "\n  lit init git@github.com:SjorsO/this-repo-does-not-exist-12345.git .");
 
 // The existing configuration survived
 assert_file_content("$projectPath/lit.json", <<<'EXPECTED'

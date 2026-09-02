@@ -20,6 +20,7 @@ $GLOBALS['current_child_process'] = null;
 $GLOBALS['current_run_result'] = '';
 $GLOBALS['is_terminating'] = false;
 $GLOBALS['stdout_is_gone'] = false;
+$GLOBALS['deploy_key_path'] = deploy_key_path($projectBasePath);
 
 register_shutdown_function(function () {
     $GLOBALS['is_terminating'] = true;
@@ -177,6 +178,8 @@ if ($command === 'deploy') {
     require "$litBasePath/scripts/enable-git-release-caching.php";
 } elseif ($command === 'disable-git-release-caching') {
     require "$litBasePath/scripts/disable-git-release-caching.php";
+} elseif ($command === 'generate-deploy-key') {
+    require "$litBasePath/scripts/generate-deploy-key.php";
 } elseif ($command === 'flush-opcache') {
     require "$litBasePath/scripts/flush-opcache.php";
 } elseif ($command === 'opcache-status') {
