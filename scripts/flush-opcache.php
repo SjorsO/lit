@@ -1,5 +1,12 @@
 <?php
 
-echo function_exists('opcache_reset') && opcache_reset()
-    ? "OPcache flushed successfully.\n"
-    : "OPcache is not enabled.\n";
+/**
+ * @var string $litBasePath
+ */
+
+$phpSourceFile = "$litBasePath/scripts/payloads/flush-opcache.php";
+$actionLabel = 'flush OPcache';
+$notIfFirstRelease = true;
+$queryString = '';
+
+require "$litBasePath/scripts/run-php-script.php";
