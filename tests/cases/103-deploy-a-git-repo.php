@@ -10,9 +10,9 @@ $projectPath = world_path().'/case/lit';
 
 // Replace hooks to verify $1 and $2 are correct directories
 // $1 (project_base_directory) should contain storage/ and logs/
-// $2 (new_release_directory) should contain the cloned repo (lit.sh)
-file_put_contents("$projectPath/hooks/before-release.sh", '[ -d "$1/storage" ] && [ -d "$1/logs" ] && [ -f "$2/lit.sh" ] && touch "$1/before-release-ran" && touch "$2/before-release-release"'."\n");
-file_put_contents("$projectPath/hooks/after-release.sh", '[ -d "$1/storage" ] && [ -d "$1/logs" ] && [ -f "$2/lit.sh" ] && touch "$1/after-release-ran" && touch "$2/after-release-release"'."\n");
+// $2 (new_release_directory) should contain the cloned repo (lit.php)
+file_put_contents("$projectPath/hooks/before-release.sh", '[ -d "$1/storage" ] && [ -d "$1/logs" ] && [ -f "$2/lit.php" ] && touch "$1/before-release-ran" && touch "$2/before-release-release"'."\n");
+file_put_contents("$projectPath/hooks/after-release.sh", '[ -d "$1/storage" ] && [ -d "$1/logs" ] && [ -f "$2/lit.php" ] && touch "$1/after-release-ran" && touch "$2/after-release-release"'."\n");
 
 // Nothing fails in this test, this hook should never run
 file_put_contents("$projectPath/hooks/on-failure.sh", 'touch "$1/on-failure-called"'."\n");
