@@ -20,4 +20,4 @@ if [[ "$available_commands" =~ "pulse:restart" ]]; then
     php artisan pulse:restart
 fi
 
-(cd "$project_base_directory" && bash "$lit_base_path/lit.sh" flush-opcache)
+(cd "$project_base_directory" && php "$lit_base_path/lit.php" flush-opcache)

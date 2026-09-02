@@ -5,7 +5,7 @@
 </p>
 
 # Lit
-Lit is a CLI for deploying Laravel.
+Lit is a CLI for zero-downtime Laravel deployments on a VPS.
 
 Highlights:
 - Run `lit deploy` for a fully automated zero downtime deployment
@@ -15,9 +15,11 @@ Highlights:
 - Works on Linux and macOS
 
 ## Install
+Lit needs PHP 8.0 or newer.
+
 Install Lit with git:
 ```
-git clone --branch release --single-branch --quiet https://github.com/SjorsO/lit.git && source lit/lit.sh
+git clone --branch release --single-branch --quiet https://github.com/SjorsO/lit.git && php lit/lit.php init
 ```
 Or, install from a bundle:
 ```
@@ -25,25 +27,26 @@ mkdir lit \
   && curl --silent --output lit/lit.tar --location https://github.com/SjorsO/lit/releases/download/latest/lit.tar.gz \
   && (cd lit && tar --extract --file lit.tar) \
   && rm lit/lit.tar \
-  && source lit/lit.sh
+  && php lit/lit.php init
 ```
 
 ## Usage
 For git deployments:
 - `lit init <git repository url> [name]` initializes a new Lit directory
 - `lit deploy` runs `git clone` and deploys the current branch
-- `lit checkout <branch>` switches to a different branch and deploys it
+- `lit checkout <branch|tag|commit>` switches to a different branch, tag, or commit and deploys it
+- `lit redeploy` deploys the exact same commit again
+- `lit enable-git-release-caching` for faster deployments of the same commit
+- `lit disable-git-release-caching` disables git release caching
 
 For bundle deployments:
 - `lit init <bundle download url> [name]` initializes a new Lit directory
 - `lit deploy` downloads the bundle and deploys it
+- `lit redeploy` redeploys the exact same bundle
 
 Other commands:
 - `lit flush-opcache` flushes PHP-FPM OPcache
-- `lit enable-git-release-caching` for faster deployments of the same commit
-- `lit disable-git-release-caching` disables git release caching
-- `lit enable-telemetry` enables sending anonymous telemetry after a deployment (disabled by default)
-- `lit disable-telemetry` disables telemetry
+- `lit opcache-status [--json]` shows PHP-FPM OPcache status
 
 To switch between git and bundle deployments, run `lit init <url>` in your existing Lit project.
 
