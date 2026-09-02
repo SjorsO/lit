@@ -55,7 +55,7 @@ function generate_deploy_key(string $projectBasePath): void
         lit_exit($keygenStatusCode);
     }
 
-    out('Generated a deploy key: "'.basename($projectBasePath).'/'.basename($deployKeyPath)."\"\n");
+    out("Generated a public/private key pair.\n");
 }
 
 // The public key lives next to the private key, rebuild it when it is missing
@@ -86,12 +86,9 @@ function print_deploy_key(string $projectBasePath): void
     $publicKeyParts = explode(' ', read_public_deploy_key($projectBasePath), 3);
 
     out("Title:\n");
-    out("\n");
-    out('    '.($publicKeyParts[2] ?? 'Lit deploy key')."\n");
-    out("\n");
-    out("Deploy key:\n");
-    out("\n");
-    out('    '.$publicKeyParts[0].' '.($publicKeyParts[1] ?? '')."\n");
+    out('  '.($publicKeyParts[2] ?? 'Lit deploy key')."\n");
+    out("Key:\n");
+    out('  '.$publicKeyParts[0].' '.($publicKeyParts[1] ?? '')."\n");
 }
 
 function print_deploy_key_instructions(string $projectBasePath, string $gitRepositoryUrl): void
@@ -99,11 +96,10 @@ function print_deploy_key_instructions(string $projectBasePath, string $gitRepos
     $githubRepository = github_repository($gitRepositoryUrl);
 
     if ($githubRepository !== '') {
-        out("Add this deploy key on GitHub:\n");
-        out("\n");
-        out("    https://github.com/$githubRepository/settings/keys/new\n");
+        out("To add the deploy key, visit:\n");
+        out("  https://github.com/$githubRepository/settings/keys/new\n");
     } else {
-        out("Add this deploy key to the repository:\n");
+        out("To add the deploy key, visit the repository settings.\n");
     }
 
     out("\n");

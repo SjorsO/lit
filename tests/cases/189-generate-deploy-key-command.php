@@ -43,9 +43,9 @@ function normalize_deploy_key_output(string $output): string
 {
     $output = normalize_output($output);
 
-    $output = preg_replace('/^    ssh-ed25519 \S+$/m', '    ssh-ed25519 PUBKEY', $output);
+    $output = preg_replace('/^  ssh-ed25519 \S+$/m', '  ssh-ed25519 PUBKEY', $output);
 
-    return preg_replace('/^    Lit deploy key for (\S+) on .*$/m', '    Lit deploy key for $1 on HOST', $output);
+    return preg_replace('/^  Lit deploy key for (\S+) on .*$/m', '  Lit deploy key for $1 on HOST', $output);
 }
 
 // The output shows the key without its comment
@@ -90,17 +90,14 @@ assert_same('usage: lit generate-deploy-key', $output);
 assert_same(0, $statusCode);
 
 assert_same(<<<'EXPECTED'
-Generated a deploy key: "origin-repo/deploy-key"
+Generated a public/private key pair.
 
-Add this deploy key to the repository:
+To add the deploy key, visit the repository settings.
 
 Title:
-
-    Lit deploy key for origin-repo on HOST
-
-Deploy key:
-
-    ssh-ed25519 PUBKEY
+  Lit deploy key for origin-repo on HOST
+Key:
+  ssh-ed25519 PUBKEY
 
 Note: the deploy key is only used with an SSH URL, run "lit init <ssh url>" to switch
 EXPECTED, normalize_deploy_key_output($output));
@@ -110,7 +107,7 @@ assert_same(0600, fileperms("$projectPath/deploy-key") & 0777);
 
 $firstPublicKey = file_get_contents("$projectPath/deploy-key.pub");
 
-assert_string_contains($output, '    '.public_key_without_comment("$projectPath/deploy-key.pub"));
+assert_string_contains($output, '  '.public_key_without_comment("$projectPath/deploy-key.pub"));
 
 // 2. With an ssh url, deploying uses the key
 set_lit_state_value($projectPath, 'git_repository_url', "git@localhost:$remotePath");
@@ -148,17 +145,15 @@ assert_same(0, $statusCode);
 
 assert_same(<<<'EXPECTED'
 This project already has a deploy key, replace it?
+
   (●) Yes    ( ) No                                ←/→ + enter to select
 
-Keeping the existing deploy key
+Keeping the existing deploy key.
 
 Title:
-
-    Lit deploy key for origin-repo on HOST
-
-Deploy key:
-
-    ssh-ed25519 PUBKEY
+  Lit deploy key for origin-repo on HOST
+Key:
+  ssh-ed25519 PUBKEY
 EXPECTED, normalize_deploy_key_output($output));
 
 assert_file_content("$projectPath/deploy-key.pub", trim($firstPublicKey));
@@ -170,19 +165,17 @@ assert_same(0, $statusCode);
 
 assert_same(<<<'EXPECTED'
 This project already has a deploy key, replace it?
+
   (●) Yes    ( ) No                                ←/→ + enter to select
 
-Generated a deploy key: "origin-repo/deploy-key"
+Generated a public/private key pair.
 
-Add this deploy key to the repository:
+To add the deploy key, visit the repository settings.
 
 Title:
-
-    Lit deploy key for origin-repo on HOST
-
-Deploy key:
-
-    ssh-ed25519 PUBKEY
+  Lit deploy key for origin-repo on HOST
+Key:
+  ssh-ed25519 PUBKEY
 
 Remember to remove the old deploy key from the repository
 EXPECTED, normalize_deploy_key_output($output));
@@ -193,7 +186,7 @@ if ($secondPublicKey === $firstPublicKey) {
     fail_assertion('Expected a new public key');
 }
 
-assert_string_contains($output, '    '.public_key_without_comment("$projectPath/deploy-key.pub"));
+assert_string_contains($output, '  '.public_key_without_comment("$projectPath/deploy-key.pub"));
 assert_same(0600, fileperms("$projectPath/deploy-key") & 0777);
 
 // 5. A GitHub url gets GitHub wording and a link to the deploy key settings
@@ -202,7 +195,7 @@ set_lit_state_value($projectPath, 'git_repository_url', 'git@github.com:SjorsO/o
 [$statusCode, $output] = lit_with_input('y', [], 'generate-deploy-key');
 
 assert_same(0, $statusCode);
-assert_string_contains($output, "Add this deploy key on GitHub:\n\n    https://github.com/SjorsO/ottjes/settings/keys/new\n");
+assert_string_contains($output, "To add the deploy key, visit:\n  https://github.com/SjorsO/ottjes/settings/keys/new\n");
 assert_string_contains($output, 'Remember to remove the old deploy key from GitHub');
 assert_string_not_contains($output, 'Note:');
 
@@ -224,7 +217,7 @@ unlink("$projectPath/deploy-key.pub");
 [$statusCode, $output] = lit_with_input('n', [], 'generate-deploy-key');
 
 assert_same(0, $statusCode);
-assert_string_contains($output, "    $publicKeyWithoutComment");
+assert_string_contains($output, "  $publicKeyWithoutComment");
 assert_file_content("$projectPath/deploy-key.pub", trim($publicKey));
 
 // Every run is in the log

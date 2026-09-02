@@ -134,9 +134,10 @@ function offer_deploy_key(string $projectPath, string $sourceUrl, string $custom
     out("\n");
 
     if (is_file(deploy_key_path($projectPath))) {
-        out("The deploy key \"$prettyDeployKeyPath\" has no access to the repository\n");
+        out("The deploy key \"$prettyDeployKeyPath\" has no access to the repository.\n");
     } else {
         out('Generate a deploy key'.($githubRepository !== '' ? ' for GitHub' : '')."?\n");
+        out("\n");
 
         if (yes_no_menu() === 'n') {
             return false;
@@ -235,10 +236,18 @@ if ($sourceType === 'git') {
     while (true) {
         out("Reading \"$sourceUrl\"... ");
 
-        [$lsRemoteStatusCode, $defaultBranchInfo, $lsRemoteError] = run_command_and_capture_stdout(git_command(['ls-remote', '--symref', $sourceUrl, 'HEAD']));
+        // Errors are not streamed, they get their own block below the "Reading" line
+        [$lsRemoteStatusCode, $defaultBranchInfo, $lsRemoteError] = run_command_and_capture_stdout(git_command(['ls-remote', '--symref', $sourceUrl, 'HEAD']), streamStderr: false);
 
         if ($lsRemoteStatusCode === 0) {
             break;
+        }
+
+        out("\n");
+
+        if (trim($lsRemoteError) !== '') {
+            out("\n");
+            out(rtrim($lsRemoteError)."\n");
         }
 
         if (! offer_deploy_key($projectPath, $sourceUrl, $customProjectName, $lsRemoteError)) {
@@ -255,6 +264,12 @@ if ($sourceType === 'git') {
     }
 
     out("Done!\n");
+
+    // Warnings from a successful read, like a new host key that ssh remembered
+    if (trim($lsRemoteError) !== '') {
+        out(rtrim($lsRemoteError)."\n");
+    }
+
     out("\n");
 }
 

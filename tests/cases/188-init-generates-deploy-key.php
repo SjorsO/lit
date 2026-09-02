@@ -67,9 +67,9 @@ function normalize_deploy_key_output(string $output): string
 {
     $output = normalize_output($output);
 
-    $output = preg_replace('/^    ssh-ed25519 \S+$/m', '    ssh-ed25519 PUBKEY', $output);
+    $output = preg_replace('/^  ssh-ed25519 \S+$/m', '  ssh-ed25519 PUBKEY', $output);
 
-    return preg_replace('/^    Lit deploy key for (\S+) on .*$/m', '    Lit deploy key for $1 on HOST', $output);
+    return preg_replace('/^  Lit deploy key for (\S+) on .*$/m', '  Lit deploy key for $1 on HOST', $output);
 }
 
 // The output shows the key without its comment
@@ -87,46 +87,45 @@ chdir($caseDir);
 assert_same(0, $statusCode);
 
 assert_same(<<<EXPECTED
-Reading "$remoteUrl"... git@localhost: Permission denied (publickey).
+Reading "$remoteUrl"...
+
+git@localhost: Permission denied (publickey).
 fatal: Could not read from remote repository.
 
 Please make sure you have the correct access rights
 and the repository exists.
 
 Generate a deploy key?
+
   (●) Yes    ( ) No                                ←/→ + enter to select
 
-Generated a deploy key: "origin-repo/deploy-key"
+Generated a public/private key pair.
 
-Add this deploy key to the repository:
+To add the deploy key, visit the repository settings.
 
 Title:
-
-    Lit deploy key for origin-repo on HOST
-
-Deploy key:
-
-    ssh-ed25519 PUBKEY
+  Lit deploy key for origin-repo on HOST
+Key:
+  ssh-ed25519 PUBKEY
 
   Press enter to try again once you have added the key         q to quit
 
-Reading "$remoteUrl"... ERROR: Repository not found.
+Reading "$remoteUrl"...
+
+ERROR: Repository not found.
 fatal: Could not read from remote repository.
 
 Please make sure you have the correct access rights
 and the repository exists.
 
-The deploy key "origin-repo/deploy-key" has no access to the repository
+The deploy key "origin-repo/deploy-key" has no access to the repository.
 
-Add this deploy key to the repository:
+To add the deploy key, visit the repository settings.
 
 Title:
-
-    Lit deploy key for origin-repo on HOST
-
-Deploy key:
-
-    ssh-ed25519 PUBKEY
+  Lit deploy key for origin-repo on HOST
+Key:
+  ssh-ed25519 PUBKEY
 
   Press enter to try again once you have added the key         q to quit
 
@@ -159,7 +158,7 @@ assert_file_exists("$projectPath/lit.json");
 assert_same(0600, fileperms("$projectPath/deploy-key") & 0777);
 
 // The public key file matches the key that was shown
-assert_string_contains($output, '    '.public_key_without_comment("$projectPath/deploy-key.pub"));
+assert_string_contains($output, '  '.public_key_without_comment("$projectPath/deploy-key.pub"));
 
 // The first attempt ran without a key, every attempt after that used the deploy key
 // (the last call is the ".env.example" lookup)
@@ -201,13 +200,16 @@ chdir($caseDir);
 assert_same(128, $statusCode);
 
 assert_same(<<<EXPECTED
-Reading "$remoteUrl"... git@localhost: Permission denied (publickey).
+Reading "$remoteUrl"...
+
+git@localhost: Permission denied (publickey).
 fatal: Could not read from remote repository.
 
 Please make sure you have the correct access rights
 and the repository exists.
 
 Generate a deploy key?
+
   (●) Yes    ( ) No                                ←/→ + enter to select
 EXPECTED, normalize_output($output));
 
@@ -227,26 +229,26 @@ assert_file_missing("$caseDir/bar");
 assert_same(130, $statusCode);
 
 assert_same(<<<EXPECTED
-Reading "$remoteUrl"... git@localhost: Permission denied (publickey).
+Reading "$remoteUrl"...
+
+git@localhost: Permission denied (publickey).
 fatal: Could not read from remote repository.
 
 Please make sure you have the correct access rights
 and the repository exists.
 
 Generate a deploy key?
+
   (●) Yes    ( ) No                                ←/→ + enter to select
 
-Generated a deploy key: "third/deploy-key"
+Generated a public/private key pair.
 
-Add this deploy key to the repository:
+To add the deploy key, visit the repository settings.
 
 Title:
-
-    Lit deploy key for third on HOST
-
-Deploy key:
-
-    ssh-ed25519 PUBKEY
+  Lit deploy key for third on HOST
+Key:
+  ssh-ed25519 PUBKEY
 
   Press enter to try again once you have added the key         q to quit
 

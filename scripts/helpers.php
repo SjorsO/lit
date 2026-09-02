@@ -630,8 +630,8 @@ function run_command_and_capture(array $command, ?string $currentDirectory = nul
     return [proc_close($process), $output];
 }
 
-// Returns [statusCode, stdout, stderr], stderr is also streamed through out()
-function run_command_and_capture_stdout(array $command): array
+// Returns [statusCode, stdout, stderr]. By default stderr is also streamed through out()
+function run_command_and_capture_stdout(array $command, bool $streamStderr = true): array
 {
     $process = proc_open($command, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
 
@@ -658,7 +658,9 @@ function run_command_and_capture_stdout(array $command): array
 
         $stderr .= $stderrChunk;
 
-        out($stderrChunk);
+        if ($streamStderr) {
+            out($stderrChunk);
+        }
     }
 
     fclose($pipes[1]);

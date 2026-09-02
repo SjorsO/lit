@@ -30,10 +30,11 @@ $hadDeployKey = is_file(deploy_key_path($projectBasePath));
 
 if ($hadDeployKey) {
     out("This project already has a deploy key, replace it?\n");
+    out("\n");
 
     if (yes_no_menu() === 'n') {
         out("\n");
-        out("Keeping the existing deploy key\n");
+        out("Keeping the existing deploy key.\n");
         out("\n");
 
         print_deploy_key($projectBasePath);
