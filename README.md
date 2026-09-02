@@ -57,10 +57,10 @@ Lit will tell you to fill in your `.env` file and review the `before-release.sh`
 When you're done, run `lit deploy` to deploy the project.
 
 ## Deploy keys
-A private repository needs a deploy key.
-When `lit init` can't access a repository over SSH, it offers to generate one.
-Lit stores the key in the project as `deploy-key` and `deploy-key.pub`, and shows you where to add the public key.
-Only Lit's own git commands use the key, so your hooks keep using the default SSH setup of the server.
+The first time you run `lit init`, if Lit can't reach the repository over SSH, it offers to generate a deploy key for you.
+The key is saved in the project as `deploy-key` and `deploy-key.pub`.
+
+Whenever those files are present, Lit uses them when cloning and fetching your repository.
 
 To replace the deploy key, run `lit generate-deploy-key`.
 

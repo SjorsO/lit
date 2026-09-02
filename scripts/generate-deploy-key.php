@@ -24,7 +24,7 @@ if (get_source_type($projectBasePath) !== 'git') {
 
 $gitRepositoryUrl = read_lit_state($projectBasePath)['git_repository_url'];
 
-$hadDeployKey = is_file(deploy_key_path($projectBasePath));
+$hadDeployKey = is_file("$projectBasePath/deploy-key");
 
 if ($hadDeployKey) {
     out("This project already has a deploy key, replace it?\n");

@@ -21,7 +21,7 @@ $GLOBALS['current_child_process'] = null;
 $GLOBALS['current_run_result'] = '';
 $GLOBALS['is_terminating'] = false;
 $GLOBALS['stdout_is_gone'] = false;
-$GLOBALS['deploy_key_path'] = deploy_key_path($projectBasePath);
+$GLOBALS['deploy_key_path'] = "$projectBasePath/deploy-key";
 
 register_shutdown_function(function () {
     $GLOBALS['is_terminating'] = true;

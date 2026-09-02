@@ -38,7 +38,7 @@ function generate_deploy_key(string $projectBasePath): void
         lit_exit(1);
     }
 
-    $deployKeyPath = deploy_key_path($projectBasePath);
+    $deployKeyPath = "$projectBasePath/deploy-key";
 
     // ssh-keygen asks before overwriting, so remove the old key first
     delete_file($deployKeyPath);
@@ -61,7 +61,7 @@ function generate_deploy_key(string $projectBasePath): void
 // The public key lives next to the private key, rebuild it when it is missing
 function read_public_deploy_key(string $projectBasePath): string
 {
-    $deployKeyPath = deploy_key_path($projectBasePath);
+    $deployKeyPath = "$projectBasePath/deploy-key";
 
     if (! is_file("$deployKeyPath.pub")) {
         [$keygenStatusCode, $keygenOutput] = run_command_and_capture(['ssh-keygen', '-y', '-f', $deployKeyPath]);

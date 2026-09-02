@@ -40,11 +40,6 @@ function update_lit_state(string $projectBasePath, string $key, string|bool $val
     write_lit_state($projectBasePath, $litState);
 }
 
-function deploy_key_path(string $projectBasePath): string
-{
-    return "$projectBasePath/deploy-key";
-}
-
 // Builds a git command. A project with a deploy key makes git use that key for ssh.
 // Only Lit's own git commands get the key, hooks keep the default ssh setup
 function git_command(array $arguments): array
@@ -96,7 +91,6 @@ function release_is_live(string $projectBasePath, string $releaseDirectory): boo
 
 function resolve_remote_ref(string $gitRepositoryUrl, string $ref): array
 {
-    // Errors are not streamed, they get their own block below the "Reading" line
     [$lsRemoteStatusCode, $lsRemoteOutput, $lsRemoteError] = run_command_and_capture_stdout(git_command(['ls-remote', $gitRepositoryUrl, "refs/heads/$ref", "refs/tags/$ref*"]), streamStderr: false);
 
     if ($lsRemoteStatusCode !== 0) {
@@ -116,7 +110,6 @@ function resolve_remote_ref(string $gitRepositoryUrl, string $ref): array
         lit_exit($lsRemoteStatusCode);
     }
 
-    // Warnings from a successful read stay on the "Reading" line, like before
     out($lsRemoteError);
 
     $branchCommit = '';

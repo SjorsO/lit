@@ -60,9 +60,7 @@ function directory_is_not_empty(string $path): bool
     }
 
     // A deploy key left behind by an earlier "lit init" does not count
-    $deployKeyName = basename(deploy_key_path($path));
-
-    return array_diff(scandir($path), ['.', '..', $deployKeyName, "$deployKeyName.pub"]) !== [];
+    return array_diff(scandir($path), ['.', '..', 'deploy-key', 'deploy-key.pub']) !== [];
 }
 
 function create_env_from_git_env_example(string $projectPath, string $sourceUrl): bool
@@ -126,9 +124,9 @@ function offer_deploy_key(string $projectPath, string $sourceUrl, string $custom
         return false;
     }
 
-    $prettyDeployKeyPath = basename($projectPath).'/'.basename(deploy_key_path($projectPath));
+    $prettyDeployKeyPath = basename($projectPath).'/deploy-key';
 
-    if (is_file(deploy_key_path($projectPath))) {
+    if (is_file("$projectPath/deploy-key")) {
         out("The deploy key \"$prettyDeployKeyPath\" has no access to the repository.\n");
     } else {
         out('Generate a deploy key'.($githubRepository !== '' ? ' for GitHub' : '')."?\n");
@@ -209,7 +207,7 @@ if (! $initInCurrentDirectory) {
 }
 
 // Git commands use the deploy key of the project (if it has one)
-$GLOBALS['deploy_key_path'] = deploy_key_path($projectPath);
+$GLOBALS['deploy_key_path'] = "$projectPath/deploy-key";
 
 // Check if the directory already exists and is not empty
 if (directory_is_not_empty($projectPath)) {
@@ -231,7 +229,6 @@ if ($sourceType === 'git') {
     while (true) {
         out("Reading \"$sourceUrl\"... ");
 
-        // Errors are not streamed, they get their own block below the "Reading" line
         [$lsRemoteStatusCode, $defaultBranchInfo, $lsRemoteError] = run_command_and_capture_stdout(git_command(['ls-remote', '--symref', $sourceUrl, 'HEAD']), streamStderr: false);
 
         if ($lsRemoteStatusCode === 0) {
@@ -433,7 +430,7 @@ if ($hasNextSteps) {
 
         $filesToKeep = '.env, lit.json';
 
-        if (is_file(deploy_key_path($projectPath))) {
+        if (is_file("$projectPath/deploy-key")) {
             $filesToKeep .= ', deploy-key, deploy-key.pub';
         }
 
