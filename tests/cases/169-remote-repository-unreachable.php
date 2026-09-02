@@ -52,11 +52,14 @@ assert_same(128, $statusCode);
 $output = normalize_output($output);
 
 assert_same(<<<EXPECTED
-Reading branch "main" of "$remoteUrl"... fatal: '$remotePath' does not appear to be a git repository
+Reading branch "main" of "$remoteUrl"...
+
+fatal: '$remotePath' does not appear to be a git repository
 fatal: Could not read from remote repository.
 
 Please make sure you have the correct access rights
 and the repository exists.
+
 Reading the remote repository failed
 Finished with errors (in X seconds)
 EXPECTED, $output);
@@ -83,11 +86,14 @@ assert_same(128, $statusCode);
 $output = normalize_output($output);
 
 assert_same(<<<EXPECTED
-Switching to "other-branch"... fatal: '$remotePath' does not appear to be a git repository
+Switching to "other-branch"...
+
+fatal: '$remotePath' does not appear to be a git repository
 fatal: Could not read from remote repository.
 
 Please make sure you have the correct access rights
 and the repository exists.
+
 Reading the remote repository failed
 EXPECTED, $output);
 

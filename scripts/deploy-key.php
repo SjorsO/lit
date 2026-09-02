@@ -1,6 +1,6 @@
 <?php
 
-// Deploy key helpers, shared by "lit init" and "lit generate-deploy-key"
+// Deploy key helpers, used by "lit init", "lit deploy", and "lit generate-deploy-key"
 
 // Matches "ssh://git@host/repo.git" and the short form "git@host:repo.git"
 function is_ssh_git_url(string $url): bool

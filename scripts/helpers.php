@@ -96,15 +96,28 @@ function release_is_live(string $projectBasePath, string $releaseDirectory): boo
 
 function resolve_remote_ref(string $gitRepositoryUrl, string $ref): array
 {
-    [$lsRemoteStatusCode, $lsRemoteOutput] = run_command_and_capture_stdout(git_command(['ls-remote', $gitRepositoryUrl, "refs/heads/$ref", "refs/tags/$ref*"]));
+    // Errors are not streamed, they get their own block below the "Reading" line
+    [$lsRemoteStatusCode, $lsRemoteOutput, $lsRemoteError] = run_command_and_capture_stdout(git_command(['ls-remote', $gitRepositoryUrl, "refs/heads/$ref", "refs/tags/$ref*"]), streamStderr: false);
 
     if ($lsRemoteStatusCode !== 0) {
+        out("\n");
+        out("\n");
+        out(rtrim($lsRemoteError)."\n");
+        out("\n");
         out("Reading the remote repository failed\n");
+
+        // An access error over ssh usually means the project has no deploy key yet
+        if (is_ssh_git_url($gitRepositoryUrl) && is_git_access_error($lsRemoteError) && ! is_file($GLOBALS['deploy_key_path'] ?? '')) {
+            out("Tip: run \"lit generate-deploy-key\" to set up a deploy key\n");
+        }
 
         $GLOBALS['current_run_result'] = 'failed (reading the remote repository failed)';
 
         lit_exit($lsRemoteStatusCode);
     }
+
+    // Warnings from a successful read stay on the "Reading" line, like before
+    out($lsRemoteError);
 
     $branchCommit = '';
     $tagCommit = '';

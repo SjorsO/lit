@@ -1,6 +1,7 @@
 <?php
 
 require __DIR__.'/scripts/helpers.php';
+require __DIR__.'/scripts/deploy-key.php';
 
 if (! extension_loaded('pcntl') || ! extension_loaded('posix')) {
     echo "Lit requires the pcntl and posix PHP extensions\n";

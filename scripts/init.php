@@ -37,8 +37,6 @@ if ($sourceUrl === '' || isset($arguments[3])) {
 
 $sourceType = str_ends_with($sourceUrl, '.git') || str_starts_with($sourceUrl, 'git@') ? 'git' : 'bundle';
 
-require_once "$litBasePath/scripts/deploy-key.php";
-
 function is_existing_zero_downtime_project(string $path): bool
 {
     return is_dir("$path/releases")
@@ -117,7 +115,6 @@ function offer_deploy_key(string $projectPath, string $sourceUrl, string $custom
     // A deploy key only works over ssh
     if (! is_ssh_git_url($sourceUrl)) {
         if ($githubRepository !== '') {
-            out("\n");
             out("Tip: with the SSH URL, Lit can set up a deploy key for you:\n");
             out(rtrim("  lit init git@github.com:$githubRepository.git $customProjectName")."\n");
         }
@@ -130,8 +127,6 @@ function offer_deploy_key(string $projectPath, string $sourceUrl, string $custom
     }
 
     $prettyDeployKeyPath = basename($projectPath).'/'.basename(deploy_key_path($projectPath));
-
-    out("\n");
 
     if (is_file(deploy_key_path($projectPath))) {
         out("The deploy key \"$prettyDeployKeyPath\" has no access to the repository.\n");
@@ -244,11 +239,9 @@ if ($sourceType === 'git') {
         }
 
         out("\n");
-
-        if (trim($lsRemoteError) !== '') {
-            out("\n");
-            out(rtrim($lsRemoteError)."\n");
-        }
+        out("\n");
+        out(rtrim($lsRemoteError)."\n");
+        out("\n");
 
         if (! offer_deploy_key($projectPath, $sourceUrl, $customProjectName, $lsRemoteError)) {
             lit_exit($lsRemoteStatusCode);

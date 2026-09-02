@@ -20,7 +20,8 @@ run_process([...$gitCommand, 'commit', '--quiet', '-m', 'one'], $seedPath);
 
 run_process(['git', 'clone', '--quiet', '--bare', $seedPath, $remotePath], $caseDir);
 
-// Fake ssh: without a key "Permission denied", with a key the git command runs locally
+// Fake ssh: without a key "Permission denied", with a key the git command runs locally.
+// The "private.git" repository denies every key, like a repository the key was not added to
 mkdir("$worldPath/bin");
 
 file_put_contents("$worldPath/bin/ssh", str_replace('__WORLD__', $worldPath, <<<'SHIM'
@@ -29,6 +30,11 @@ printf '%s\n' "$*" >> "__WORLD__/case/ssh-calls.log"
 
 if [[ " $* " != *" -i "* ]]; then
     echo "git@localhost: Permission denied (publickey)." >&2
+    exit 255
+fi
+
+if [[ "$*" == *"/private.git'"* ]]; then
+    echo "ERROR: Repository not found." >&2
     exit 255
 fi
 
@@ -84,6 +90,35 @@ chdir($projectPath);
 assert_same(1, $statusCode);
 assert_same('usage: lit generate-deploy-key', $output);
 
+// Without a deploy key, an ssh url fails with an access error. Deploy points at the fix
+set_lit_state_value($projectPath, 'git_repository_url', "git@localhost:$remotePath");
+
+neutralize_hooks($projectPath);
+file_put_contents("$projectPath/.env", "APP_KEY=test\n");
+
+[$statusCode, $output] = lit('deploy');
+
+assert_same(128, $statusCode);
+
+assert_same(<<<EXPECTED
+Reading branch "main" of "git@localhost:$remotePath"...
+
+git@localhost: Permission denied (publickey).
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+
+Reading the remote repository failed
+Tip: run "lit generate-deploy-key" to set up a deploy key
+Finished with errors (in X seconds)
+EXPECTED, normalize_output($output));
+
+assert_file_missing("$projectPath/releases/1");
+
+// Back to the local url, the first key is generated for a project without ssh
+set_lit_state_value($projectPath, 'git_repository_url', "file://$remotePath");
+
 // 1. Generate a key. The url is not an ssh url, so a note explains the key is not used yet
 [$statusCode, $output] = lit_with_input('', [], 'generate-deploy-key');
 
@@ -112,9 +147,6 @@ assert_string_contains($output, '  '.public_key_without_comment("$projectPath/de
 // 2. With an ssh url, deploying uses the key
 set_lit_state_value($projectPath, 'git_repository_url', "git@localhost:$remotePath");
 
-neutralize_hooks($projectPath);
-file_put_contents("$projectPath/.env", "APP_KEY=test\n");
-
 [$statusCode, $output] = lit('deploy');
 
 assert_same(0, $statusCode);
@@ -122,10 +154,11 @@ assert_directory_exists("$projectPath/releases/1");
 
 $sshCalls = explode("\n", rtrim(file_get_contents("$caseDir/ssh-calls.log"), "\n"));
 
-// One call to read the branch, one to clone
-assert_same(2, count($sshCalls));
+// The failed deploy ran without a key, then one call to read the branch and one to clone
+assert_same(3, count($sshCalls));
+assert_string_not_contains($sshCalls[0], '-i ');
 
-foreach ($sshCalls as $sshCall) {
+foreach (array_slice($sshCalls, 1) as $sshCall) {
     assert_string_contains($sshCall, "-i $projectPath/deploy-key -o IdentitiesOnly=yes ");
 }
 
@@ -137,6 +170,16 @@ chmod("$projectPath/deploy-key", 0644);
 assert_same(0, $statusCode);
 assert_directory_exists("$projectPath/releases/2");
 assert_same(0600, fileperms("$projectPath/deploy-key") & 0777);
+
+// With a key in place, an access error means the key was not added, so no tip to generate one
+set_lit_state_value($projectPath, 'git_repository_url', "git@localhost:$caseDir/private.git");
+
+[$statusCode, $output] = lit('deploy');
+
+assert_same(128, $statusCode);
+assert_string_contains($output, 'ERROR: Repository not found.');
+assert_string_contains($output, 'Reading the remote repository failed');
+assert_string_not_contains($output, 'Tip:');
 
 // 3. Saying no keeps the key, and shows it again
 [$statusCode, $output] = lit_with_input('n', [], 'generate-deploy-key');

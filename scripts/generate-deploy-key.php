@@ -6,8 +6,6 @@
  * @var string[] $arguments
  */
 
-require_once __DIR__.'/deploy-key.php';
-
 if (isset($arguments[1])) {
     out("usage: lit generate-deploy-key\n");
 
