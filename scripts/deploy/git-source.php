@@ -76,6 +76,8 @@ function prepare_git_release(stdClass $state, array $litState, string $projectBa
         if ($state->isForcing) {
             out("Using \"--force\", redeploying...\n");
         } else {
+            print_recent_commits("$projectBasePath/current", $state->currentCommit);
+
             out("Run \"lit deploy --force\" to redeploy\n");
 
             $GLOBALS['current_run_result'] = 'aborted, this commit is already deployed';

@@ -135,3 +135,53 @@ EXPECTED);
 $output = normalize_output($output);
 
 assert_string_contains($output, "Cloning repository...\nCreating a symlink to the storage directory");
+
+// Deploying again is skipped, the list still shows what is live
+// The old commit is the new commit, so only the "─▶" arrow shows
+[$statusCode, $output] = lit('deploy');
+
+assert_same(0, $statusCode);
+
+$elevenChars = substr($commits['twelve'], 0, 11);
+
+assert_string_contains($output, <<<EXPECTED
+Latest commit of "main" is already deployed ($elevenChars)
+
+─▶ {$shortHashes['twelve']} twelve
+   {$shortHashes['eleven']} eleven
+   {$shortHashes['ten']} (tag: v1.0) ten
+   {$shortHashes['nine']} nine
+   {$shortHashes['eight']} eight
+   {$shortHashes['seven']} seven
+   {$shortHashes['six']} six
+   {$shortHashes['five']} five
+   {$shortHashes['four']} four
+   {$shortHashes['three']} three
+
+Run "lit deploy --force" to redeploy
+EXPECTED);
+
+// The normalizer removes this block too
+assert_same(<<<EXPECTED
+Reading branch "main" of "$remoteUrl"...
+Latest commit of "main" is already deployed (COMMIT)
+Run "lit deploy --force" to redeploy
+Finished successfully (in X seconds)
+EXPECTED, normalize_output($output));
+
+// Without ".git" in the live release there is nothing to list
+// Git must not walk up and log a parent repository (the test world lives inside one)
+run_process(['rm', '-rf', realpath("$projectPath/current").'/.git'], $projectPath);
+
+[$statusCode, $output] = lit('deploy');
+
+assert_same(0, $statusCode);
+
+assert_string_not_contains($output, '▶');
+
+assert_same(<<<EXPECTED
+Reading branch "main" of "$remoteUrl"...
+Latest commit of "main" is already deployed (COMMIT)
+Run "lit deploy --force" to redeploy
+Finished successfully (in X seconds)
+EXPECTED, normalize_output($output));

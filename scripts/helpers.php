@@ -164,12 +164,16 @@ function clone_git_ref_into(string $gitRepositoryUrl, string $ref, string $refTy
 
 function print_recent_commits(string $repositoryPath, string $previousCommit = ''): void
 {
+    if (! is_dir("$repositoryPath/.git")) {
+        return;
+    }
+
     // Output is piped, git would hide decorations, force them on (tags only)
     [$logStatusCode, $logOutput] = run_command_and_capture(['git', '-C', $repositoryPath, '-c', 'core.abbrev=7', 'log', '--oneline', '--decorate', '--decorate-refs=refs/tags', '-10']);
 
     $logOutput = trim($logOutput);
 
-    // Skip silently, a caching hook may have removed the ".git" directory
+    // Skip silently, the list is only decoration
     if ($logStatusCode !== 0 || $logOutput === '') {
         return;
     }
