@@ -38,12 +38,12 @@ array_map('unlink', glob("$worldPath/lit/cached-releases/*.tar"));
 assert_same(0, $statusCode);
 
 // Assert timing formats are correct
-// Hash check: "(in X.XX seconds)" format
-assert_matches('/\(in [0-9]+\.[0-9]{2} seconds\)/', $output);
-// Download: "(XXK in X.XX seconds)" format
-assert_matches('/\([0-9]+K in [0-9]+\.[0-9]{2} seconds\)/', $output);
-// Final runtime: "(in X.XXs)" format
-assert_matches('/\(in [0-9]+\.[0-9]{2}s\)/', $output);
+// Hash check: "(in X.X seconds)" format
+assert_matches('/\(in [0-9]+\.[0-9] seconds\)/', $output);
+// Download: "(XXK in X.X seconds)" format
+assert_matches('/\([0-9]+K in [0-9]+\.[0-9] seconds\)/', $output);
+// Final runtime: "(in X.Xs)" format
+assert_matches('/\(in [0-9]+\.[0-9]s\)/', $output);
 
 $output = normalize_output($output);
 

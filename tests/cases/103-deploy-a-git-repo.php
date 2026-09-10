@@ -33,8 +33,8 @@ file_put_contents("$projectPath/.env", "APP_KEY=test\n");
 
 assert_same(0, $statusCode);
 
-// Assert runtime format is X.XXs (e.g., "1.05s")
-assert_matches('/\(in [0-9]+\.[0-9]{2}s\)/', $output);
+// Assert runtime format is X.Xs (e.g., "1.3s")
+assert_matches('/\(in [0-9]+\.[0-9]s\)/', $output);
 
 $output = normalize_output($output);
 

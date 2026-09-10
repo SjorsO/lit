@@ -101,7 +101,7 @@ function timer(): object
             $microseconds = (int) round((hrtime(true) - $this->startedAt) / 1_000);
 
             if ($microseconds >= 1_000_000) {
-                return round($microseconds / 1_000_000, precision: 1).'s';
+                return sprintf('%.1fs', $microseconds / 1_000_000);
             }
 
             if ($microseconds >= 1000) {
