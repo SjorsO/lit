@@ -298,7 +298,7 @@ function is_macos(): bool
 
 function pretty_runtime(int $runtimeInMs): string
 {
-    return sprintf('%d.%02ds', intdiv($runtimeInMs, 1000), intdiv($runtimeInMs % 1000, 10));
+    return sprintf('%.1fs', $runtimeInMs / 1000);
 }
 
 function uuid(): string

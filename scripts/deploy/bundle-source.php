@@ -63,7 +63,7 @@ function read_remote_bundle_hash(stdClass $state, string $bundleHashUrl, string 
 
     [$curlStatusCode, $curlOutput, $curlSeconds] = run_curl_and_capture([$bundleHashUrl]);
 
-    out(sprintf("(in %.2f seconds)\n", $curlSeconds));
+    out(sprintf("(in %.1f seconds)\n", $curlSeconds));
 
     if ($curlStatusCode !== 0) {
         out("Warning: $curlOutput\n");
@@ -161,7 +161,7 @@ function fetch_bundle(stdClass $state, string $bundleUrl, string $bundleHashUrl,
 
     $bundleSize = human_file_size(filesize($tempBundlePath));
 
-    out(sprintf("($bundleSize in %.2f seconds)\n", $curlSeconds));
+    out(sprintf("($bundleSize in %.1f seconds)\n", $curlSeconds));
 
     $state->newBundleHash = sha1_file($tempBundlePath);
 
