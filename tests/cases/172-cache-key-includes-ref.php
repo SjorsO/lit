@@ -144,3 +144,64 @@ assert_same('HEAD', $releaseBranch);
 
 // Three cache entries now, one per ref
 assert_same(3, count(glob("$worldPath/lit/cached-releases/$cacheCommit-*.tar")));
+
+// Checkout can update the configured ref without deploying it. Redeploy must
+// still use the live release's cache, even when the other ref has a cache too.
+$commitCacheMarker = file_get_contents("$projectPath/current/cache-marker");
+
+[$statusCode] = lit('checkout', 'main');
+
+assert_same(0, $statusCode);
+assert_lit_state_value($projectPath, 'git_ref', 'main');
+assert_lit_state_value($projectPath, 'deployed_git_cache_ref', "commit:$commitOne");
+
+[$statusCode, $output] = lit('redeploy');
+
+assert_same(0, $statusCode);
+assert_string_contains($output, 'Reusing deployment from cache');
+assert_same($commitCacheMarker, file_get_contents("$projectPath/current/cache-marker"));
+
+// The same protection applies when another branch is configured.
+[$statusCode] = lit('deploy', '--force');
+
+assert_same(0, $statusCode);
+assert_same($mainCacheMarker, file_get_contents("$projectPath/current/cache-marker"));
+
+[$statusCode] = lit('checkout', 'same-head');
+
+assert_same(0, $statusCode);
+
+[$statusCode, $output] = lit('redeploy');
+
+assert_same(0, $statusCode);
+assert_string_contains($output, 'Reusing deployment from cache');
+assert_same($mainCacheMarker, file_get_contents("$projectPath/current/cache-marker"));
+assert_lit_state_value($projectPath, 'deployed_git_cache_ref', 'branch:main');
+
+// A failed release must not change the cache ref of the live deployment.
+file_put_contents("$projectPath/hooks/before-release.sh", "exit 1\n");
+
+[$statusCode] = lit('deploy', '--force');
+
+assert_same(1, $statusCode);
+assert_lit_state_value($projectPath, 'deployed_git_cache_ref', 'branch:main');
+
+neutralize_hooks($projectPath);
+
+[$statusCode, $output] = lit('redeploy');
+
+assert_same(0, $statusCode);
+assert_string_contains($output, 'Reusing deployment from cache');
+assert_same($mainCacheMarker, file_get_contents("$projectPath/current/cache-marker"));
+
+// Without a recorded cache ref, redeploy uses the original commit-based lookup.
+$legacyState = lit_state($projectPath);
+unset($legacyState['deployed_git_cache_ref']);
+file_put_contents("$projectPath/lit.json", json_encode($legacyState));
+
+[$statusCode, $output] = lit('redeploy');
+
+assert_same(0, $statusCode);
+assert_string_contains($output, 'Reusing deployment from cache');
+assert_same($commitCacheMarker, file_get_contents("$projectPath/current/cache-marker"));
+assert_lit_state_value($projectPath, 'deployed_git_cache_ref', "commit:$commitOne");

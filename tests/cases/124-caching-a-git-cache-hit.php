@@ -173,3 +173,26 @@ assert_file_content("$projectPath/current/cache-marker", rtrim($otherBranchCache
 // Verify before/after release hooks still run with cached releases
 assert_file_exists("$projectPath/current/before-release-ran");
 assert_file_exists("$projectPath/current/after-release-ran");
+
+// Redeploy must reuse the same build too, without creating a commit-ref cache.
+$cacheFilesBeforeRedeploy = glob("$worldPath/lit/cached-releases/*.tar");
+
+[$statusCode, $output] = lit('redeploy');
+
+assert_same(0, $statusCode);
+
+assert_same(<<<EXPECTED
+Redeploying the current commit (COMMIT)
+Reusing deployment from cache
+Creating "$projectPath/releases/6" for the new release...
+Extracting release...
+Creating a symlink to the storage directory
+Creating a symlink to the .env file
+Releasing the new deployment "$projectPath/releases/6"
+Finished successfully (in X seconds)
+EXPECTED, normalize_output($output));
+
+assert_file_content("$projectPath/current/cache-marker", rtrim($otherBranchCacheMarker, "\n"));
+assert_same($cacheFilesBeforeRedeploy, glob("$worldPath/lit/cached-releases/*.tar"));
+assert_file_exists("$projectPath/releases/6/before-release-ran");
+assert_file_exists("$projectPath/releases/6/after-release-ran");
