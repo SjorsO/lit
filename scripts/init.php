@@ -74,8 +74,8 @@ function create_env_from_git_env_example(string $projectPath, string $sourceUrl)
     [$cloneStatusCode] = run_command_and_capture(git_command(['clone', '--quiet', '--no-checkout', '--depth', '1', '--filter=blob:none', $sourceUrl, $clonePath]));
 
     if ($cloneStatusCode === 0) {
-        run_command_and_capture(['git', 'sparse-checkout', 'set', '--no-cone', '.env.example'], $clonePath);
-        run_command_and_capture(['git', 'checkout'], $clonePath);
+        run_command_and_capture(git_command(['sparse-checkout', 'set', '--no-cone', '.env.example']), $clonePath);
+        run_command_and_capture(git_command(['checkout']), $clonePath);
     }
 
     $createdEnvFile = file_exists("$clonePath/.env.example");

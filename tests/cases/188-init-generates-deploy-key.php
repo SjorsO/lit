@@ -19,10 +19,15 @@ $gitCommand = ['git', '-c', 'user.email=lit@test', '-c', 'user.name=lit'];
 run_process(['git', 'init', '--quiet', '--initial-branch=main', $seedPath], $caseDir);
 
 file_put_contents("$seedPath/app.txt", "one\n");
-run_process(['git', 'add', 'app.txt'], $seedPath);
+file_put_contents("$seedPath/.env.example", "APP_NAME=Laravel\nAPP_KEY=\nDB_CONNECTION=sqlite\n");
+run_process(['git', 'add', 'app.txt', '.env.example'], $seedPath);
 run_process([...$gitCommand, 'commit', '--quiet', '-m', 'one'], $seedPath);
 
 run_process(['git', 'clone', '--quiet', '--bare', $seedPath, $remotePath], $caseDir);
+
+// Honor partial clones like GitHub, so checking out ".env.example" needs another
+// authenticated fetch instead of using blobs already downloaded by the clone.
+run_process(['git', 'config', 'uploadpack.allowFilter', 'true'], $remotePath);
 
 // The fake ssh behaves like GitHub:
 // - without a key: "Permission denied"
@@ -133,6 +138,8 @@ Reading "$remoteUrl"... Done!
 
 Current branch set to "main"
 
+Created ".env" from the ".env.example" in the repository
+Application key (APP_KEY) set successfully.
 Finished initializing "origin-repo"
 
 Next steps:
@@ -154,6 +161,13 @@ assert_file_exists("$projectPath/deploy-key");
 assert_file_exists("$projectPath/deploy-key.pub");
 assert_file_exists("$projectPath/lit.json");
 
+// After adding the key, init downloads the example and fills in an application key.
+$envContents = file_get_contents("$projectPath/.env");
+
+assert_matches('/^APP_KEY=base64:[A-Za-z0-9+\/]{43}=$/m', $envContents);
+assert_same(file_get_contents("$seedPath/.env.example"), preg_replace('/^APP_KEY=.*/m', 'APP_KEY=', $envContents));
+assert_file_missing("$projectPath/env-example-clone");
+
 // Only the owner may read the private key
 assert_same(0600, fileperms("$projectPath/deploy-key") & 0777);
 
@@ -161,10 +175,10 @@ assert_same(0600, fileperms("$projectPath/deploy-key") & 0777);
 assert_string_contains($output, '  '.public_key_without_comment("$projectPath/deploy-key.pub"));
 
 // The first attempt ran without a key, every attempt after that used the deploy key
-// (the last call is the ".env.example" lookup)
+// (the last two calls clone the repository and fetch the ".env.example" blob)
 $sshCalls = ssh_calls();
 
-assert_same(4, count($sshCalls));
+assert_same(5, count($sshCalls));
 assert_string_not_contains($sshCalls[0], '-i ');
 
 foreach (array_slice($sshCalls, 1) as $sshCall) {
@@ -186,9 +200,9 @@ assert_file_content("$projectPath/releases/1/app.txt", 'one');
 $sshCalls = ssh_calls();
 
 // One call to read the branch, one to clone
-assert_same(6, count($sshCalls));
+assert_same(7, count($sshCalls));
 
-foreach (array_slice($sshCalls, 4) as $sshCall) {
+foreach (array_slice($sshCalls, 5) as $sshCall) {
     assert_string_contains($sshCall, "-i $projectPath/deploy-key -o IdentitiesOnly=yes ");
 }
 
@@ -267,6 +281,8 @@ assert_same(0, $statusCode);
 assert_string_contains($output, "Reading \"$remoteUrl\"... Done!");
 assert_string_not_contains($output, 'Generate a deploy key');
 assert_file_exists("$caseDir/third/lit.json");
+assert_same(file_get_contents("$seedPath/.env.example"), preg_replace('/^APP_KEY=.*/m', 'APP_KEY=', file_get_contents("$caseDir/third/.env")));
+assert_file_missing("$caseDir/third/env-example-clone");
 
 $sshCalls = ssh_calls();
 
