@@ -94,7 +94,7 @@ function prepare_git_release(stdClass $state, array $litState, string $projectBa
         return;
     }
 
-    prepare_git_release_from_cache($state, $gitRepositoryUrl, $projectBasePath, $litBasePath, $previousCommit);
+    prepare_git_release_from_cache($state, $litState, $projectBasePath, $litBasePath, $previousCommit);
 }
 
 // Clones straight into the new release directory
@@ -132,8 +132,9 @@ function prepare_git_release_without_cache(stdClass $state, string $gitRepositor
 }
 
 // Builds a cached tar (or reuses one), then extracts it into the new release directory
-function prepare_git_release_from_cache(stdClass $state, string $gitRepositoryUrl, string $projectBasePath, string $litBasePath, string $previousCommit): void
+function prepare_git_release_from_cache(stdClass $state, array $litState, string $projectBasePath, string $litBasePath, string $previousCommit): void
 {
+    $gitRepositoryUrl = $litState['git_repository_url'];
     $cacheLock = acquire_cache_lock($litBasePath, isExclusive: false);
 
     if (file_exists("$projectBasePath/hooks/before-caching.sh")) {
@@ -148,16 +149,29 @@ function prepare_git_release_from_cache(stdClass $state, string $gitRepositoryUr
     // but produce different clones, since ".git" records the ref (e.g. a branch
     // head vs. a tag on the same commit).
     $cacheCommit = substr($state->currentRemoteCommit, 0, 12);
-    $cacheRefHash = substr(sha1("$state->currentRefType:$state->currentRef"), 0, 12);
+    $state->cacheRef = "$state->currentRefType:$state->currentRef";
+    $cacheRefHash = substr(sha1($state->cacheRef), 0, 12);
+    $cacheRefs = [$state->cacheRef];
+
+    if ($state->isRedeploying && isset($litState['deployed_git_cache_ref'])) {
+        array_unshift($cacheRefs, $litState['deployed_git_cache_ref']);
+    }
 
     $tarFilePath = '';
+    $cachedHookChanged = false;
 
-    if (file_exists("$litBasePath/cached-releases/$cacheCommit-$cacheRefHash-$beforeCachingHookHash.tar")) {
-        $tarFilePath = "$litBasePath/cached-releases/$cacheCommit-$cacheRefHash-$beforeCachingHookHash.tar";
-    } elseif (glob("$litBasePath/cached-releases/$cacheCommit-$cacheRefHash-*.tar")) {
-        out("Cached release found but hook changed, rebuilding...\n");
-    } elseif (glob("$litBasePath/cached-releases/$cacheCommit-*.tar")) {
-        out("Cached release found but for a different ref, rebuilding...\n");
+    foreach (array_unique($cacheRefs) as $cacheRef) {
+        $lookupRefHash = substr(sha1($cacheRef), 0, 12);
+        $candidateTarFilePath = "$litBasePath/cached-releases/$cacheCommit-$lookupRefHash-$beforeCachingHookHash.tar";
+
+        if (file_exists($candidateTarFilePath)) {
+            $tarFilePath = $candidateTarFilePath;
+            $state->cacheRef = $cacheRef;
+
+            break;
+        }
+
+        $cachedHookChanged = $cachedHookChanged || (bool) glob("$litBasePath/cached-releases/$cacheCommit-$lookupRefHash-*.tar");
     }
 
     if ($tarFilePath !== '') {
@@ -168,6 +182,14 @@ function prepare_git_release_from_cache(stdClass $state, string $gitRepositoryUr
 
         $state->currentCommit = $state->currentRemoteCommit;
     } else {
+        if ($cachedHookChanged) {
+            out("Cached release found but hook changed, rebuilding...\n");
+        } elseif (glob("$litBasePath/cached-releases/$cacheCommit-*.tar")) {
+            out("Cached release found but for a different ref, rebuilding...\n");
+        }
+
+        // A redeploy cache miss builds a detached commit clone. Keep its cache
+        // separate from branch/tag builds, whose hooks can inspect the git ref.
         $tarFilePath = build_cached_release($state, $gitRepositoryUrl, $projectBasePath, $litBasePath, $beforeCachingHookPath, $beforeCachingHookHash, $cacheRefHash);
     }
 

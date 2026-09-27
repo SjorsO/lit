@@ -80,6 +80,7 @@ $state = (object) [
     'currentCommit' => '',
     'newBundleHash' => '',
     'cachingEnabled' => false,
+    'cacheRef' => '',
     'isForcing' => $isForcing,
     'isRedeploying' => $isRedeploying,
     'currentRemoteCommit' => $currentRemoteCommit,
@@ -182,8 +183,19 @@ if ($wasReleased) {
         'bundle' => update_lit_state($projectBasePath, 'bundle_hash', $state->newBundleHash),
     };
 
+    // Only a released deployment may change which cache ref redeploy uses.
+    $releasedLitState = read_lit_state($projectBasePath);
+
+    if ($state->cacheRef !== '') {
+        $releasedLitState['deployed_git_cache_ref'] = $state->cacheRef;
+    } else {
+        unset($releasedLitState['deployed_git_cache_ref']);
+    }
+
     // Remember which .env this release went live with
-    update_lit_state($projectBasePath, 'deployed_dotenv_hash', sha1_file($realEnvFilePath));
+    $releasedLitState['deployed_dotenv_hash'] = sha1_file($realEnvFilePath);
+
+    write_lit_state($projectBasePath, $releasedLitState);
 }
 
 // A pending signal is delivered here, after the release is fully recorded
